@@ -97,3 +97,13 @@ O material do Sebrae funciona como índice de descoberta e comparação. Para pr
 ### Resiliência das séries históricas estaduais
 
 A coleta semanal preserva o histórico público JUCISRS/DataRS já conferido: se a API estadual estiver indisponível (timeout ou erro HTTP), os registros anteriores são mantidos, a indisponibilidade é registrada em `quality.errors` e não é interpretada como zero. Em 18/10/2026 os 110 registros históricos foram recuperados de artefato GitHub Pages verificado e persistidos em `public/data/official.json`; a recuperação foi auditada pelo workflow `recover-rs-history.yml`. Os dados mensais estaduais permanecem separados dos indicadores municipais de Canoas.
+
+## Séries interativas originais do Observatório Sebrae — Etapa 8
+
+O explorador `/sebrae/series` apresenta reproduções **próprias** dos dados públicos dos cubos OLAP do Observatório Setorial Territorial, com filtro estrito por Canoas (IBGE 4304606). O catálogo completo dos metadados contém **87 cubos**; `scripts/sebrae_series_specs.json` define as consultas multidimensionais efetivamente coletadas (mais de 70 séries distintas). A rotina mensal `.github/workflows/sebrae-series.yml` executa as consultas anônimas verificáveis via `https://apiv2-observatorio.sebrae.com.br/tesseract/data.jsonrecords` e persiste `public/data/sebrae-series.json`.
+
+Reprodução significa **série temporal e seus recortes públicos em gráficos próprios**, não copiar os gráficos, o JavaScript ou elementos protegidos do site Sebrae. Os dados são armazenados no GitHub, para que o site GitHub Pages não dependa de CORS nem de serviço no navegador. Fontes primárias e ressalvas são preservadas, e exportação CSV é oferecida por seleção.
+
+**Controle essencial RAIS:** aplicar `Active worker indicator=1`; os 95.355 vínculos RAIS 2025 ficam reconciliados com o perfil de Canoas. A consulta sem filtro devolve 155.787, englobando vínculos não ativos e inflando o indicador. Os demais cubos exigem tratamento específico (médias, impostos, saldo CAGED, PIB, níveis contábeis, condições de ano parcial etc.).
+
+O explorador registra cubos sem dados municipais, filtros não suportados e fontes indisponíveis, sem inventar valores. Registros com contagem entre 1 e 4 são suprimidos; resultados anteriores conferidos são preservados se a API falhar.

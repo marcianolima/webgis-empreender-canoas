@@ -97,6 +97,7 @@ export function OfficialDashboard() {
             <button key={id} onClick={() => goTo(id)} className={"rounded-lg px-3 py-2 font-semibold " + (tab === id ? "bg-brand-50 text-brand-700" : "text-slate-600 hover:bg-slate-100")}>{label}</button>)}
           <Link href="/cnpj" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">Empresas CNPJ</Link>
           <Link href="/sebrae" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">Panorama Sebrae</Link>
+          <Link href="/sebrae/series" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">Séries e comparativos</Link>
           <Link href="/setores" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">Setores</Link>
           <Link href="/trabalho" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">Emprego e exportações</Link>
           <Link href="/redesim" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">REDESIM</Link>

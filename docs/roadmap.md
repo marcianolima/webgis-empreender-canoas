@@ -77,3 +77,12 @@
 - [x] Coleta mensal própria no GitHub Actions e publicação no Pages após validação.
 - [ ] Ampliar séries por emprego/ocupação, cursos, orçamento e mobilidade a partir das fontes primárias quando abertas.
 - [ ] Homologar critérios de divergência RFB/Sebrae com o Sebrae e a Receita.
+
+### Etapa 8 — Reconstituição dos históricos multidimensionais Sebrae
+- [x] API Tesseract pública verificada sem autenticação; catálogo estruturado dos 87 cubos.
+- [x] Reconciliação RAIS: indicador "ativo" exige filtro = 1, 2025 95.355 vínculos.
+- [x] Coletor de dezenas de séries comparáveis por ano/mês, sexo, CNAE, porte, profissões, matriz, REDESIM, MDIC, SICONFI, INEP, PNUD e agro.
+- [x] Série materializada no GitHub Pages com metadados, filtros, classificação territorial, CSV e histórico.
+- [x] Explorador genérico adaptado a telas menores, com diferenciação entre dados extraídos e cubos somente catalogados.
+- [ ] Resolver cubos sem limite municipal ou sem fatos para Canoas com fontes primárias e estudo metodológico.
+- [ ] Validar interativamente cada combinação arbitrária disponível na interface Sebrae além das consultas já materializadas.

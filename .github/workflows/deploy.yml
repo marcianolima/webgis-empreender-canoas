@@ -96,6 +96,16 @@ jobs:
           if seb["status"]=="verified":
               assert len(seb["metrics"])>=15 and len(seb["archived"]["observations"])>=45
           assert all(r["territory"]=="4304606" for r in dee["observations"])
+          series=json.loads((p/"data/sebrae-series.json").read_text())
+          assert series["municipalityIbgeCode"]=="4304606"
+          assert series["status"] in ("ok","partial","not_loaded")
+          if series["status"]!="not_loaded":
+              assert series["coverage"]["available"]>=50
+              assert series["coverage"]["catalogCubes"]>=80
+              assert series["coverage"]["rows"]>=4000
+              ra=next(x for x in series["datasets"] if x["id"]=="rais-trabalho-anual")
+              assert next(row["Workers"] for row in ra["rows"] if row["Year"]==2025)==95355
+          assert (p/"sebrae/series/index.html").exists(),"página das séries não exportada"
           print("Dados:",len(d["cempre"]),"CEMPRE,",len(d["gdp"]),"PIB,",len(d["cnae"]),"CNAE,",len(d["rsBusiness"]),"meses RS")
           PY
           touch out/.nojekyll
@@ -135,6 +145,10 @@ jobs:
                   assert d["municipality"]["code"]=="4304606"
                   get("data/canoas.geojson")
                   get("sobre/")
+                  get("sebrae/series/")
+                  query=json.loads(get("data/sebrae-series.json"))
+                  assert query["municipalityIbgeCode"]=="4304606"
+                  print("Sebrae séries municipais:",query["coverage"],flush=True)
                   print("GitHub Pages validado:",base,d["quality"]["status"])
                   break
               except Exception as exc:

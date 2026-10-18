@@ -132,6 +132,7 @@ export function SebraeDashboard(){
  }
  return <main className="mx-auto max-w-[1500px] space-y-6 px-4 pb-16 pt-8 text-ink sm:px-6">
   <Link href="/" className="text-sm font-bold text-brand-700">← Painel principal</Link>
+  <Link href="/sebrae/series" className="inline-flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm font-bold text-brand-900 hover:border-brand-600">Explorar séries históricas completas e filtros →</Link>
   <div className="flex flex-wrap items-end justify-between gap-4">
    <div><span className="rounded-full bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700">Observatório Setorial Territorial · Sebrae</span>
     <h1 className="mt-4 text-2xl font-extrabold sm:text-4xl">Panorama socioeconômico de Canoas</h1>
