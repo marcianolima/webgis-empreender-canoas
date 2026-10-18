@@ -15,6 +15,13 @@ def dims(c):
 def measures(c):
     return [m["name"] for m in c.get("measures",[])]
 def main():
+    probeurl=BASE+"/data.jsonrecords?cube=RAIS_workers&drilldowns=Year&measures=Workers&Municipality=4304606&Active%20worker%20indicator=1&Year=2025"
+    for origin in ("https://marcianolima.github.io", "https://observatorio.sebrae.com.br"):
+        try:
+            req=urllib.request.Request(probeurl,headers={"Origin":origin,"User-Agent":"Mozilla/5.0"})
+            with urllib.request.urlopen(req,timeout=12) as resp:
+                print("CORS",origin,resp.status,"allow-origin",resp.headers.get("Access-Control-Allow-Origin"),"credentials",resp.headers.get("Access-Control-Allow-Credentials"),flush=True)
+        except Exception as e:print("CORS_ERROR",origin,repr(e),flush=True)
     a=grab("/cubes")
     cubes=a.get("cubes",[]) if isinstance(a,dict) else a
     print("TOTAL_CUBES",len(cubes),flush=True)
