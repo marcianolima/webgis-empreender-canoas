@@ -1,0 +1,28 @@
+name: Probe BAIRROSOFICIAL ArcGIS public
+on:
+  push:
+    paths: [.github/workflows/probe-bairros.yml]
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Testar serviço e camadas disponíveis
+        run: |
+          python - <<'PY'
+          import urllib.request,json
+          url="https://geo.canoas.rs.gov.br/server/rest/services/BAIRROSOFICIAL/FeatureServer"
+          for suffix in ("?f=pjson","/0?f=pjson","/0/query?where=1%3D1&outFields=*&returnGeometry=false&resultRecordCount=2&f=json","/0/query?where=1%3D1&outFields=*&returnCountOnly=true&f=json"):
+            target=url+suffix
+            try:
+              with urllib.request.urlopen(urllib.request.Request(target,headers={"User-Agent":"CanoasEmpreende/1.0","Accept":"application/json"}),timeout=18) as response:
+                payload=json.load(response)
+              if "/query?" in suffix:
+                print("RESPONSE",suffix,json.dumps(payload,ensure_ascii=False)[:10000],flush=True)
+              else:
+                print("METADATA",suffix,json.dumps({k:payload.get(k) for k in ["error","layers","spatialReference","capabilities","maxRecordCount","geometryType","fields","objectIdField","name","extent","advancedQueryCapabilities","supportedQueryFormats","supportsPagination"]},ensure_ascii=False)[:14000],flush=True)
+            except Exception as e:print("ERROR",suffix,repr(e),flush=True)
+          PY
