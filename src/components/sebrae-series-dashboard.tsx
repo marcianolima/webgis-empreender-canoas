@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import {useEffect,useMemo,useState} from "react";
+import {useEffect,useState} from "react";
 import {Bar,BarChart,CartesianGrid,Legend,Line,LineChart,ResponsiveContainer,Tooltip,XAxis,YAxis} from "recharts";
 import {Activity,ArrowUpRight,BookOpen,Download,ExternalLink,Filter,Search} from "lucide-react";
-import type {SebraeSeriesDataset,SebraeSeriesDocument,SebraeSeriesRow} from "@/types/sebrae-series";
+import type {SebraeSeriesDataset,SebraeSeriesDocument,SeriesRow} from "@/types/sebrae-series";
 
 const base=process.env.NEXT_PUBLIC_BASE_PATH||"";
 const SOURCE="https://observatorio.sebrae.com.br/profile/geo/canoas";
@@ -36,7 +36,7 @@ function measureFmt(n:number,metric:string):string{
  if(/rate|index|ratio|gini|idhm|ibc|pontua|score|percent|opening time|hours/i.test(metric))return number.format(n);
  return integer.format(n);
 }
-function periods(row:SebraeSeriesRow,axis:string):string{
+function periods(row:SeriesRow,axis:string):string{
  if(axis==="__month"){
   const year=String(row.Year??"");
   const raw=String(row.Month??"");
@@ -51,7 +51,7 @@ function safeCsv(value:unknown):string{
  const protectedText=/^[=+\-@\t\r]/.test(text)?"'"+text:text;
  return '"'+protectedText.replaceAll('"','""')+'"';
 }
-function saveCsv(dataset:SebraeSeriesDataset,rows:SebraeSeriesRow[]){
+function saveCsv(dataset:SebraeSeriesDataset,rows:SeriesRow[]){
  const columns=[...dataset.dimensions,...(dataset.measures||[])];
  const body="\ufeff"+[columns,...rows.map(r=>columns.map(k=>String(r[k]??"")))]
    .map(row=>row.map(safeCsv).join(";")).join("\r\n");
@@ -269,7 +269,7 @@ export function SebraeSeriesDashboard(){
           {selectedSet.notes&&<p><strong>Nota:</strong> {selectedSet.notes}</p>}
           {selectedSet.stale&&<p className="text-amber-800"><strong>Fotografia anterior:</strong> o último download da API falhou. Dados verificados preservados.</p>}
           <p>Unidade de referência: {selectedSet.unit||"Conforme denominação da medida"} · Fonte: {selectedSet.annotations?.source_name||"Sebrae/OLAP"}. Medidas de média/taxa não são somadas entre grupos.</p>
-          <p>Origem: <a className="font-semibold text-brand-700 underline" href={selectedSet.sourceUrl||SOURCE} target="_blank" rel="noopener noreferrer">Consulta pública verificada <ExternalLink inline size={11}/></a></p>
+          <p>Origem: <a className="font-semibold text-brand-700 underline" href={selectedSet.sourceUrl||SOURCE} target="_blank" rel="noopener noreferrer">Consulta pública verificada <ExternalLink size={11}/></a></p>
          </div>
         </>}
        </section>
