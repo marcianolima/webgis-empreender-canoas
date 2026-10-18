@@ -38,7 +38,7 @@ RS_DATASETS = {
     "constituidas": "empresas-constituidas",
     "extintas": "extincao-empresas",
     "filiais_abertas": "abertura-filiais",
-    "filiais_encerradas": "encerramento-filiais",
+    "filiais_encerradas": "encerramento-de-filiais",
 }
 
 
