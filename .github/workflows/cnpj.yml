@@ -101,19 +101,35 @@ jobs:
           assert not any(k in d for k in ("cnpj","razao_social","cpf","logradouro","email"))
           print("Dados verificados:",d["reference"],"estabelecimentos:",d["kpis"]["total"])
           PY
+      - name: Salvar snapshot de agregados antes do commit
+        uses: actions/upload-artifact@v4
+        with:
+          name: cnpj-agregado-validado
+          path: public/data/cnpj.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Commit apenas dos agregados, nunca dos arquivos CNPJ individuais
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/cnpj.json
-          if git diff --cached --quiet; then
-            echo "Sem alterações"
-          else
+          cp public/data/cnpj.json /tmp/cnpj-aggregates-approved.json
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            cp /tmp/cnpj-aggregates-approved.json public/data/cnpj.json
+            git add public/data/cnpj.json
+            if git diff --cached --quiet; then
+              echo "Agregado oficial já publicado no último commit"; break
+            fi
             git commit -m "data(cnpj): fotografia RFB ${{ needs.discover.outputs.reference }} integral validada"
-            git pull --rebase origin main
-            git push origin HEAD:main
-          fi
+            if git push origin HEAD:main; then
+              echo "Agregado oficial publicado em main"; break
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "Falha após cinco tentativas de atualização concorrente"; exit 1
+            fi
+          done
       - name: Publicar atualização via workflow do GitHub Pages
         env:
           GH_TOKEN: ${{ github.token }}

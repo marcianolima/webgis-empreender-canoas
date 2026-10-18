@@ -1,0 +1,91 @@
+name: Recuperar agregado CNPJ integral sem novo download dos dez fragmentos
+on:
+  push:
+    paths:
+      - .github/workflows/cnpj-resume.yml
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "Workflow original com dez fragmentos validados e seus artefatos"
+        required: true
+        default: "39125912255"
+        type: string
+      reference:
+        description: "Competência AAAA-MM conforme manifesto original"
+        required: true
+        default: "2026-10"
+        type: string
+permissions:
+  actions: read
+  contents: write
+concurrency:
+  group: canoas-cnpj-publish-recovery
+  cancel-in-progress: false
+jobs:
+  resume:
+    runs-on: ubuntu-latest
+    timeout-minutes: 130
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Recuperar partes oficiais já processadas no run 39125912255
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.source_run_id || '39125912255' }}
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+          pattern: cnpj-part-*
+          path: work/shards
+          merge-multiple: true
+      - name: Reexecutar apenas junção Empresas + Simples e gerar agregados
+        run: python scripts/cnpj_pipeline.py assemble --reference "${{ inputs.reference || '2026-10' }}" --source-dir work/shards
+      - name: Validar completude municipal, fonte, competência e privacidade
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path("public/data/cnpj.json").read_text())
+          assert data["status"]=="official"
+          assert data["reference"]=="2026-10"
+          assert data["coverage"]["establishmentShards"]==10
+          assert data["coverage"]["companyShards"]==10
+          assert data["coverage"]["simplesLoaded"] is True
+          assert data["coverage"]["recordsMunicipality"]==sum(1 for _ in [0])*0+data["kpis"]["total"]
+          assert sum(x["count"] for x in data["bySector"])==data["kpis"]["active"]
+          assert all(r["count"]>=5 for r in data["districtSectorCells"])
+          print("VALIDADO",data["reference"],data["kpis"],flush=True)
+          PY
+      - name: Preservar agregado validado como artefato recuperável
+        uses: actions/upload-artifact@v4
+        with:
+          name: canoas-cnpj-consolidado-verificado
+          path: public/data/cnpj.json
+          retention-days: 30
+          if-no-files-found: error
+      - name: Publicar na versão mais recente de main sem rebase conflitante
+        run: |
+          set -euo pipefail
+          cp public/data/cnpj.json /tmp/cnpj-approved.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            cp /tmp/cnpj-approved.json public/data/cnpj.json
+            git add public/data/cnpj.json
+            if git diff --cached --quiet; then
+              echo "Fotografia idêntica já presente em main"
+              exit 0
+            fi
+            git commit -m "data(cnpj): 2026-10 Canoas integral, validado e auditável"
+            if git push origin HEAD:main; then
+              echo "PUBLICAÇÃO CNPJ OK"
+              exit 0
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "Falha persistente ao publicar no branch main"
+              exit 1
+            fi
+          done
