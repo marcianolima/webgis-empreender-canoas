@@ -35,7 +35,7 @@ jobs:
           assert x["schemaVersion"]==1
           assert x["status"] in ("ok","partial")
           assert len(x["catalog"])>=80
-          assert len(x["datasets"])==60
+          assert len(x["datasets"])>=70
           assert x["coverage"]["available"]>=12
           assert x["coverage"]["rows"]>=70
           active=next(d for d in x["datasets"] if d["id"]=="rais-trabalho-anual")

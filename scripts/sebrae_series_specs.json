@@ -755,11 +755,13 @@
       "dimensions": [
         "Year",
         "Sex",
-        "Age Range"
+        "Age Group"
       ],
-      "measures": [],
+      "measures": [
+        "Population"
+      ],
       "filters": {},
-      "notes": "Selecionar as dimensões realmente disponíveis no cubo.",
+      "notes": "Faixas etárias e sexo, Censo Demográfico IBGE; não confundir com estimativa 2026.",
       "unit": ""
     },
     {
@@ -991,15 +993,19 @@
     },
     {
       "id": "credito-pj",
-      "title": "Operações de crédito pessoa jurídica",
+      "title": "Operações de crédito e ativos bancários municipais",
       "topic": "financas",
-      "cube": "credito_bacen_valores",
+      "cube": "BCB_ESTBAN_MUN",
       "dimensions": [
-        "Year"
+        "Year",
+        "Month"
       ],
-      "measures": [],
+      "measures": [
+        "Credit Operations",
+        "Asset Availability"
+      ],
       "filters": {},
-      "notes": "Concessões por período; não confundir com estoque de crédito.",
+      "notes": "Estoque bancário por mês; não confundir com concessões trimestrais PJ (que não têm dimensão municipal neste cubo).",
       "unit": ""
     },
     {
@@ -1017,6 +1023,281 @@
       ],
       "filters": {},
       "notes": "Índices são pontuações, não quantitativos.",
+      "unit": ""
+    },
+    {
+      "id": "bc-agencias",
+      "title": "Agências e postos bancários por mês",
+      "topic": "financas",
+      "cube": "BCB_AGENCIAS_POSTOS",
+      "dimensions": [
+        "Year",
+        "Month"
+      ],
+      "measures": [
+        "Total Agencies",
+        "Total Stations"
+      ],
+      "filters": {},
+      "notes": "Presença de rede física bancária.",
+      "unit": ""
+    },
+    {
+      "id": "bc-credito-rural",
+      "title": "Operações de crédito rural",
+      "topic": "financas",
+      "cube": "bcb_sicor_mun",
+      "dimensions": [
+        "Year",
+        "Month"
+      ],
+      "measures": [
+        "Costing Value",
+        "Investiment Value"
+      ],
+      "filters": {},
+      "notes": "Crédito agropecuário, não estoque geral.",
+      "unit": ""
+    },
+    {
+      "id": "anatel-ibc",
+      "title": "Conectividade municipal e banda larga",
+      "topic": "desenvolvimento",
+      "cube": "ANATEL_IBC_MUN",
+      "dimensions": [
+        "Year"
+      ],
+      "measures": [
+        "IBC",
+        "Cobertura População 4G/5G",
+        "Fibra"
+      ],
+      "filters": {},
+      "notes": "Indicadores de conectividade, unidades e metodologia próprias.",
+      "unit": ""
+    },
+    {
+      "id": "aneel-custo-energia",
+      "title": "Tarifas de energia elétrica",
+      "topic": "financas",
+      "cube": "ANEEL_Custo_Energia",
+      "dimensions": [
+        "Year"
+      ],
+      "measures": [
+        "Convetional Tariff",
+        "White Tariff - Ponta"
+      ],
+      "filters": {},
+      "notes": "Tarifa regulada, não gasto empresarial observado.",
+      "unit": ""
+    },
+    {
+      "id": "pncp-compras",
+      "title": "Compras públicas por modalidade",
+      "topic": "financas",
+      "cube": "ComprasPublicas_PNCP",
+      "dimensions": [
+        "Year",
+        "Modalidade"
+      ],
+      "measures": [
+        "Valor Estimado",
+        "Valor Homologado"
+      ],
+      "filters": {},
+      "notes": "Modalidades de contratação pública, não faturamento de empresas.",
+      "unit": ""
+    },
+    {
+      "id": "turismo-mtur",
+      "title": "Emprego e atividade turística",
+      "topic": "comercio",
+      "cube": "MTUR_Mapa_Turismo",
+      "dimensions": [
+        "Year"
+      ],
+      "measures": [
+        "Quantidade de Empregos",
+        "Quantidade de Estabelecimentos",
+        "Arrecadacao"
+      ],
+      "filters": {},
+      "notes": "Setor turístico, não comércio exterior.",
+      "unit": ""
+    },
+    {
+      "id": "turismo-cadastur",
+      "title": "Atividades econômicas do Cadastur",
+      "topic": "comercio",
+      "cube": "MTUR_CadasTur",
+      "dimensions": [
+        "Year",
+        "Activity Type"
+      ],
+      "measures": [
+        "Número de Empresas"
+      ],
+      "filters": {},
+      "notes": "Cadastur: registros setoriais; pode ter universo próprio.",
+      "unit": ""
+    },
+    {
+      "id": "turismo-mercado",
+      "title": "Produtos turísticos e empresas no Sebrae",
+      "topic": "comercio",
+      "cube": "Sebrae_Art_Turismo",
+      "dimensions": [
+        "Year"
+      ],
+      "measures": [
+        "Empresas",
+        "Total Produtos"
+      ],
+      "filters": {},
+      "notes": "Produtos turísticos são categoria de atendimento, não PIB.",
+      "unit": ""
+    },
+    {
+      "id": "turismo-categoria",
+      "title": "Categoria do município no mapa de turismo",
+      "topic": "comercio",
+      "cube": "MTUR_Mapa_Categorizacao",
+      "dimensions": [
+        "Year",
+        "Category"
+      ],
+      "measures": [
+        "Value"
+      ],
+      "filters": {},
+      "notes": "Categorias oficiais são índices, não valores financeiros.",
+      "unit": ""
+    },
+    {
+      "id": "caf-registros",
+      "title": "Registros de agricultura familiar",
+      "topic": "agro",
+      "cube": "MDA_CAF",
+      "dimensions": [
+        "Enrollment Year"
+      ],
+      "measures": [
+        "Registers"
+      ],
+      "filters": {},
+      "notes": "CAF inscrição não mede número de estabelecimentos agropecuários do Censo.",
+      "unit": ""
+    },
+    {
+      "id": "caf-renda",
+      "title": "Renda e famílias cadastradas no CAF",
+      "topic": "agro",
+      "cube": "MDA_CAF_Renda",
+      "dimensions": [
+        "Enrollment Year"
+      ],
+      "measures": [
+        "UFPA Registers",
+        "Income Value"
+      ],
+      "filters": {},
+      "notes": "Renda do cadastro da agricultura familiar, com universo próprio.",
+      "unit": ""
+    },
+    {
+      "id": "pevs-extracao",
+      "title": "Extração vegetal por produto",
+      "topic": "agro",
+      "cube": "PEVS_Plant_Extraction",
+      "dimensions": [
+        "Year",
+        "Product"
+      ],
+      "measures": [
+        "Production",
+        "Production Value"
+      ],
+      "filters": {},
+      "notes": "Produções com unidades potencialmente diferentes: não somar indiscriminadamente.",
+      "unit": ""
+    },
+    {
+      "id": "pevs-silvicultura",
+      "title": "Produção de silvicultura por produto",
+      "topic": "agro",
+      "cube": "PEVS_Forestry",
+      "dimensions": [
+        "Year",
+        "Product"
+      ],
+      "measures": [
+        "Production",
+        "Production Value"
+      ],
+      "filters": {},
+      "notes": "Unidades variam segundo produto.",
+      "unit": ""
+    },
+    {
+      "id": "pevs-area",
+      "title": "Área florestal por espécie",
+      "topic": "agro",
+      "cube": "PEVS_Area_Forestry",
+      "dimensions": [
+        "Year",
+        "Species"
+      ],
+      "measures": [
+        "Area"
+      ],
+      "filters": {},
+      "notes": "Hectares por espécie conforme publicação.",
+      "unit": ""
+    },
+    {
+      "id": "sim-obitos",
+      "title": "Óbitos por ano",
+      "topic": "desenvolvimento",
+      "cube": "DATASUS_SIM",
+      "dimensions": [
+        "Year"
+      ],
+      "measures": [
+        "Total Deaths Count"
+      ],
+      "filters": {},
+      "notes": "Contexto demográfico/saúde, sem atribuir causalidade econômica.",
+      "unit": ""
+    },
+    {
+      "id": "sinasc-nascidos",
+      "title": "Nascidos vivos por ano",
+      "topic": "demografia",
+      "cube": "DATASUS_SINASC",
+      "dimensions": [
+        "Year"
+      ],
+      "measures": [
+        "Total Births"
+      ],
+      "filters": {},
+      "notes": "Série anual de natalidade, dados DATASUS.",
+      "unit": ""
+    },
+    {
+      "id": "homicidios",
+      "title": "Registros de homicídios no município",
+      "topic": "desenvolvimento",
+      "cube": "MJSP_Sinesp_Homicidios",
+      "dimensions": [
+        "Year"
+      ],
+      "measures": [
+        "Homicides"
+      ],
+      "filters": {},
+      "notes": "Contexto urbano de segurança e desenvolvimento.",
       "unit": ""
     }
   ]
