@@ -22,6 +22,9 @@ jobs:
             "https://dados.rs.gov.br/api/3/action/package_show?id=empresas-constituidas",
             "https://servicodados.ibge.gov.br/api/v3/malhas/municipios/4304606?formato=application/vnd.geo%2Bjson&qualidade=minima",
             "https://servicodados.ibge.gov.br/api/v3/agregados/5938/periodos/2023/variaveis/37?localidades=N6%5B4304606%5D",
+            "https://servicodados.ibge.gov.br/api/v3/agregados/993/metadados",
+            "https://servicodados.ibge.gov.br/api/v3/agregados/993/periodos/2021/variaveis/all?localidades=N6%5B4304606%5D",
+            "https://servicodados.ibge.gov.br/api/v3/agregados/4714/periodos/2022/variaveis/93?localidades=N6%5B4304606%5D",
           ]
           for url in urls:
             print("PROBING",url,flush=True)
