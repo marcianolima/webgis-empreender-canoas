@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "status": "not_loaded",
+  "reference": null,
+  "generatedAt": null,
+  "source": "Receita Federal — Dados Abertos do CNPJ",
+  "sourceUrl": "https://arquivos.receitafederal.gov.br/index.php/s/YggdBLfdninEJX9",
+  "municipality": "Canoas",
+  "municipalityIbgeCode": "4304606",
+  "kpis": null,
+  "bySector": [],
+  "byPorte": [],
+  "byDistrictDeclared": [],
+  "monthly": [],
+  "districtSectorCells": [],
+  "quality": {
+    "notes": [
+      "O processamento nacional de todas as dez partes da Receita Federal ainda não concluiu; nenhum indicador incompleto é publicado.",
+      "Nenhum registro fictício ou geocodificação inventada é utilizado."
+    ]
+  }
+}
