@@ -107,3 +107,7 @@ Reprodução significa **série temporal e seus recortes públicos em gráficos 
 **Controle essencial RAIS:** aplicar `Active worker indicator=1`; os 95.355 vínculos RAIS 2025 ficam reconciliados com o perfil de Canoas. A consulta sem filtro devolve 155.787, englobando vínculos não ativos e inflando o indicador. Os demais cubos exigem tratamento específico (médias, impostos, saldo CAGED, PIB, níveis contábeis, condições de ano parcial etc.).
 
 O explorador registra cubos sem dados municipais, filtros não suportados e fontes indisponíveis, sem inventar valores. Registros com contagem entre 1 e 4 são suprimidos; resultados anteriores conferidos são preservados se a API falhar.
+
+### Consulta OLAP pública avançada (sem servidor adicional)
+
+A rota `/sebrae/consulta` permite executar consultas anônimas em cubos públicos com suporte a `Municipality=4304606`, medidas e dimensões escolhidas pelo usuário, filtros de membros, séries cronológicas, exportação CSV e visualizações próprias. A API confirmou resposta `Access-Control-Allow-Origin: *` para a origem GitHub Pages. O limite de 3.000 registros impede gráficos incompletos; consultas que excedam esse teto requerem recorte adicional. Resultados dinâmicos não entram automaticamente no histórico Git — para arquivamento permanente, acrescentar a respectiva combinação a `scripts/sebrae_series_specs.json` e executar a coleta no GitHub Actions.

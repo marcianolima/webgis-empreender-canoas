@@ -34,3 +34,9 @@ Atualização mensal. Uso de dados publicados anonimamente, sem autenticação, 
 ## Limites
 
 Reproduzir as consultas especificadas não equivale a materializar a totalidade combinatória de 87 cubos vezes todas as dimensões e filtros. O explorador relaciona o que está efetivamente em cache e o que está apenas catalogado. Para novos cruzamentos acrescentar especificações auditáveis e verificar unicidade, unidade, origem e cobertura antes da publicação.
+
+## Consulta multidimensional ad hoc
+
+A interface `/sebrae/consulta` oferece consultas adicionais sobre **qualquer cubo do catálogo que possua dimensão Município**, executadas pelo navegador a partir da API Tesseract pública, com autorização CORS confirmada para `marcianolima.github.io`. A consulta adiciona sempre `Municipality=4304606`; RAIS_workers usa `Active worker indicator=1` e RF usa `Registration Status=2` por padrão, com explicação visível. Permite selecionar cubo, medida, eixo, comparação, ano, membros de dimensões, gráfico e exportação. Limite de 3.000 linhas e supressão de contagens 1–4. Cubos sem dimensão municipal ficam indisponíveis para evitar agregações nacionais apresentadas como Canoas.
+
+**Diferença crucial:** modo histórico (`/sebrae/series`) serve dados auditados/persistidos no GitHub. Modo de consulta (`/sebrae/consulta`) obtém observações atuais sob demanda e depende da API pública estar operante; não persiste automaticamente resultados individuais no repositório. Essa abordagem cobre combinatoriamente mais filtros sem duplicar a infraestrutura de cálculo.

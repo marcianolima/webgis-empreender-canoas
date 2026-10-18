@@ -157,6 +157,7 @@ export function SebraeSeriesDashboard(){
  }
  return <main className="mx-auto max-w-[1550px] space-y-6 px-4 pb-16 pt-8 text-ink sm:px-6">
   <Link href="/sebrae" className="text-sm font-semibold text-brand-700">← Panorama Sebrae</Link>
+  <Link href="/sebrae/consulta" className="inline-flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm font-bold text-brand-900 hover:border-brand-500">Consulta avançada ao vivo nos cubos públicos →</Link>
   <header className="flex flex-wrap items-end justify-between gap-4">
    <div className="max-w-4xl">
     <span className="inline-flex gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700"><Activity size={15}/> API pública OLAP · Canoas 4304606</span>

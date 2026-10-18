@@ -66,7 +66,9 @@ export function SebraeLiveQuery(){
  const defaultAxis=dims.includes("Year")?"Year":dims.includes("Open Activity Year")?"Open Activity Year":dims[0]||"";
  const axisValue=dims.includes(axis)?axis:defaultAxis;
  const groupValue=compare!=="none"&&dims.includes(compare)&&compare!==axisValue?compare:"none";
- const filterable=dims.filter(d=>d!==axisValue&&d!==groupValue&&d!=="Year");
+ const filterable=dims.filter(d=>d!==axisValue&&d!==groupValue&&d!=="Year"
+  &&!(cube==="RAIS_workers"&&d==="Active worker indicator")
+  &&!(cube==="RF"&&d==="Registration Status"));
  const chosenExtra=filterable.includes(extraDim)?extraDim:filterable[0]||"";
  const allowed=catalog.filter(c=>c.hasMunicipality&&(!search||((c.name+" "+c.source).toLowerCase().includes(search.toLowerCase()))));
  const grouped=groupValue!=="none"&&result?Array.from(new Set(result.rows.map(x=>String(x[groupValue]??"")))):[];
@@ -129,6 +131,7 @@ export function SebraeLiveQuery(){
   setResult(null);setError("");
   if(!cubeMeta?.hasMunicipality||!axisValue||!metricValue){setError("Escolha um cubo municipal, eixo e medida.");return;}
   if(years.trim()&&!/^(19|20)\d{2}(,(19|20)\d{2})*$/.test(years.trim())){setError("Informe anos como 2024 ou 2024,2025.");return;}
+  if(years.trim()&&!dims.includes("Year")){setError("Este cubo não disponibiliza a dimensão Ano (Year); deixe o filtro de anos vazio.");return;}
   const drilldowns=[axisValue];
   if(axisValue==="Year"&&dims.includes("Month"))drilldowns.push("Month");
   if(groupValue!=="none"&&!drilldowns.includes(groupValue))drilldowns.push(groupValue);
@@ -209,7 +212,7 @@ export function SebraeLiveQuery(){
       <option value="none">Sem segundo agrupamento</option>{dims.filter(m=>m!==axisValue&&m!=="Month").map(m=><option key={m} value={m}>{m}</option>)}
      </select>
     </label>
-    <label className="block text-xs font-bold text-slate-600">Anos (opcional)
+    <label className="block text-xs font-bold text-slate-600">Anos (se a dimensão Year existir)
      <input value={years} onChange={e=>setYears(e.target.value)} placeholder="Ex.: 2024,2025" className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm font-normal"/>
     </label>
    </div>
