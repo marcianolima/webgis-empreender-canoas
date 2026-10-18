@@ -38,6 +38,62 @@ function Card({m,archived}:{m:SebraeMetric;archived:boolean}){
    <a href={m.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand-700 underline">Consultar Sebrae <ExternalLink size={12}/></a>
  </article>;
 }
+
+function ThematicComparison({theme,doc}:{theme:SebraeTheme;doc:SebraeDocument}){
+ const archive=doc.archived.observations;
+ const all=[...doc.metrics,...archive];
+ const get=(code:string)=>all.find(r=>r.code===code)?.value;
+ let title="";let unit="";let notes="";let rows:{label:string;value:number}[]=[];
+ const addRow=(label:string,code:string)=>{const value=get(code);if(value!==undefined)rows.push({label,value});};
+ if(theme==="empresas"){
+   title="Empresas ativas por classificação de porte";unit="estabelecimentos";
+   notes="Distribuição informada pelo Sebrae (fotografia 2026-10); não reconcilia automaticamente a classificação da Receita Federal direta.";
+   addRow("MEI","rf_mei_sebrae");addRow("ME","rf_micro_sebrae");addRow("EPP","rf_pequena_sebrae");addRow("Outros","rf_outros_sebrae");
+ }
+ if(theme==="emprego"){
+   title="Diferença salarial por sexo — RAIS 2025";unit="R$/mês";
+   notes="Remuneração média nominal de vínculos formais; diferença descritiva, não ajustada por ocupação, jornada ou escolaridade.";
+   addRow("Mulheres","rais_remuneracao_mulheres");addRow("Homens","rais_remuneracao_homens");
+ }
+ if(theme==="ocupacoes"){
+   title="Ocupações com mais vínculos no recorte Sebrae";unit="vínculos";
+   notes="Cinco ocupações destacadas no gráfico do Sebrae; seleção sujeita aos filtros do painel original.";
+   addRow("Vendedor","ocupacao_vendedor");addRow("Assistente adm.","ocupacao_assistente");addRow("Motorista","ocupacao_motorista");addRow("Auxiliar escr.","ocupacao_auxiliar_escritorio");addRow("Faxineiro","ocupacao_faxineiro");
+ }
+ if(theme==="financas"){
+   title="Dependência de transferências nas receitas correntes — 2024";unit="%";
+   notes="Mesmo indicador SICONFI para Canoas, média estadual e nacional. Não é participação no orçamento total.";
+   addRow("Canoas","siconfi_participacao_transferencias");addRow("RS","siconfi_transferencias_pct_rs");addRow("Brasil","siconfi_transferencias_pct_br");
+ }
+ if(theme==="educacao"){
+   title="IDEB: evolução dos anos iniciais e finais";unit="índice";
+   notes="Dois marcos históricos publicados no perfil (2005 e 2023), não uma série anual completa. Para 2026, consultar divulgação INEP mais recente.";
+   addRow("Iniciais 2005","ideb_iniciais_2005");addRow("Iniciais 2023","ideb_iniciais_2023");
+   addRow("Finais 2005","ideb_finais_2005");addRow("Finais 2023","ideb_finais_2023");
+ }
+ if(theme==="desenvolvimento"){
+   title="Dimensões históricas do IDHM — 2010";unit="índice";
+   notes="Desenvolvimento humano de 2010: não representa o IDHM corrente de 2026.";
+   addRow("Renda","idh_renda");addRow("Educação","idh_educacao");addRow("Longevidade","idh_longevidade");
+ }
+ if(theme==="comercio"){
+   title="Volume físico por país no recorte público — 2025";unit="kg";
+   notes="Países parceiros selecionados no painel Sebrae. Fluxo e filtros devem ser conferidos no Comex Stat antes de rankings oficiais; não comparar com exportações em US$ FOB.";
+   addRow("China","comex_china_kg");addRow("Índia","comex_india_kg");addRow("Omã","comex_oma_kg");
+ }
+ if(!rows.length)return null;
+ return <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+   <h3 className="text-sm font-bold">{title}</h3>
+   <p className="mt-2 text-xs leading-relaxed text-slate-500">{notes}</p>
+   <div className="mt-5 h-[250px]" role="img" aria-label={title}>
+     <ResponsiveContainer width="100%" height="100%"><BarChart data={rows} layout="vertical" margin={{right:20}}>
+       <CartesianGrid horizontal={false} stroke="#e5ebef"/><XAxis type="number" tick={{fontSize:10}}/><YAxis type="category" dataKey="label" tick={{fontSize:10}} width={115}/><Tooltip formatter={v=>num.format(Number(v))+" "+unit}/><Bar dataKey="value" name={unit} fill="#087f66" radius={[0,4,4,0]}/>
+     </BarChart></ResponsiveContainer>
+   </div>
+   <p className="mt-2 text-xs text-slate-500">Fonte: perfil municipal Sebrae e suas bases oficiais citadas nos cartões.</p>
+ </section>;
+}
+
 export function SebraeDashboard(){
  const [doc,setDoc]=useState<SebraeDocument|null>(null);
  const [cnpj,setCnpj]=useState<CnpjSnapshot|null>(null);
@@ -135,6 +191,7 @@ export function SebraeDashboard(){
       <p className="mt-3 text-xs text-slate-500">{filtered.length} indicadores · {source.filter(x=>x.theme===theme).length} da coleta estruturada recente</p>
      </div>
      {chosen?.href&&<Link href={chosen.href} className="flex items-start justify-between rounded-xl border border-brand-100 bg-brand-50 p-4 text-sm text-brand-900"><span><strong>Explorar a fonte primária municipal</strong><span className="mt-1 block text-xs">Gráficos e dados complementares preservados no Canoas Empreende.</span></span><ArrowUpRight size={18}/></Link>}
+     <ThematicComparison theme={theme} doc={doc}/>
      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{filtered.map(m=><Card key={m.code} m={m} archived={historicalCodes.has(m.code)}/>)}</div>
      {!filtered.length&&<p className="rounded-xl border border-dashed border-slate-200 bg-white p-6 text-sm text-slate-500">Nenhum registro publicável para a seleção. Ausência não equivale a zero.</p>}
     </div>
