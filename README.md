@@ -81,3 +81,15 @@ A rota `/redesim` é exclusiva para séries de tempo de abertura, viabilidade, r
 - **População**: Censo 2022 preservado; estimativa anual 2026 por tabela IBGE 6579. Não misturar estimativa e recenseamento em taxas como se fossem mesmo levantamento.
 - **Novas fontes prioritárias**: MDIC/Comex Stat 2026-09, MTE/Novo Caged 2026-08, IDESE Revisão 2026 (dados 2022–2024), BNDES desembolsos por município, BCB/ESTBAN.
 - **Garantia:** toda atualização deve preservar o histórico anterior e registrar ano/período de referência, fonte, unidade e ressalvas de série, sem imputar zeros.
+
+## Observatório Sebrae — Panorama socioeconômico de Canoas (outubro de 2026)
+
+O novo painel `/sebrae` integra **somente dados agregados do perfil público do Sebrae**, sem reproduzir suas imagens/gráficos/código. O coletor `scripts/collect_sebrae.py` lê o bloco `__NEXT_DATA__` servido publicamente pelo perfil https://observatorio.sebrae.com.br/profile/geo/canoas, confirma o código IBGE 4304606, seleciona indicadores numéricos e publica `public/data/sebrae.json`.
+
+O painel apresenta nove eixos: empresas/MEI/CNAE; emprego e salário RAIS; ocupações; finanças públicas/PIB; educação e formação; mercado consumidor; inclusão/IDHM; agropecuária; comércio exterior. Os históricos RAIS 2024–2025 provêm da série estruturada pública. Há ainda uma fotografia auditada do conteúdo narrativo em `src/data/sebrae-archive-2026-10.json` (18/10/2026), preservando as unidades, os anos, o universo e o aviso de que não constitui atualização automática.
+
+A rotina `.github/workflows/sebrae.yml` executa coleta mensal e manual, valida o território, ano e consistência, salva um artefato recuperável e realiza commit seguro do agregado. O push aciona a publicação no GitHub Pages, sem dependência de Vercel.
+
+**Atenção metodológica:** Sebrae e Receita Federal direta possuem diferentes fotografias (Sebrae: 60.100 ativos; carga RFB de outubro/2026: 60.243), não somar nem inferir 143 aberturas/baixas; RAIS e CAGED não medem o mesmo universo; valores SICONFI per capita e ENEM requerem conferência específica; o zero publicado no gráfico de Comex 2026 não é interpretado como ausência de exportação. A série municipal principal IBGE/PIB 2002–2023 mantém as ressalvas oficiais.
+
+O material do Sebrae funciona como índice de descoberta e comparação. Para produzir novas séries históricas completas por indicador, a prioridade permanece obter o conjunto público da **fonte primária**, não reconstruir visualizações fechadas de terceiros.

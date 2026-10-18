@@ -67,3 +67,13 @@
 - [ ] Integrar Novo Caged do MTE (até agosto/2026 verificado); manter RAIS/DEE 2022–2023 como estoque de vínculos histórico.
 - [ ] Integrar IDESE Revisão 2026 (série 2022–2024) para comparativos Canoas × RS × municípios.
 - [ ] Integrar BNDES desembolsos municipais e Banco Central ESTBAN em abas financeiras.
+
+### Etapa 7 — Perfil público Observatório Sebrae Canoas
+- [x] Perfil público analisado por renderização real e dados estruturados do HTML do portal.
+- [x] Fotografia de 61 indicadores narrativos agregados (outubro/2026), de múltiplos temas.
+- [x] Coletor de métricas estruturadas com território IBGE 4304606 e histórico RAIS 2024–2025.
+- [x] Página temática mobile-first, gráficos, busca, CSV e contexto metodológico.
+- [x] Comparação documentada entre Sebrae e CNPJ RFB; sem soma indevida dos universos.
+- [x] Coleta mensal própria no GitHub Actions e publicação no Pages após validação.
+- [ ] Ampliar séries por emprego/ocupação, cursos, orçamento e mobilidade a partir das fontes primárias quando abertas.
+- [ ] Homologar critérios de divergência RFB/Sebrae com o Sebrae e a Receita.

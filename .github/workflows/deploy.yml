@@ -68,7 +68,7 @@ jobs:
           import json
           from pathlib import Path
           p=Path("out")
-          for name in ("index.html","sobre/index.html","fontes/index.html","atualizacao/index.html"):
+          for name in ("index.html","sobre/index.html","fontes/index.html","atualizacao/index.html","sebrae/index.html"):
               assert (p/name).exists(), name+" não foi gerado"
           html=(p/"index.html").read_text()
           assert "/webgis-empreender-canoas/_next/" in html, "Next.js sem basePath Pages"
@@ -90,6 +90,11 @@ jobs:
           assert all(r["territory"]=="4304606" for r in sectors["observations"])
           dee=json.loads((p/"data/dee.json").read_text())
           assert dee["territory"]=="4304606"
+          seb=json.loads((p/"data/sebrae.json").read_text())
+          assert seb["municipalityIbgeCode"]=="4304606"
+          assert seb["status"] in ("not_loaded","verified")
+          if seb["status"]=="verified":
+              assert len(seb["metrics"])>=15 and len(seb["archived"]["observations"])>=45
           assert all(r["territory"]=="4304606" for r in dee["observations"])
           print("Dados:",len(d["cempre"]),"CEMPRE,",len(d["gdp"]),"PIB,",len(d["cnae"]),"CNAE,",len(d["rsBusiness"]),"meses RS")
           PY

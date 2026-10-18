@@ -84,3 +84,25 @@ Preencher valores apenas após conferência documental. **Não carregar totais e
 - Não foi encontrada API pública aberta que permita colher todos os tempos de Canoas diretamente sem autenticação. Painéis Power BI não autorizam automaticamente endpoints privados.
 - Importação suportada em `scripts/import_external_indicators.py` com `fonte=redesim_jucisrs` ou `fonte=mapa_empresas`. É necessário extrair por mecanismo oficial e preencher competência, IBGE 4304606, universo, unidade, segmento e URL de origem, preservando arquivo original e licença.
 - O painel `/redesim` exibe dados validados, ou informação explícita de indisponibilidade (nunca estimativa).
+
+## Perfil territorial Sebrae: Canoas (análise de 18/10/2026)
+
+Fonte pública: https://observatorio.sebrae.com.br/profile/geo/canoas.
+
+**Cobertura real observada:** 14 grandes áreas de página, incluindo iniciativas do Sebrae, empresas, emprego, orçamento, ocupações, demografia, eleitorado, PNUD, programas sociais, educação, saúde, comércio exterior, PIB e agronegócio. Para desenvolvimento econômico, foram priorizadas nove áreas integráveis; eleitorado e outros conteúdos sem relação causal clara foram mantidos apenas no catálogo de escopo, não como KPIs econômicos.
+
+**Integração técnica:** a página é Next.js. Seu HTML público inclui `__NEXT_DATA__`, com `profileProps.id=4304606` e variáveis agregadas já publicadas. O coletor lê apenas esse HTML público; **não** utiliza login, token de sessão, APIs restritas nem endpoints privados de gráficos. O arquivo `public/data/sebrae.json` é pequeno e serve ao GitHub Pages; o arquivo `src/data/sebrae-archive-2026-10.json` documenta fatos já verificados em 18/10/2026.
+
+**Novos dados principais**: RAIS 2025 (vínculos, evolução 2024–2025, remuneração nominal, sexo, estabelecimentos); Receita/CNPJ (estoque visto pelo Sebrae, porte, MEI, natureza jurídica, CNAE e novas empresas ainda ativas); Sebrae (atendimentos e Sala do Empreendedor); ocupações CBO; finanças (receitas correntes e transferências SICONFI); demografia; INEP (matrículas e indicadores de educação); Bolsa Família; PNUD/IDHM; PAM/PPM (agropecuária); MDIC (massa exportada por país na seleção pública); composição setorial histórica do VAB (2021).
+
+**Diferenças observadas que não podem ser harmonizadas automaticamente:**
+- Estabelecimentos CNPJ outubro/2026: Sebrae **60.100** vs RFB direta **60.243**. Diferença de 143; conferir data da carga, transformações e filtro de porte antes de análise.
+- RAIS: bloco-resumo indica 20.612 estabelecimentos em 2025; série auxiliar do próprio perfil indica 20.607. Não unir as duas séries, e não confundir o universo RAIS com 60 mil CNPJs ativos.
+- ENEM 2024: 269 pontos no perfil possui agregação e filtros não reconstituídos. Não usar para ranking simples.
+- SICONFI: existem valores de despesas per capita no texto com universo/rubrica que precisam de conciliação; importar só os numeradores e denominadores identificados como receitas correntes e transferências (2024).
+- Comércio exterior: o valor zero de 2026 não deve ser usado como prova de comércio inexistente; preferir Comex Stat/MDIC para série primária. Quilogramas e US$ FOB não são unidades comparáveis.
+- RAIS gênero, porte empresarial e ocupações: universos podem ser restritos pelos filtros do respectivo gráfico.
+- Indicadores de 2000/2010 (IDHM e Gini) são históricos; não representar como fotografia de 2026.
+- PIB e setor: composição de 2021 não pode ser extrapolada sobre resultados municipais de 2022–2023 que tiveram ressalvas metodológicas.
+
+**Faltam séries históricas completas para alguns painéis do Sebrae:** gráficos CAGED, emprego por CNAE/ocupação, ENEM, dependência fiscal, comércio exterior por NCM/país, cursos e matrículas por modalidade, orçamento e IDHM ao longo dos anos, quando os dados não estão disponibilizados no bloco público estruturado. Não estimar o que não foi publicado; integrar pelas fontes abertas primárias.
