@@ -42,7 +42,7 @@ RS_DATASETS = {
 }
 
 
-def download(url: str, *, retries: int = 1, max_bytes: int = 8_000_000) -> bytes:
+def download(url: str, *, retries: int = 1, max_bytes: int = 8_000_000, timeout: int = 18) -> bytes:
     err = None
     for attempt in range(retries + 1):
         try:
@@ -51,7 +51,7 @@ def download(url: str, *, retries: int = 1, max_bytes: int = 8_000_000) -> bytes
                 "Accept": "application/json,text/csv,*/*",
                 "Accept-Encoding": "identity",
             })
-            with urllib.request.urlopen(request, timeout=18) as reply:
+            with urllib.request.urlopen(request, timeout=timeout) as reply:
                 if reply.status != 200:
                     raise RuntimeError(f"HTTP {reply.status}")
                 payload = reply.read(max_bytes + 1)
@@ -65,8 +65,8 @@ def download(url: str, *, retries: int = 1, max_bytes: int = 8_000_000) -> bytes
     raise RuntimeError(f"Fonte indisponível: {url} ({err})")
 
 
-def get_json(url: str):
-    raw = download(url)
+def get_json(url: str, *, retries: int = 1, timeout: int = 18):
+    raw = download(url, retries=retries, timeout=timeout)
     if raw[:2] == b"\x1f\x8b":
         raw = gzip.decompress(raw)
     return json.loads(raw.decode("utf-8-sig"))
@@ -255,7 +255,7 @@ def parse_rs_csv(raw: bytes, year: int, group: str, url: str) -> list[dict]:
 
 
 def collect_rs(group: str, slug: str) -> list[dict]:
-    meta = get_json(PACKAGE + urllib.parse.quote(slug))
+    meta = get_json(PACKAGE + urllib.parse.quote(slug), retries=0, timeout=10)
     if not meta.get("success"):
         raise ValueError(f"Dataset CKAN inválido: {slug}")
     pkg = meta["result"]
@@ -275,8 +275,8 @@ def collect_rs(group: str, slug: str) -> list[dict]:
         resources.append((int(match.group(1)), url))
     # Recursos de 2023 em diante, sem supor periodicidade completa.
     output = []
-    for year, url in sorted(resources):
-        output.extend(parse_rs_csv(download(url), year, group, url))
+    for year, url in sorted(resources)[-2:]:
+        output.extend(parse_rs_csv(download(url, retries=0, timeout=12), year, group, url))
     return sorted(output, key=lambda x: x["month"])
 
 
@@ -380,6 +380,53 @@ def collect() -> tuple[dict, dict | None]:
         except Exception as exc:
             data["quality"]["errors"].append(f"JUCISRS {group}: {exc}")
             print(f"AVISO JUCISRS {group}: {exc}", flush=True)
+
+    # Continuidade histórica: jamais apagar registros estaduais verificados
+    # em virtude de indisponibilidade passageira da API JucisRS/DataRS.
+    previous_path = PUBLIC / "official.json"
+    if previous_path.exists():
+        try:
+            previous = json.loads(previous_path.read_text(encoding="utf-8"))
+            if previous.get("municipality", {}).get("code") != MUNICIPIO:
+                raise ValueError("Snapshot anterior de outro município")
+            prior_rs = previous.get("rsBusiness", [])
+            if prior_rs and all(
+                entry.get("territory") == "43"
+                and entry.get("group") in RS_DATASETS
+                and isinstance(entry.get("value"), int)
+                and entry.get("month", "")[:4].isdigit()
+                for entry in prior_rs
+            ):
+                current = {(r["group"], r["month"]): r for r in data["rsBusiness"]}
+                merged = {(r["group"], r["month"]): r for r in prior_rs}
+                prior_count = len(merged)
+                merged.update(current)
+                data["rsBusiness"] = sorted(
+                    merged.values(), key=lambda row: (row["group"], row["month"])
+                )
+                if len(current) < prior_count:
+                    data["quality"]["notes"].append(
+                        "JUCISRS/DataRS: séries estaduais históricas preservadas de fotografia "
+                        "anterior auditada. A falha temporária da API NÃO representa zero "
+                        "empresas, baixas ou novas filiais."
+                    )
+                for src in previous.get("sources", []):
+                    if str(src.get("name", "")).startswith("JUCISRS") and src not in data["sources"]:
+                        data["sources"].append(src)
+                print(
+                    "HISTORICO_RS_PRESERVADO",
+                    prior_count, "anteriores,", len(current),
+                    "obtidos nesta coleta,", len(data["rsBusiness"]), "total",
+                    flush=True,
+                )
+            elif prior_rs:
+                data["quality"]["errors"].append(
+                    "Histórico JUCISRS anterior não passou na validação de origem"
+                )
+        except Exception as exc:
+            data["quality"]["errors"].append(
+                f"Falha ao verificar histórico persistido JUCISRS: {exc}"
+            )
 
     boundary = None
     try:
