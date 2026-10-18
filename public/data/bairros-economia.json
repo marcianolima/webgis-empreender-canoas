@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "status": "not_loaded",
+  "territory": "4304606",
+  "reference": null,
+  "sourceUrl": "https://geo.canoas.rs.gov.br/server/rest/services/BAIRROSOFICIAL/FeatureServer/0",
+  "pmtiles": null,
+  "coverage": null,
+  "neighborhoods": [],
+  "unmatched": [],
+  "sectors": [],
+  "notes": [
+    "Aguardando a geração verificada de PMTiles no GitHub Actions."
+  ]
+}

@@ -1,0 +1,27 @@
+"""Offline safety checks; no manufactured data is published."""
+import importlib.util, pathlib, sys, unittest
+p=pathlib.Path(__file__).resolve().parents[1]/"scripts/collect_bairros.py"
+spec=importlib.util.spec_from_file_location("collect_bairros",p)
+module=importlib.util.module_from_spec(spec)
+sys.modules[spec.name]=module
+spec.loader.exec_module(module)
+class TestGeocanoasBairros(unittest.TestCase):
+    def test_orthographic_aliases(self):
+        official={"MATHIAS VELHO","NOSSA SENHORA DAS GRACAS","SAO LUIS","BRIGADEIRA","FATIMA"}
+        self.assertEqual(module.canonical("Matias Velho",official),"MATHIAS VELHO")
+        self.assertEqual(module.canonical("São Luís",official),"SAO LUIS")
+        self.assertEqual(module.canonical("Sao Luiz",official),"SAO LUIS")
+        self.assertEqual(module.canonical("N. Sra. das Graças",official),"NOSSA SENHORA DAS GRACAS")
+        self.assertEqual(module.canonical("Bairro Fátima",official),"FATIMA")
+    def test_ambiguous_subdivisions_not_automatically_joined(self):
+        official={"MATHIAS VELHO","FATIMA","BRIGADEIRA","IGARA"}
+        for value in ("VILA IGARA","VILA FERNANDES","BRIGADEIRO","CIDADE NOVA","2 DISTRITO",""):
+            self.assertIsNone(module.canonical(value,official))
+    def test_bounds_rejects_invented_locations(self):
+        self.assertEqual(len(module.cleanup_z([-51.20,-29.90,0])),2)
+        with self.assertRaises(ValueError):module.cleanup_z([-46.0,-23.0])
+    def test_null_denominators(self):
+        self.assertIsNone(module.safe_number(None))
+        self.assertIsNone(module.safe_number(float("nan")))
+        self.assertEqual(module.safe_number(0),0.0)
+if __name__=="__main__":unittest.main()

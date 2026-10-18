@@ -1,0 +1,94 @@
+name: GEO Canoas | Bairros oficiais e PMTiles
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/collect_bairros.py
+      - .github/workflows/bairros.yml
+      - public/data/cnpj.json
+  workflow_dispatch:
+  schedule:
+    - cron: "17 13 14 * *"
+permissions:
+  contents: write
+concurrency:
+  group: canoas-bairros-pmtiles
+  cancel-in-progress: false
+jobs:
+  tiles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Testes de bairros e normalização
+        run: python -m unittest discover -s tests -p 'test_bairros.py' -v
+      - name: Instalar ferramentas de transformação cartográfica
+        run: |
+          python -m pip install --quiet "shapely>=2,<3" "pyproj>=3.6,<4"
+          if ! command -v tippecanoe >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq make g++ libsqlite3-dev zlib1g-dev liblzma-dev
+            git clone --quiet --depth 1 https://github.com/felt/tippecanoe.git /tmp/canoas-tippecanoe
+            make -C /tmp/canoas-tippecanoe -j2 >/tmp/tippecanoe-make.log 2>&1 || { tail -80 /tmp/tippecanoe-make.log; exit 1; }
+            sudo make -C /tmp/canoas-tippecanoe install >/dev/null
+          fi
+          tippecanoe --version
+      - name: Coletar 18 bairros GeoCanoas, conciliar CNPJs e gerar PMTiles
+        run: python scripts/collect_bairros.py
+      - name: Validar domínio, dados originais, formatos e arquivo de mapa
+        run: |
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          base=Path("public/data")
+          x=json.loads((base/"bairros-economia.json").read_text())
+          y=json.loads((base/"bairros-economia-series.json").read_text())
+          cnpj=json.loads((base/"cnpj.json").read_text())
+          assert x["schemaVersion"]==1 and x["status"]=="verified"
+          assert x["territory"]=="4304606" and x["reference"]==cnpj["reference"]
+          assert len(x["neighborhoods"])==18
+          assert len({r["id"] for r in x["neighborhoods"]})==18
+          assert len({r["name"] for r in x["neighborhoods"]})==18
+          assert x["coverage"]["activeTotal"]==cnpj["kpis"]["active"]
+          assert x["coverage"]["declaredPublished"]==sum(r["count"] for r in cnpj["byDistrictDeclared"])
+          assert x["coverage"]["matched"]+x["coverage"]["unmatchedPublished"]==x["coverage"]["declaredPublished"]
+          assert x["coverage"]["activeTotal"]>=x["coverage"]["declaredPublished"]
+          assert y["snapshots"][-1]["reference"]==x["reference"]
+          p=base/"bairros-economia.pmtiles"
+          assert p.read_bytes()[:8]==b"PMTiles\x03"
+          assert p.stat().st_size==x["pmtiles"]["bytes"]
+          assert hashlib.sha256(p.read_bytes()).hexdigest()==x["pmtiles"]["sha256"]
+          assert sum(r["population2022"] or 0 for r in x["neighborhoods"])==x["population2022LayerSum"]
+          assert all((r["densityKm2"] is None or r["active"]>0 and r["areaKm2"]>0) for r in x["neighborhoods"])
+          print("BAIRROS_PM_VALIDATED",len(x["neighborhoods"]),x["coverage"],"PMTiles bytes",p.stat().st_size,flush=True)
+          PY
+      - name: Guardar saídas auditadas de PMTiles e metadados
+        uses: actions/upload-artifact@v4
+        with:
+          name: bairros-canoas-pmtiles-geocanoas-verificados
+          path: |
+            public/data/bairros-economia.pmtiles
+            public/data/bairros-economia.json
+            public/data/bairros-economia-series.json
+          retention-days: 30
+          if-no-files-found: error
+      - name: Publicar dados oficiais sobre último commit de main
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/canoas-geo-approved
+          cp public/data/bairros-economia.pmtiles public/data/bairros-economia.json public/data/bairros-economia-series.json /tmp/canoas-geo-approved/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for i in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            cp /tmp/canoas-geo-approved/* public/data/
+            git add public/data/bairros-economia.pmtiles public/data/bairros-economia.json public/data/bairros-economia-series.json
+            if git diff --cached --quiet; then echo "Sem alterações"; exit 0; fi
+            git commit -m "data(geo): malha BAIRROSOFICIAL e agregados CNPJ PMTiles $(python -c 'import json; print(json.load(open("public/data/cnpj.json"))["reference"])')"
+            if git push origin HEAD:main; then echo "BAIRROS_PM_COMMITTED"; exit 0; fi
+            if [ "$i" -eq 5 ]; then exit 1; fi
+          done
