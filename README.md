@@ -16,6 +16,7 @@ Plataforma **WebGIS + dashboard**, aberta e orientada a evidências, para compre
 - **Mapa de empresas**: pontos de estabelecimentos geocodificados, clusters, calor, bairros e recortes territoriais, sempre explicitando a precisão de localização.
 - **Filtros únicos**: o mesmo recorte deve repercutir no mapa, indicadores e gráficos.
 - **Transparência**: datas de referência, definição das métricas, rastreabilidade, cobertura e limitações.
+- **Fontes complementares**: DataSebrae, RS em Dados, Mapa de Empresas e Dados RS, com importação opcional de indicadores agregados auditados.
 - **Uso público**: desenho responsivo e acessível, pensado para gestores, empreendedores e pesquisadores.
 
 ### O que está implementado nesta etapa
@@ -27,6 +28,7 @@ Plataforma **WebGIS + dashboard**, aberta e orientada a evidências, para compre
 | Next.js (App Router), TypeScript, Tailwind, Zustand, Recharts e MapLibre | Base criada |
 | Dashboard + mapa com amostra sintética, filtros integrados | Protótipo, não homologado |
 | Ingestão local de arquivos da Receita (ZIP/CSV) com filtro para Canoas | Script inicial |
+| Catálogo de painéis públicos + importador de indicadores agregados | Base criada; sem valores importados |
 | Série mensal oficial auditada e cruzamento espacial validado | Pendente |
 | Atualização mensal automática e implantação Vercel | Pendente |
 
@@ -46,7 +48,11 @@ Secretaria Municipal de Desenvolvimento Econômico e Inovação (SMDEI), demais 
 | [OpenStreetMap](https://www.openstreetmap.org/) | Referência de ruas e enriquecimento cartográfico | Mapa-base e geocodificação a homologar |
 | [Mapa de Empresas — Governo Federal](https://www.gov.br/empresas-e-negocios/pt-br/mapa-de-empresas) | Confronto de indicadores agregados | Planejado |
 
-Consulte [docs/fontes.md](docs/fontes.md) antes de utilizar um dado como indicador oficial.
+### Fontes complementares e painel de referência
+
+A rota **`/fontes`** cataloga DataSebrae (abertura e tempo), RS em Dados, Mapa de Empresas e Dados RS/JUCISRS. Dados agregados, se exportados legalmente e revisados, podem ser convertidos em série no projeto com `scripts/import_external_indicators.py`. **Atualmente nenhuma série externa foi importada.** Relatórios Power BI consultáveis não implicam API pública de extração.
+
+Consulte [docs/fontes.md](docs/fontes.md) e [docs/fontes-complementares.md](docs/fontes-complementares.md) antes de utilizar um dado como indicador oficial.
 
 ## Arquitetura proposta
 
@@ -134,7 +140,7 @@ src/
   lib/                 agregações e utilitários
   store/               estado compartilhado (Zustand)
   types/               contratos TypeScript
-scripts/               ingestão CNPJ em Python
+scripts/               ingestão CNPJ e importação de indicadores agregados
 docs/                  metodologia e governança de dados
 data/raw/              ZIPs originais (ignorado pelo Git)
 data/processed/        dados derivados (ignorado pelo Git)

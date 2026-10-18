@@ -73,6 +73,7 @@ export function Dashboard() {
           <div className="flex gap-2 text-sm">
             <a className="rounded-lg px-3 py-2 font-semibold text-brand-700 hover:bg-brand-50" href="#visao-geral">Painel</a>
             <a className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-50" href="#mapa">Mapa</a>
+            <a className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-50" href="/fontes">Fontes públicas</a>
             <a className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-50" href="/sobre">Sobre</a>
           </div>
         </div>
@@ -179,7 +180,7 @@ export function Dashboard() {
         </main>
       </div>
       <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
-        Canoas Empreende · Software aberto (MIT) · Protótipo com dados exclusivamente sintéticos · <a className="underline" href="/atualizacao">Atualização dos dados</a>
+        Canoas Empreende · Software aberto (MIT) · Protótipo com dados exclusivamente sintéticos · <a className="underline" href="/fontes">Fontes públicas</a> · <a className="underline" href="/atualizacao">Atualização dos dados</a>
       </footer>
     </>
   );

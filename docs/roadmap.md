@@ -35,3 +35,12 @@
 - Exportação agregada CSV/GeoJSON, documentação de API e painéis setoriais.
 - Camada contextual de demografia/emprego/renda e métricas de densidade por área.
 - Histórico comparável e painel interno de auditoria e aprovação editorial.
+
+## Complemento — DataSebrae e RS em Dados (etapa 2)
+
+- [x] Catalogar painéis e distinguir acesso externo de ingestão estruturada.
+- [x] Criar rota `/fontes` e esquema de indicadores agregados com metadados.
+- [x] Criar importador Python com validação de URL, município, competência, unidade e duplicidade.
+- [ ] Obter exportações oficiais com filtros Canoas e termos de uso confirmados.
+- [ ] Ingerir séries verificadas das plataformas e reconciliar com CNPJ conforme universo.
+- [ ] Validar atualizações em lote e acordos de acesso/API antes de automatizar.

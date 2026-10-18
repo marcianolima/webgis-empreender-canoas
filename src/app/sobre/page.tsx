@@ -10,6 +10,8 @@ export default function Sobre() {
       <p className="mt-4 leading-relaxed text-slate-600">Observatório WebGIS de dinâmica empresarial em Canoas/RS. A etapa atual é um protótipo demonstrativo com registros e coordenadas inteiramente fictícios. Não há, neste momento, estatísticas municipais homologadas.</p>
       <h2 className="mt-8 text-xl font-bold">Fontes oficiais previstas</h2>
       <p className="mt-2 leading-relaxed text-slate-600">A base principal será a Receita Federal (dados abertos do CNPJ). IBGE, GeoCanoas, Prefeitura de Canoas, OpenStreetMap e Mapa de Empresas serão utilizados como complementos, sujeitos à validação, compatibilidade metodológica e condições de uso.</p>
+      <h2 className="mt-8 text-xl font-bold">Fontes complementares</h2>
+      <p className="mt-2 leading-relaxed text-slate-600">Os painéis do DataSebrae, RS em Dados e Mapa de Empresas são catalogados em uma <Link href="/fontes" className="font-semibold text-brand-700 underline">página própria</Link>. Dados desses portais só serão exibidos como série estatística quando existirem exportações legítimas, referências completas e validação metodológica. Nenhum valor foi importado nesta etapa.</p>
       <h2 className="mt-8 text-xl font-bold">Interpretação dos indicadores</h2>
       <p className="mt-2 leading-relaxed text-slate-600">A unidade de contagem é o estabelecimento CNPJ (inclui matriz e filiais). Ativo significa situação cadastral 02 no período de referência. Aberturas utilizam data de início de atividade; baixas usam situação 08 e data da situação. Retratos cadastrais não são histórico exaustivo de eventos, e o saldo não necessariamente equivale à variação do estoque.</p>
       <h2 className="mt-8 text-xl font-bold">Geocodificação e qualidade</h2>

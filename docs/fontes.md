@@ -29,3 +29,7 @@
 \`fonte\`, \`url_origem\`, \`referencia\`, \`data_coleta\`, \`versao_pipeline\`, \`licenca\`, \`sha256_do_arquivo\`, \`registros_entrada\`, \`registros_saida\`, \`regras_filtro\`, \`regras_agregacao\`, \`taxa_geocodificacao\` e \`restricoes\`.
 
 **Nenhuma contagem oficial foi ingerida nesta primeira etapa.** Dados fictícios da interface são apenas demonstração.
+
+## Painéis e indicadores complementares
+
+As fontes DataSebrae, RS em Dados, Mapa de Empresas e Dados RS estão documentadas em [fontes-complementares.md](fontes-complementares.md). A rota `/fontes` apresenta links e indicadores somente quando importados por arquivo agregado revisado. Nenhum número externo está publicado nesta etapa.
