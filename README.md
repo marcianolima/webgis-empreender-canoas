@@ -93,3 +93,7 @@ A rotina `.github/workflows/sebrae.yml` executa coleta mensal e manual, valida o
 **Atenção metodológica:** Sebrae e Receita Federal direta possuem diferentes fotografias (Sebrae: 60.100 ativos; carga RFB de outubro/2026: 60.243), não somar nem inferir 143 aberturas/baixas; RAIS e CAGED não medem o mesmo universo; valores SICONFI per capita e ENEM requerem conferência específica; o zero publicado no gráfico de Comex 2026 não é interpretado como ausência de exportação. A série municipal principal IBGE/PIB 2002–2023 mantém as ressalvas oficiais.
 
 O material do Sebrae funciona como índice de descoberta e comparação. Para produzir novas séries históricas completas por indicador, a prioridade permanece obter o conjunto público da **fonte primária**, não reconstruir visualizações fechadas de terceiros.
+
+### Resiliência das séries históricas estaduais
+
+A coleta semanal preserva o histórico público JUCISRS/DataRS já conferido: se a API estadual estiver indisponível (timeout ou erro HTTP), os registros anteriores são mantidos, a indisponibilidade é registrada em `quality.errors` e não é interpretada como zero. Em 18/10/2026 os 110 registros históricos foram recuperados de artefato GitHub Pages verificado e persistidos em `public/data/official.json`; a recuperação foi auditada pelo workflow `recover-rs-history.yml`. Os dados mensais estaduais permanecem separados dos indicadores municipais de Canoas.
