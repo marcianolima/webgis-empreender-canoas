@@ -1,0 +1,75 @@
+name: Sebrae OLAP | Séries históricas municipais e filtros
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/collect_sebrae_series.py
+      - scripts/sebrae_series_specs.json
+      - .github/workflows/sebrae-series.yml
+  workflow_dispatch:
+  schedule:
+    - cron: "43 10 16 * *"
+permissions:
+  contents: write
+concurrency:
+  group: sebrae-canoas-olap-verified
+  cancel-in-progress: false
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Consultar todas as 60 especificações sem arquivos sintéticos
+        run: python scripts/collect_sebrae_series.py --workers 5
+      - name: Conferir RAIS ativa, município, cobertura e integridade
+        run: |
+          python - <<'PY'
+          import json,math
+          from pathlib import Path
+          p=Path("public/data/sebrae-series.json")
+          x=json.loads(p.read_text())
+          assert x["municipalityIbgeCode"]=="4304606"
+          assert x["schemaVersion"]==1
+          assert x["status"] in ("ok","partial")
+          assert len(x["catalog"])>=80
+          assert len(x["datasets"])==60
+          assert x["coverage"]["available"]>=12
+          assert x["coverage"]["rows"]>=70
+          active=next(d for d in x["datasets"] if d["id"]=="rais-trabalho-anual")
+          assert active["status"]=="ok" and not active["stale"]
+          assert next(r["Workers"] for r in active["rows"] if r["Year"]==2025)==95355
+          assert all(d["id"] and d["cube"] for d in x["datasets"])
+          assert all(len(d.get("rows",[]))<=9000 for d in x["datasets"])
+          assert all(
+            all(v is None or isinstance(v,(str,int,float)) and (not isinstance(v,float) or math.isfinite(v)) for v in row.values())
+            for d in x["datasets"] for row in d.get("rows",[])
+          )
+          print("OLAP_INTEGRITY_OK",x["coverage"],flush=True)
+          PY
+      - name: Armazenar resultado validado no GitHub Actions
+        uses: actions/upload-artifact@v4
+        with:
+          name: canoas-sebrae-olap-series
+          path: public/data/sebrae-series.json
+          retention-days: 30
+          if-no-files-found: error
+          compression-level: 6
+      - name: Persistir fotografia, preservando commits concorrentes
+        run: |
+          set -euo pipefail
+          cp public/data/sebrae-series.json /tmp/sebrae-series-approved.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            cp /tmp/sebrae-series-approved.json public/data/sebrae-series.json
+            git add public/data/sebrae-series.json
+            if git diff --cached --quiet; then echo "Sem alterações";exit 0;fi
+            git commit -m "data(sebrae): séries históricas municipais auditadas e catálogo OLAP"
+            if git push origin HEAD:main; then echo "SERIES_PUBLISHED_TO_MAIN";exit 0;fi
+            if [ "$attempt" -eq 5 ]; then exit 1;fi
+          done

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "status": "not_loaded",
+  "municipality": "Canoas",
+  "municipalityIbgeCode": "4304606",
+  "sourceUrl": "https://observatorio.sebrae.com.br/profile/geo/canoas",
+  "apiUrl": "https://apiv2-observatorio.sebrae.com.br/tesseract",
+  "generatedAt": null,
+  "datasets": [],
+  "catalog": [],
+  "coverage": {
+    "specifications": 60,
+    "available": 0,
+    "unavailable": 60,
+    "preservedFromPrevious": 0,
+    "catalogCubes": 0,
+    "rows": 0
+  },
+  "methodology": [
+    "A coleta completa da API OLAP pública será publicada somente após validação municipal e metodologia."
+  ]
+}
