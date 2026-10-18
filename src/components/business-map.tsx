@@ -64,10 +64,11 @@ export default function BusinessMap({ businesses, mode }: Props) {
         clusterRadius: 46,
         clusterMaxZoom: 14,
       });
+      map.addSource("density", { type: "geojson", data: toGeoJSON(rowsRef.current) });
       map.addLayer({
         id: "heatmap",
         type: "heatmap",
-        source: "businesses",
+        source: "density",
         maxzoom: 15,
         layout: { visibility: modeRef.current === "heatmap" ? "visible" : "none" },
         paint: {
@@ -168,6 +169,7 @@ export default function BusinessMap({ businesses, mode }: Props) {
     const map = mapRef.current;
     if (!map?.isStyleLoaded() || !map.getSource("businesses")) return;
     (map.getSource("businesses") as GeoJSONSource).setData(toGeoJSON(businesses));
+    (map.getSource("density") as GeoJSONSource | undefined)?.setData(toGeoJSON(businesses));
   }, [businesses]);
 
   useEffect(() => {
