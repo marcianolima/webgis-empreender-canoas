@@ -1,0 +1,1023 @@
+{
+  "schemaVersion": 1,
+  "territory": "4304606",
+  "endpoint": "https://apiv2-observatorio.sebrae.com.br/tesseract",
+  "description": "Dimensões e medidas dos cubos públicos do Observatório Sebrae (não transcrição de gráficos). Séries condicionadas aos dados auditáveis do backend.",
+  "specifications": [
+    {
+      "id": "rais-trabalho-anual",
+      "title": "Trabalhadores ativos por ano",
+      "topic": "emprego",
+      "cube": "RAIS_workers",
+      "dimensions": [
+        "Year"
+      ],
+      "measures": [
+        "Workers",
+        "Remuneration Avg Nominal"
+      ],
+      "filters": {
+        "Active worker indicator": "1"
+      },
+      "notes": "Apenas vínculos ativos no encerramento do ano.",
+      "unit": "vínculos / R$"
+    },
+    {
+      "id": "rais-trabalho-setor",
+      "title": "Emprego por grande setor e ano",
+      "topic": "emprego",
+      "cube": "RAIS_workers",
+      "dimensions": [
+        "Year",
+        "Grande Sector"
+      ],
+      "measures": [
+        "Workers"
+      ],
+      "filters": {
+        "Active worker indicator": "1"
+      },
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "rais-trabalho-secao",
+      "title": "Emprego por seção CNAE e ano",
+      "topic": "emprego",
+      "cube": "RAIS_workers",
+      "dimensions": [
+        "Year",
+        "Section"
+      ],
+      "measures": [
+        "Workers"
+      ],
+      "filters": {
+        "Active worker indicator": "1"
+      },
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "rais-trabalho-divisao",
+      "title": "Emprego por divisão CNAE",
+      "topic": "emprego",
+      "cube": "RAIS_workers",
+      "dimensions": [
+        "Year",
+        "Division"
+      ],
+      "measures": [
+        "Workers"
+      ],
+      "filters": {
+        "Active worker indicator": "1",
+        "Year": "2025"
+      },
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "rais-trabalho-sexo",
+      "title": "Empregos por sexo e ano",
+      "topic": "emprego",
+      "cube": "RAIS_workers",
+      "dimensions": [
+        "Year",
+        "Sex"
+      ],
+      "measures": [
+        "Workers",
+        "Remuneration Avg Nominal"
+      ],
+      "filters": {
+        "Active worker indicator": "1"
+      },
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "rais-trabalho-idade",
+      "title": "Empregos por faixa etária",
+      "topic": "emprego",
+      "cube": "RAIS_workers",
+      "dimensions": [
+        "Year",
+        "Range Age"
+      ],
+      "measures": [
+        "Workers"
+      ],
+      "filters": {
+        "Active worker indicator": "1"
+      },
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "rais-trabalho-escolaridade",
+      "title": "Emprego por escolaridade",
+      "topic": "emprego",
+      "cube": "RAIS_workers",
+      "dimensions": [
+        "Year",
+        "Education level"
+      ],
+      "measures": [
+        "Workers"
+      ],
+      "filters": {
+        "Active worker indicator": "1"
+      },
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "rais-trabalho-porte",
+      "title": "Emprego por porte de empresa",
+      "topic": "emprego",
+      "cube": "RAIS_workers",
+      "dimensions": [
+        "Year",
+        "Aggregated Company Size"
+      ],
+      "measures": [
+        "Workers"
+      ],
+      "filters": {
+        "Active worker indicator": "1"
+      },
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "rais-trabalho-ocupacao",
+      "title": "Principais ocupações em 2025",
+      "topic": "ocupacoes",
+      "cube": "RAIS_workers",
+      "dimensions": [
+        "Occupation"
+      ],
+      "measures": [
+        "Workers"
+      ],
+      "filters": {
+        "Active worker indicator": "1",
+        "Year": "2025"
+      },
+      "notes": "Ocupações do ano fixado, não evolução anual.",
+      "unit": ""
+    },
+    {
+      "id": "rais-trabalho-grupo-cbo",
+      "title": "Ocupações por grupo CBO e ano",
+      "topic": "ocupacoes",
+      "cube": "RAIS_workers",
+      "dimensions": [
+        "Year",
+        "CBO Group"
+      ],
+      "measures": [
+        "Workers"
+      ],
+      "filters": {
+        "Active worker indicator": "1"
+      },
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "rais-trabalho-subgrupo-cbo",
+      "title": "Ocupações por subgrupo",
+      "topic": "ocupacoes",
+      "cube": "RAIS_workers",
+      "dimensions": [
+        "Year",
+        "Main Subgroup"
+      ],
+      "measures": [
+        "Workers"
+      ],
+      "filters": {
+        "Active worker indicator": "1",
+        "Year": "2025"
+      },
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "rais-trabalho-salarios-setor",
+      "title": "Remuneração por seção CNAE",
+      "topic": "emprego",
+      "cube": "RAIS_workers",
+      "dimensions": [
+        "Year",
+        "Section"
+      ],
+      "measures": [
+        "Remuneration Avg Nominal"
+      ],
+      "filters": {
+        "Active worker indicator": "1"
+      },
+      "notes": "Médias remuneratórias não são aditivas.",
+      "unit": "R$/mês"
+    },
+    {
+      "id": "rais-estab-historico",
+      "title": "Estabelecimentos e trabalhadores declarados RAIS",
+      "topic": "emprego",
+      "cube": "RAIS_establishment",
+      "dimensions": [
+        "Year"
+      ],
+      "measures": [
+        "Establishments",
+        "Number workers"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "rais-estab-porte",
+      "title": "Estabelecimentos RAIS por porte",
+      "topic": "emprego",
+      "cube": "RAIS_establishment",
+      "dimensions": [
+        "Year",
+        "Aggregated Company Size"
+      ],
+      "measures": [
+        "Establishments"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "caged-mov-mensal",
+      "title": "Movimentação mensal de empregos formais",
+      "topic": "emprego",
+      "cube": "CAGED_movements",
+      "dimensions": [
+        "Year",
+        "Month"
+      ],
+      "measures": [
+        "Admissions",
+        "Resignations",
+        "Movement Balance"
+      ],
+      "filters": {},
+      "notes": "Movimentos mensais não são estoque RAIS.",
+      "unit": ""
+    },
+    {
+      "id": "caged-mov-setor",
+      "title": "Movimentação mensal por grande setor",
+      "topic": "emprego",
+      "cube": "CAGED_movements",
+      "dimensions": [
+        "Year",
+        "Month",
+        "Grande Sector"
+      ],
+      "measures": [
+        "Admissions",
+        "Resignations",
+        "Movement Balance"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "caged-mov-sexo",
+      "title": "Admissões e desligamentos por sexo",
+      "topic": "emprego",
+      "cube": "CAGED_movements",
+      "dimensions": [
+        "Year",
+        "Sex"
+      ],
+      "measures": [
+        "Admissions",
+        "Resignations",
+        "Movement Balance"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "caged-mov-porte",
+      "title": "Movimentações por porte de empresa",
+      "topic": "emprego",
+      "cube": "CAGED_movements",
+      "dimensions": [
+        "Year",
+        "Aggregated Company Size"
+      ],
+      "measures": [
+        "Admissions",
+        "Resignations",
+        "Movement Balance"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "caged-mov-ocupacao",
+      "title": "Movimentos por grupos ocupacionais",
+      "topic": "ocupacoes",
+      "cube": "CAGED_movements",
+      "dimensions": [
+        "Year",
+        "CBO Group"
+      ],
+      "measures": [
+        "Admissions",
+        "Resignations",
+        "Movement Balance"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "rf-situacao",
+      "title": "Cadastro CNPJ por situação",
+      "topic": "empresas",
+      "cube": "RF",
+      "dimensions": [
+        "Registration Status"
+      ],
+      "measures": [
+        "Establishments"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "rf-porte",
+      "title": "CNPJ por porte Sebrae",
+      "topic": "empresas",
+      "cube": "RF",
+      "dimensions": [
+        "Company Size Sebrae",
+        "Registration Status"
+      ],
+      "measures": [
+        "Establishments"
+      ],
+      "filters": {},
+      "notes": "Observe filtros de status ao comparar com empresas ativas.",
+      "unit": ""
+    },
+    {
+      "id": "rf-mei",
+      "title": "Empresas por enquadramento MEI",
+      "topic": "empresas",
+      "cube": "RF",
+      "dimensions": [
+        "MEI Indicator",
+        "Registration Status"
+      ],
+      "measures": [
+        "Establishments"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "rf-simples",
+      "title": "Empresas pelo Simples Nacional",
+      "topic": "empresas",
+      "cube": "RF",
+      "dimensions": [
+        "Simples Indicator",
+        "Registration Status"
+      ],
+      "measures": [
+        "Establishments"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "rf-natureza",
+      "title": "Empresas por natureza jurídica",
+      "topic": "empresas",
+      "cube": "RF",
+      "dimensions": [
+        "Reduced Legal Nature",
+        "Registration Status"
+      ],
+      "measures": [
+        "Establishments"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "rf-setores",
+      "title": "Estabelecimentos por grande setor e situação",
+      "topic": "empresas",
+      "cube": "RF",
+      "dimensions": [
+        "Grande Sector",
+        "Registration Status"
+      ],
+      "measures": [
+        "Establishments"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "rf-divisoes",
+      "title": "Empresas ativas por divisão econômica",
+      "topic": "empresas",
+      "cube": "RF",
+      "dimensions": [
+        "Division"
+      ],
+      "measures": [
+        "Establishments"
+      ],
+      "filters": {
+        "Registration Status": "2"
+      },
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "rf-aberturas",
+      "title": "Ano de início de atividade empresarial",
+      "topic": "empresas",
+      "cube": "RF",
+      "dimensions": [
+        "Open Activity Year"
+      ],
+      "measures": [
+        "Establishments"
+      ],
+      "filters": {
+        "Registration Status": "2"
+      },
+      "notes": "Aberturas ainda ativas no momento do cadastro, não todas as aberturas históricas.",
+      "unit": ""
+    },
+    {
+      "id": "rf-aberturas-porte",
+      "title": "Ano de abertura por porte",
+      "topic": "empresas",
+      "cube": "RF",
+      "dimensions": [
+        "Open Activity Year",
+        "Company Size Sebrae"
+      ],
+      "measures": [
+        "Establishments"
+      ],
+      "filters": {
+        "Registration Status": "2"
+      },
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "rf-sebrae-clientes",
+      "title": "Clientes Sebrae entre estabelecimentos",
+      "topic": "empresas",
+      "cube": "RF",
+      "dimensions": [
+        "Sebrae Client Indicator",
+        "Grande Sector"
+      ],
+      "measures": [
+        "Establishments"
+      ],
+      "filters": {
+        "Registration Status": "2"
+      },
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "sebrae-atendimentos-mensais",
+      "title": "Atendimentos realizados pelo Sebrae",
+      "topic": "empresas",
+      "cube": "Sebrae_Atendimento",
+      "dimensions": [
+        "Year",
+        "Month"
+      ],
+      "measures": [
+        "Attendances",
+        "Clients PJ Atendidos"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "sebrae-atendimentos-setor",
+      "title": "Atendimentos por setor econômico",
+      "topic": "empresas",
+      "cube": "Sebrae_Atendimento",
+      "dimensions": [
+        "Year",
+        "Grande Sector"
+      ],
+      "measures": [
+        "Attendances",
+        "Clients PJ Atendidos"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "sebrae-atendimentos-2026",
+      "title": "Atendimentos e clientes em 2026",
+      "topic": "empresas",
+      "cube": "Sebrae_Atendimento_2026",
+      "dimensions": [
+        "Year",
+        "Month"
+      ],
+      "measures": [
+        "Attendances",
+        "Clientes PJ"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "redesim-tempo-anual",
+      "title": "Tempos de abertura de empresas",
+      "topic": "empresas",
+      "cube": "REDESIM_Tempo_Abertura",
+      "dimensions": [
+        "Year"
+      ],
+      "measures": [
+        "Opening Time",
+        "User Opening Time",
+        "Total Opening Time"
+      ],
+      "filters": {},
+      "notes": "Unidades e quebras metodológicas MAT devem ser examinadas.",
+      "unit": "horas"
+    },
+    {
+      "id": "redesim-tempo-porte",
+      "title": "Tempos de formalização por setor",
+      "topic": "empresas",
+      "cube": "REDESIM_Tempo_Abertura",
+      "dimensions": [
+        "Year",
+        "Grande Sector"
+      ],
+      "measures": [
+        "Total Opening Time"
+      ],
+      "filters": {},
+      "notes": "Médias de tempo não são aditivas.",
+      "unit": "horas"
+    },
+    {
+      "id": "comex-mensal",
+      "title": "Exportações e importações por mês",
+      "topic": "comercio",
+      "cube": "mdic_exp_imp_mun",
+      "dimensions": [
+        "Year",
+        "Month",
+        "Operation Type ID"
+      ],
+      "measures": [
+        "Dollar Value FOB",
+        "Liquid Weight KG"
+      ],
+      "filters": {},
+      "notes": "Município do domicílio fiscal do declarante; US$ FOB e kg são medidas distintas.",
+      "unit": ""
+    },
+    {
+      "id": "comex-paises",
+      "title": "Comércio exterior por país parceiro",
+      "topic": "comercio",
+      "cube": "mdic_exp_imp_mun",
+      "dimensions": [
+        "Year",
+        "COMEX - Country Code",
+        "Operation Type ID"
+      ],
+      "measures": [
+        "Dollar Value FOB"
+      ],
+      "filters": {
+        "Year": "2025"
+      },
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "comex-produtos",
+      "title": "Comércio exterior por SH2",
+      "topic": "comercio",
+      "cube": "mdic_exp_imp_mun",
+      "dimensions": [
+        "Year",
+        "Codigo SH2",
+        "Operation Type ID"
+      ],
+      "measures": [
+        "Dollar Value FOB"
+      ],
+      "filters": {
+        "Year": "2025"
+      },
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "siconfi-receitas",
+      "title": "Receita orçamentária por categoria",
+      "topic": "financas",
+      "cube": "SICONFI_receitas",
+      "dimensions": [
+        "Year",
+        "Revenue Type"
+      ],
+      "measures": [
+        "Revenue Value"
+      ],
+      "filters": {},
+      "notes": "Categorias distintas não devem ser somadas indiscriminadamente.",
+      "unit": ""
+    },
+    {
+      "id": "siconfi-receitas-natureza",
+      "title": "Receita por natureza contábil",
+      "topic": "financas",
+      "cube": "SICONFI_receitas",
+      "dimensions": [
+        "Year",
+        "Revenue Nature"
+      ],
+      "measures": [
+        "Revenue Value"
+      ],
+      "filters": {},
+      "notes": "Evitar soma de níveis hierárquicos contábeis.",
+      "unit": ""
+    },
+    {
+      "id": "siconfi-despesas",
+      "title": "Despesa orçamentária por natureza",
+      "topic": "financas",
+      "cube": "SICONFI_despesas",
+      "dimensions": [
+        "Year",
+        "Expense Type"
+      ],
+      "measures": [
+        "Expense Value"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "siconfi-despesas-natureza",
+      "title": "Despesas por natureza contábil",
+      "topic": "financas",
+      "cube": "SICONFI_despesas",
+      "dimensions": [
+        "Year",
+        "Expense Nature"
+      ],
+      "measures": [
+        "Expense Value"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "ibge-vab",
+      "title": "Valor adicionado bruto por setor",
+      "topic": "financas",
+      "cube": "IBGE_PIB_Municipal_VAB",
+      "dimensions": [
+        "Year",
+        "Grand Sector"
+      ],
+      "measures": [
+        "VAB"
+      ],
+      "filters": {},
+      "notes": "Série antiga por setor; verificar quebra de 2022.",
+      "unit": ""
+    },
+    {
+      "id": "ibge-popurb",
+      "title": "Distribuição urbana e rural no Censo",
+      "topic": "demografia",
+      "cube": "IBGE_Censo_Pop_Sit",
+      "dimensions": [
+        "Year",
+        "Household Situation"
+      ],
+      "measures": [
+        "Population"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "ibge-popidade",
+      "title": "População por sexo e faixa etária",
+      "topic": "demografia",
+      "cube": "IBGE_Censo_Sexo_Faixa_Etaria",
+      "dimensions": [
+        "Year",
+        "Sex",
+        "Age Range"
+      ],
+      "measures": [],
+      "filters": {},
+      "notes": "Selecionar as dimensões realmente disponíveis no cubo.",
+      "unit": ""
+    },
+    {
+      "id": "ibge-pnud",
+      "title": "IDHM, renda, educação e longevidade",
+      "topic": "desenvolvimento",
+      "cube": "PNUD_Atlas_IDHM",
+      "dimensions": [
+        "Year"
+      ],
+      "measures": [
+        "IDHM",
+        "IDHM_R",
+        "IDHM_L",
+        "IDHM_E",
+        "Gini"
+      ],
+      "filters": {},
+      "notes": "Atlas PNUD, série não anual; anos ausentes não são interpolados.",
+      "unit": ""
+    },
+    {
+      "id": "mds-pbf",
+      "title": "Famílias no Bolsa Família por mês",
+      "topic": "desenvolvimento",
+      "cube": "MDS_PBF",
+      "dimensions": [
+        "Year",
+        "Month"
+      ],
+      "measures": [],
+      "filters": {},
+      "notes": "Quantidade mensal, não número de pessoas beneficiadas.",
+      "unit": ""
+    },
+    {
+      "id": "inep-enem",
+      "title": "Resultados ENEM por componente",
+      "topic": "educacao",
+      "cube": "INEP_enem",
+      "dimensions": [
+        "Year"
+      ],
+      "measures": [
+        "Natural Sciences",
+        "Social Sciences",
+        "Languages",
+        "Math",
+        "Students"
+      ],
+      "filters": {},
+      "notes": "Médias de área não são nota única simples; não somar.",
+      "unit": ""
+    },
+    {
+      "id": "inep-enem-sexo",
+      "title": "Resultados ENEM por sexo",
+      "topic": "educacao",
+      "cube": "INEP_enem",
+      "dimensions": [
+        "Year",
+        "Sex"
+      ],
+      "measures": [
+        "Math",
+        "Languages"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "inep-enssuperior",
+      "title": "Matrículas de educação superior",
+      "topic": "educacao",
+      "cube": "INEP_censo",
+      "dimensions": [
+        "Year"
+      ],
+      "measures": [],
+      "filters": {},
+      "notes": "Contagem de matrículas; usar filtros administrativos no drilldown.",
+      "unit": ""
+    },
+    {
+      "id": "inep-educacao-basica",
+      "title": "Matrículas, professores e turmas",
+      "topic": "educacao",
+      "cube": "INEP_Censo_Ed_Basica",
+      "dimensions": [
+        "Year"
+      ],
+      "measures": [
+        "Enrollments",
+        "Teachers",
+        "Classes"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "inep-basica-etapa",
+      "title": "Matrículas por etapa de ensino",
+      "topic": "educacao",
+      "cube": "INEP_Censo_Ed_Basica",
+      "dimensions": [
+        "Year",
+        "Education Level"
+      ],
+      "measures": [
+        "Enrollments"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "inep-taxas",
+      "title": "Abandono, reprovação e distorção",
+      "topic": "educacao",
+      "cube": "INEP_Censo_Taxas_Basica",
+      "dimensions": [
+        "Year",
+        "Education Level"
+      ],
+      "measures": [
+        "Approval Rate",
+        "Dropout Rate",
+        "Age-Grade Distortion Rate"
+      ],
+      "filters": {},
+      "notes": "Taxas não são somáveis, desagregar por etapa.",
+      "unit": ""
+    },
+    {
+      "id": "inep-ideb",
+      "title": "IDEB observado por etapa e rede",
+      "topic": "educacao",
+      "cube": "INEP_IDEB_Municipio",
+      "dimensions": [
+        "Year",
+        "Education Level",
+        "Administrative Type"
+      ],
+      "measures": [
+        "IDEB Index"
+      ],
+      "filters": {},
+      "notes": "Metodologia INEP, não interpolar anos sem edição.",
+      "unit": ""
+    },
+    {
+      "id": "pam-lavouras",
+      "title": "Culturas agrícolas, produção e área",
+      "topic": "agro",
+      "cube": "PAM Culturas",
+      "dimensions": [
+        "Year",
+        "Crop"
+      ],
+      "measures": [
+        "Quantity Produced",
+        "Production Value",
+        "Harvested Area"
+      ],
+      "filters": {},
+      "notes": "Quantidades por produto podem possuir unidade diferente.",
+      "unit": ""
+    },
+    {
+      "id": "ppm-rebanhos",
+      "title": "Rebanhos por espécie",
+      "topic": "agro",
+      "cube": "PPM Efetivo dos Rebanhos",
+      "dimensions": [
+        "Year",
+        "Herd Type"
+      ],
+      "measures": [
+        "Herd Numbers"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "ppm-produtos",
+      "title": "Pecuária por produto",
+      "topic": "agro",
+      "cube": "PPM Produtos",
+      "dimensions": [
+        "Year",
+        "Product"
+      ],
+      "measures": [
+        "Production",
+        "Production Value"
+      ],
+      "filters": {},
+      "notes": "",
+      "unit": ""
+    },
+    {
+      "id": "ans-planos",
+      "title": "Cobertura e beneficiários da saúde suplementar",
+      "topic": "desenvolvimento",
+      "cube": "ANS_COB_PLANOS",
+      "dimensions": [
+        "Year"
+      ],
+      "measures": [],
+      "filters": {},
+      "notes": "Contexto social, não substitui indicador financeiro.",
+      "unit": ""
+    },
+    {
+      "id": "eleitorado-perfil",
+      "title": "Perfil do eleitorado",
+      "topic": "demografia",
+      "cube": "TSE_Perfil_Eleitorado",
+      "dimensions": [
+        "Year"
+      ],
+      "measures": [],
+      "filters": {},
+      "notes": "Contexto demográfico e eleitoral, não indicador de atividade empresarial.",
+      "unit": ""
+    },
+    {
+      "id": "credito-pj",
+      "title": "Operações de crédito pessoa jurídica",
+      "topic": "financas",
+      "cube": "credito_bacen_valores",
+      "dimensions": [
+        "Year"
+      ],
+      "measures": [],
+      "filters": {},
+      "notes": "Concessões por período; não confundir com estoque de crédito.",
+      "unit": ""
+    },
+    {
+      "id": "economia-bio",
+      "title": "Potencial municipal de bioeconomia",
+      "topic": "desenvolvimento",
+      "cube": "Sebrae_Bioeconomia",
+      "dimensions": [
+        "Year"
+      ],
+      "measures": [
+        "Score Ecologico Territorial",
+        "Score Economico Estrutural",
+        "Score Capital Humano"
+      ],
+      "filters": {},
+      "notes": "Índices são pontuações, não quantitativos.",
+      "unit": ""
+    }
+  ]
+}
