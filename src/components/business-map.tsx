@@ -42,6 +42,7 @@ export default function BusinessMap({ businesses, mode }: Props) {
       maxZoom: 18,
       style: {
         version: 8,
+        glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
         sources: {
           osm: {
             type: "raster",
