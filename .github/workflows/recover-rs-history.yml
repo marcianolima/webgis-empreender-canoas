@@ -22,7 +22,7 @@ jobs:
         with:
           name: github-pages
           repository: ${{ github.repository }}
-          run-id: "39139388034"
+          run-id: "39133179892"
           github-token: ${{ github.token }}
           path: work/pages-history
       - name: Recuperar unicamente estatísticas reais e validar os 110 meses
