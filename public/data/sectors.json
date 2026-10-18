@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "status": "not_loaded",
+  "generatedAt": null,
+  "territory": "4304606",
+  "municipality": "Canoas",
+  "observations": [],
+  "quality": {
+    "errors": [],
+    "notes": [
+      "Indicadores serão publicados somente após coleta municipal verificada das tabelas oficiais IBGE/PAM/PPM/PEVS.",
+      "Valores ausentes não serão preenchidos por simulação."
+    ]
+  }
+}
