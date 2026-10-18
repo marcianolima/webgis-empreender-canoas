@@ -24,6 +24,8 @@ jobs:
             "https://dados.rs.gov.br/api/3/action/package_search?q=emprego&rows=5",
             "https://dados.rs.gov.br/api/3/action/package_show?id=dee-4948",
             "https://dados.rs.gov.br/api/3/action/package_show?id=dee-5468",
+            "https://data.rs.gov.br/download/dee-4949.csv",
+            "https://data.rs.gov.br/download/dee-5483.csv",
           ]
           for url in urls:
             try:
@@ -31,6 +33,9 @@ jobs:
               with urllib.request.urlopen(req,timeout=20) as r:
                 b=r.read(1000000)
                 if b[:2]==b"\x1f\x8b": b=gzip.decompress(b)
+                if url.endswith(".csv"):
+                  print("CSV SAMPLE",url,"LENGTH",len(b),"BODY",repr(b[:2300]),flush=True)
+                  continue
                 d=json.loads(b)
                 if isinstance(d,dict) and "variaveis" in d:
                   print("METADATA",d["id"],d.get("nome"),"PERIOD",d.get("periodicidade"),"VARIABLES",[(v["id"],v["nome"],v.get("unidade")) for v in d.get("variaveis",[])],"CLASSIFICATIONS",[(c["id"],c["nome"],len(c.get("categorias",[]))) for c in d.get("classificacoes",[])],flush=True)
