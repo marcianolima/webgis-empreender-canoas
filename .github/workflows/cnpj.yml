@@ -1,10 +1,5 @@
 name: CNPJ Receita Federal | Carga integral e atualização
 on:
-  push:
-    branches: [main]
-    paths:
-      - scripts/cnpj_pipeline.py
-      - .github/workflows/cnpj.yml
   workflow_dispatch:
     inputs:
       reference:
