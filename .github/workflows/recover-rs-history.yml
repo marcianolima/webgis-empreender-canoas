@@ -1,0 +1,71 @@
+name: Recuperar snapshot histórico JucisRS do GitHub Pages
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/recover-rs-history.yml
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+concurrency:
+  group: canoas-recover-rs-history
+  cancel-in-progress: false
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Recuperar artifact publicado e verificado antes da falha DataRS
+        uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+          repository: ${{ github.repository }}
+          run-id: "39139388034"
+          github-token: ${{ github.token }}
+          path: work/pages-history
+      - name: Recuperar unicamente estatísticas reais e validar os 110 meses
+        run: |
+          set -euo pipefail
+          find work/pages-history -maxdepth 2 -type f -printf '%p %s bytes\n'
+          mkdir -p work/recovered
+          tar -xf work/pages-history/artifact.tar -C work/recovered
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          source=Path("work/recovered/data/official.json")
+          assert source.exists(), "Artefato Pages sem data/official.json"
+          old=json.loads(source.read_text())
+          assert old["municipality"]["code"]=="4304606"
+          history=old["rsBusiness"]
+          assert len(history)>=100, len(history)
+          assert len({(r["group"],r["month"]) for r in history})==len(history)
+          assert all(r["territory"]=="43" and isinstance(r["value"],int) and r["value"]>=0 for r in history)
+          assert len(old["cempre"])>=16
+          assert len(old["gdp"])>=22
+          assert len(old["cempreCurrent"])>=3
+          assert len(old["populationEstimate"])>=3
+          Path("/tmp/verified-rs-snapshot.json").write_text(json.dumps(old,ensure_ascii=False,separators=(",",":"))+"\n")
+          print("RECUPERADO",len(history),"registros reais da JucisRS;",
+                len(old["gdp"]),"PIB; ",len(old["cempre"]),"CEMPRE antigo",flush=True)
+          PY
+      - name: Persistir histórico no repositório sem sobrescrever commits concorrentes
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for i in 1 2 3 4; do
+            git fetch origin main
+            git reset --hard origin/main
+            cp /tmp/verified-rs-snapshot.json public/data/official.json
+            git add public/data/official.json
+            if git diff --cached --quiet; then
+              echo "Histórico já persistido"; exit 0
+            fi
+            git commit -m "data(rs): recuperar 110 registros JucisRS e históricos IBGE verificados"
+            if git push origin HEAD:main; then
+              echo "Históricos reais restaurados; próximo deploy os preservará"; exit 0
+            fi
+            if [ "$i" -eq 4 ]; then exit 1; fi
+          done
