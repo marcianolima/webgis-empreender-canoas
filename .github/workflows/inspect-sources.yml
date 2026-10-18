@@ -1,4 +1,4 @@
-name: Diagnosticar fontes oficiais
+name: Diagnosticar consultas IBGE
 on:
   push:
     paths:
@@ -9,29 +9,27 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 7
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Consultar CSV JUCISRS 2025 e IBGE
-        shell: bash
+      - name: Conferir formatos da API SIDRA
         run: |
           python - <<'PY'
-          import urllib.request,urllib.error
+          import urllib.request, json
           urls=[
-            "https://dados.rs.gov.br/dataset/4006d49e-fe92-4961-8a36-2045778fee16/resource/2d86d7e7-0ff0-4020-88c7-d3fe3bf51758/download/constituicaoempresas2025.csv",
-            "https://dados.rs.gov.br/api/3/action/package_show?id=empresas-constituidas",
-            "https://servicodados.ibge.gov.br/api/v3/malhas/municipios/4304606?formato=application/vnd.geo%2Bjson&qualidade=minima",
-            "https://servicodados.ibge.gov.br/api/v3/agregados/5938/periodos/2023/variaveis/37?localidades=N6%5B4304606%5D",
             "https://servicodados.ibge.gov.br/api/v3/agregados/993/metadados",
-            "https://servicodados.ibge.gov.br/api/v3/agregados/993/periodos/2021/variaveis/all?localidades=N6%5B4304606%5D",
-            "https://servicodados.ibge.gov.br/api/v3/agregados/4714/periodos/2022/variaveis/93?localidades=N6%5B4304606%5D",
+            "https://servicodados.ibge.gov.br/api/v3/agregados/993/periodos/2021/variaveis/2585?localidades=N6%5B4304606%5D",
+            "https://servicodados.ibge.gov.br/api/v3/agregados/993/periodos/2016-2021/variaveis/2585?localidades=N6%5B4304606%5D",
+            "https://servicodados.ibge.gov.br/api/v3/agregados/993/periodos/2016%7C2017%7C2018%7C2019%7C2020%7C2021/variaveis/2585?localidades=N6%5B4304606%5D",
+            "https://servicodados.ibge.gov.br/api/v3/agregados/993/periodos/2021/variaveis/2585?localidades=N6%5B4304606%5D&classificacao=12762%5Ball%5D%7C319%5B0%5D%7C12386%5B0%5D",
+            "https://servicodados.ibge.gov.br/api/v3/agregados/5938/periodos/2018-2023/variaveis/37?localidades=N6%5B4304606%5D",
           ]
           for url in urls:
-            print("PROBING",url,flush=True)
             try:
-              req=urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0 (CanoasEmpreende/0.2)"})
-              with urllib.request.urlopen(req,timeout=40) as response:
-                b=response.read(3500)
-                print("STATUS",response.status,"CONTENTTYPE",response.headers.get("Content-Type"),"FIRST3500",repr(b[:3500]),flush=True)
-            except Exception as ex:print("ERROR",repr(ex),flush=True)
+              req=urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0 (CanoasEmpreende/0.2)","Accept-Encoding":"identity"})
+              with urllib.request.urlopen(req,timeout=16) as resp:
+                raw=resp.read(4000)
+                print("PROBE",resp.status,url,"bytes",len(raw),"preview",repr(raw[:450]),flush=True)
+            except Exception as ex:
+              print("PROBE ERROR",url,repr(ex),flush=True)
           PY
