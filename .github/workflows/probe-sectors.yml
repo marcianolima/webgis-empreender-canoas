@@ -1,0 +1,39 @@
+name: Diagnosticar indicadores setoriais e DEE
+on:
+  push:
+    paths: [.github/workflows/probe-sectors.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - name: Consultar metadados SIDRA e CKAN
+        run: |
+          python - <<'PY'
+          import json,urllib.request,gzip
+          urls=[
+            "https://servicodados.ibge.gov.br/api/v3/agregados/5457/metadados",
+            "https://servicodados.ibge.gov.br/api/v3/agregados/3939/metadados",
+            "https://servicodados.ibge.gov.br/api/v3/agregados/289/metadados",
+            "https://servicodados.ibge.gov.br/api/v3/agregados/5938/metadados",
+            "https://dados.rs.gov.br/api/3/action/package_search?q=exportacoes&rows=5",
+            "https://dados.rs.gov.br/api/3/action/package_search?q=emprego&rows=5",
+          ]
+          for url in urls:
+            try:
+              req=urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0 (CanoasEmpreende/1.0)","Accept-Encoding":"identity"})
+              with urllib.request.urlopen(req,timeout=20) as r:
+                b=r.read(1000000)
+                if b[:2]==b"\x1f\x8b": b=gzip.decompress(b)
+                d=json.loads(b)
+                if isinstance(d,dict) and "variaveis" in d:
+                  print("METADATA",d["id"],d.get("nome"),"PERIOD",d.get("periodicidade"),"VARIABLES",[(v["id"],v["nome"],v.get("unidade")) for v in d.get("variaveis",[])],"CLASSIFICATIONS",[(c["id"],c["nome"],len(c.get("categorias",[]))) for c in d.get("classificacoes",[])],flush=True)
+                else:
+                  ds=d.get("result",{}).get("results",[]) if isinstance(d,dict) else []
+                  print("CKAN",url,[(v.get("name"),v.get("title"),len(v.get("resources",[]))) for v in ds],flush=True)
+            except Exception as ex:print("ERROR",url,repr(ex),flush=True)
+          PY
