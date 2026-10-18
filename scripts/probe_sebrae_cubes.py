@@ -18,13 +18,20 @@ def main():
     a=grab("/cubes")
     cubes=a.get("cubes",[]) if isinstance(a,dict) else a
     print("TOTAL_CUBES",len(cubes),flush=True)
+    print("ALL_CUBE_NAMES",[(c["name"],(c.get("annotations") or {}).get("source_name")) for c in cubes],flush=True)
     keywords=("RAIS","RF","CAGED","COMEX","MDIC","SICONFI","IBGE","INEP","MDS","PAM","PPM","REDESIM","PNUD","SEBRAE","ANS","BACEN","CENSO","SALARIO","IDHM","VAB","DEMP","POP")
     relevant=[c for c in cubes if any(k in c["name"].upper() for k in keywords)]
     print("RELEVANT_CUBES",len(relevant),[(c["name"],(c.get("annotations") or {}).get("source_name")) for c in relevant],flush=True)
     targeted=["RAIS_workers","RAIS_establishment","RF"]
     targeted += [c["name"] for c in relevant if "CAGED" in c["name"].upper() or "SICONFI" in c["name"].upper() or "COMEX" in c["name"].upper() or "REDESIM" in c["name"].upper()]
     targeted += [c["name"] for c in relevant if "INEP_IDEB" in c["name"].upper() or "INEP_enem" in c["name"]]
-    targeted=list(dict.fromkeys(targeted))[:26]
+    targeted += ["mdic_exp_imp_mun","MDS_PBF","IBGE","IBGE_PIB_Municipal_VAB",
+       "INEP_censo","INEP_Censo_Ed_Basica","INEP_Censo_Taxas_Basica",
+       "PNUD_Atlas_IDHM","IBGE_Censo_Pop_Sit","IBGE_Censo_Sexo_Faixa_Etaria",
+       "Sebrae_Atendimento","Sebrae_Atendimento_2026","PAM Culturas",
+       "PPM Produtos","PPM Efetivo dos Rebanhos","ANS_COB_PLANOS",
+       "TSE_Perfil_Eleitorado","Sebrae_Bioeconomia"]
+    targeted=list(dict.fromkeys(targeted))[:55]
     for c in cubes:
         if c["name"] in targeted:
             print("SCHEMA",c["name"],"MEASURES",measures(c),"DIMS",dims(c),"ANN",c.get("annotations"),flush=True)
