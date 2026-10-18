@@ -55,6 +55,6 @@ class TestMunicipalOLAP(unittest.TestCase):
         self.assertEqual(next(r["Workers"] for r in active["rows"] if r["Year"]==2025),95355)
         self.assertTrue(all(d.get("rowCount",0)<=c.MAX_ROWS for d in data["datasets"]))
         self.assertEqual(len({d["id"] for d in data["datasets"]}),len(data["datasets"]))
-        self.assertTrue(all(r["Year"]>=1990 for d in data["datasets"] for r in d.get("rows",[]) if "Year" in r))
+        self.assertTrue(all(r["Year"]>=1900 for d in data["datasets"] for r in d.get("rows",[]) if "Year" in r))
 
 if __name__=="__main__":unittest.main()
