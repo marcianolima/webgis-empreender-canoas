@@ -1,0 +1,79 @@
+name: GEO Canoas | Homologação browser e mobile
+on:
+  push:
+    paths:
+      - .github/workflows/geo-visual-check.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar navegador de teste
+        run: |
+          python -m pip install --quiet playwright pillow
+          python -m playwright install --with-deps chromium >/dev/null
+      - name: Auditar mapa real, PMTiles, filtros e responsividade
+        run: |
+          python - <<'PY'
+          import asyncio,io,json,urllib.request
+          from PIL import Image
+          from playwright.async_api import async_playwright
+          ROOT="https://marcianolima.github.io/webgis-empreender-canoas/"
+          async def main():
+            with urllib.request.urlopen(ROOT+"data/bairros-economia.pmtiles",timeout=20) as r:
+              magic=r.read(8);print("PMTILES_HTTP",r.status,r.headers.get("Content-Length"),magic,flush=True)
+              assert magic==bytes([80,77,84,105,108,101,115,3])
+            with urllib.request.urlopen(ROOT+"data/bairros-economia.json",timeout=20) as r:
+              d=json.load(r)
+            assert d["status"]=="verified" and len(d["neighborhoods"])==18
+            async with async_playwright() as p:
+              browser=await p.chromium.launch(headless=True)
+              for label,w,h in [("desktop",1366,900),("mobile",390,844)]:
+                page=await browser.new_page(viewport={"width":w,"height":h},device_scale_factor=1)
+                errors=[]
+                page.on("pageerror",lambda err:errors.append(str(err)))
+                response=await page.goto(ROOT+"bairros/",wait_until="domcontentloaded",timeout=60000)
+                assert response and response.status==200
+                await page.locator(".maplibregl-canvas").wait_for(timeout=45000)
+                await page.wait_for_timeout(6000)
+                content=await page.locator("body").inner_text()
+                assert "59.553" in content or "59,553" in content or "59 553" in content
+                assert "PMTiles indisponível" not in content,content[-3000:]
+                assert "Carregando PMTiles" not in content,content[-3000:]
+                assert not errors,errors
+                canvas=page.locator(".maplibregl-canvas")
+                img=Image.open(io.BytesIO(await canvas.screenshot())).convert("RGB")
+                green=sum(1 for r,g,b in img.getdata() if g>r+8 and g>b+4 and 35<r<215)
+                print("MAP_CHECK",label,"canvas",img.size,"green_pixels",green,"url",page.url,flush=True)
+                assert green>300,"Map rendered with no geographic thematic colors"
+                if label=="mobile":
+                  horizontal=await page.evaluate("({scroll:document.documentElement.scrollWidth,window:window.innerWidth})")
+                  print("MOBILE_OVERFLOW",horizontal,flush=True)
+                  assert horizontal["scroll"]<=horizontal["window"]+12
+                await page.get_by_label("Seção CNAE").select_option("G")
+                await page.get_by_label("Indicador").select_option("density")
+                await page.wait_for_timeout(1000)
+                body=await page.locator("body").inner_text()
+                assert "Estabelecimentos por km²" in body
+                await page.screenshot(path=f"geo-{label}.png",full_page=True)
+                await page.close()
+              await browser.close()
+          asyncio.run(main())
+          PY
+      - name: Anexar screenshots da homologação
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: geocanoas-map-desktop-mobile
+          path: |
+            geo-desktop.png
+            geo-mobile.png
+          if-no-files-found: ignore
+          retention-days: 7
