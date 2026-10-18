@@ -44,3 +44,13 @@
 - [ ] Obter exportações oficiais com filtros Canoas e termos de uso confirmados.
 - [ ] Ingerir séries verificadas das plataformas e reconciliar com CNPJ conforme universo.
 - [ ] Validar atualizações em lote e acordos de acesso/API antes de automatizar.
+
+## 2026-10 — Receita Federal, REDESIM e setores
+- [x] Fonte oficial WebDAV da Receita identificada e verificada para 2026-10.
+- [x] Pipeline GitHub Actions em dez fragmentos com junção Empresas + Simples e bloqueio de publicação parcial.
+- [x] Páginas CNPJ e setores, sem registros sintéticos.
+- [x] Catálogo ampliado de DEE/BI Setorial, DataRS, Sebrae, REDESIM e InvestCanoas.
+- [ ] Marcar snapshot da Receita como carregado somente após sucesso real dos dez shards, junções e checksums.
+- [ ] Importar dados municipais de tempo de abertura REDESIM mediante exportação oficial estruturada.
+- [ ] Adicionar exportações e emprego municipal do DEE após validação do esquema do CSV.
+- [ ] Homologar geocodificação e privacidade para pontos reais.

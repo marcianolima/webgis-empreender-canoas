@@ -10,7 +10,7 @@ import {
   type ExternalIndicatorRecord, type ExternalSourceId, type IndicatorId,
 } from "@/lib/external-sources";
 
-const SOURCE_NOTES: Record<ExternalSourceId, string> = {
+const SOURCE_NOTES: Partial<Record<ExternalSourceId, string>> = {
   datasebrae_aberturas: "Não comparar diretamente com abertura de estabelecimentos (matriz + filiais) sem harmonizar universo, filtros e competência.",
   datasebrae_tempo: "Tempo de processamento, não a jornada completa do empreendedor. Observar mudança metodológica nacional em dez/2025.",
   rs_em_dados: "Fontes, granularidades e períodos variam conforme cada painel. Nem todo indicador está disponível por município.",
@@ -174,7 +174,7 @@ export function ExternalDataPanel({ records, generatedAt }: {
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
             <h3 className="flex items-center gap-2 text-sm font-bold text-ink"><Info size={17} className="text-brand-700"/> Interpretação e limitações</h3>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">{SOURCE_NOTES[selectedSource]}</p>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">{SOURCE_NOTES[selectedSource] ?? "Fonte oficial catalogada. A integração numérica requer download/API verificável, recorte municipal e licença de reutilização."}</p>
             <p className="mt-2 text-xs leading-relaxed text-slate-500"><Link2 size={13} className="mr-1 inline"/> Indicadores externos não são misturados automaticamente com a base individual de estabelecimentos CNPJ. Filtros CNAE e de bairro do protótipo não se aplicam aos dados importados sem campos compatíveis.</p>
           </div>
         </section>

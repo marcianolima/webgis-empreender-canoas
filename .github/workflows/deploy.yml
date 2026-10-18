@@ -35,6 +35,14 @@ jobs:
             cp /tmp/official-verified.json public/data/official.json
             cp /tmp/canoas-verified.geojson public/data/canoas.geojson
           fi
+      - name: Coletar indicadores setoriais IBGE (PAM, PPM, PEVS, VAB)
+        timeout-minutes: 3
+        run: |
+          if timeout 140s python scripts/collect_sectors.py; then
+            echo "Indicadores setoriais municipais obtidos de fontes oficiais"
+          else
+            echo "Fonte indisponível; mantendo snapshot real ou situação sem dados"
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -63,6 +71,12 @@ jobs:
           assert all(r["territory"]=="43" for r in d["rsBusiness"]), "JUCISRS estadual classificado como municipal"
           assert all(r["value"]>=0 for r in d["rsBusiness"])
           assert (p/"data/canoas.geojson").exists(), "malha IBGE ausente"
+          cnpj=json.loads((p/"data/cnpj.json").read_text())
+          assert cnpj["municipalityIbgeCode"]=="4304606"
+          assert cnpj["status"] in ("not_loaded","official")
+          sectors=json.loads((p/"data/sectors.json").read_text())
+          assert sectors["territory"]=="4304606"
+          assert all(r["territory"]=="4304606" for r in sectors["observations"])
           print("Dados:",len(d["cempre"]),"CEMPRE,",len(d["gdp"]),"PIB,",len(d["cnae"]),"CNAE,",len(d["rsBusiness"]),"meses RS")
           PY
           touch out/.nojekyll

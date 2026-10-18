@@ -3,7 +3,20 @@ export type ExternalSourceId =
   | "datasebrae_tempo"
   | "rs_em_dados"
   | "mapa_empresas"
-  | "dados_rs";
+  | "dados_rs"
+  | "dee_agronegocio"
+  | "dee_agricultura"
+  | "dee_pecuaria"
+  | "dee_extracao"
+  | "dee_exportacoes"
+  | "dee_turismo"
+  | "dee_criativa"
+  | "datars"
+  | "dee_perfil"
+  | "sebrae_observatorio"
+  | "sebrae_rs"
+  | "invest_canoas"
+  | "redesim_jucisrs";
 
 export type IndicatorId =
   | "aberturas"
@@ -85,7 +98,85 @@ export const EXTERNAL_SOURCES: {
     description: "Conjuntos abertos CSV, incluindo estatísticas da JUCISRS e indicadores econômicos do DEE.",
     purpose: "Agregar séries estaduais e municipais com licenças e metodologias explícitas.",
     approach: "Preferir CSV/licença do conjunto de dados e API CKAN quando aplicável.",
+  },,
+  {
+    id: "dee_agronegocio", name: "Agronegócio", organization: "DEE / Governo do RS",
+    url: "https://bi.dee.rs.gov.br/agronegocio/", description: "Painel temático de indicadores do agronegócio e atividades relacionadas.",
+    purpose: "Contextualizar Canoas com indicadores setoriais e institucionais de origem verificável.",
+    approach: "Consulta ao painel original; importação somente com API pública ou exportação documentada, unidade e referência.",
   },
+  {
+    id: "dee_agricultura", name: "Agricultura", organization: "DEE / Governo do RS",
+    url: "https://bi.dee.rs.gov.br/agricultura/", description: "Séries por culturas, área colhida, produção e valor.",
+    purpose: "Contextualizar Canoas com indicadores setoriais e institucionais de origem verificável.",
+    approach: "Consulta ao painel original; importação somente com API pública ou exportação documentada, unidade e referência.",
+  },
+  {
+    id: "dee_pecuaria", name: "Pecuária", organization: "DEE / Governo do RS",
+    url: "https://bi.dee.rs.gov.br/pecuaria/", description: "Efetivos de rebanhos e indicadores agropecuários.",
+    purpose: "Contextualizar Canoas com indicadores setoriais e institucionais de origem verificável.",
+    approach: "Consulta ao painel original; importação somente com API pública ou exportação documentada, unidade e referência.",
+  },
+  {
+    id: "dee_extracao", name: "Extração vegetal e silvicultura", organization: "DEE / Governo do RS",
+    url: "https://bi.dee.rs.gov.br/extracao-vegetal-silvicultura/", description: "Produção extrativa e florestal, observando unidades próprias.",
+    purpose: "Contextualizar Canoas com indicadores setoriais e institucionais de origem verificável.",
+    approach: "Consulta ao painel original; importação somente com API pública ou exportação documentada, unidade e referência.",
+  },
+  {
+    id: "dee_exportacoes", name: "Comércio exterior", organization: "DEE / Governo do RS",
+    url: "https://bi.dee.rs.gov.br/exportacoes/", description: "Painel de exportações, mercadorias e territórios.",
+    purpose: "Contextualizar Canoas com indicadores setoriais e institucionais de origem verificável.",
+    approach: "Consulta ao painel original; importação somente com API pública ou exportação documentada, unidade e referência.",
+  },
+  {
+    id: "dee_turismo", name: "Turismo", organization: "DEE / Governo do RS",
+    url: "https://bi.dee.rs.gov.br/turismo/", description: "Atividades características do turismo e indicadores setoriais.",
+    purpose: "Contextualizar Canoas com indicadores setoriais e institucionais de origem verificável.",
+    approach: "Consulta ao painel original; importação somente com API pública ou exportação documentada, unidade e referência.",
+  },
+  {
+    id: "dee_criativa", name: "Economia criativa", organization: "DEE / Governo do RS",
+    url: "https://bi.dee.rs.gov.br/economia-criativa/", description: "Indicadores econômicos e setoriais da economia criativa.",
+    purpose: "Contextualizar Canoas com indicadores setoriais e institucionais de origem verificável.",
+    approach: "Consulta ao painel original; importação somente com API pública ou exportação documentada, unidade e referência.",
+  },
+  {
+    id: "datars", name: "DataRS", organization: "DEE / SPGG",
+    url: "https://data.rs.gov.br/", description: "API e dados municipais de economia, trabalho, agricultura, exportações e indicadores sociais.",
+    purpose: "Contextualizar Canoas com indicadores setoriais e institucionais de origem verificável.",
+    approach: "Consulta ao painel original; importação somente com API pública ou exportação documentada, unidade e referência.",
+  },
+  {
+    id: "dee_perfil", name: "Perfil Municipal do RS", organization: "DEE / SPGG",
+    url: "https://data.rs.gov.br/perfil-municipal/", description: "Perfil municipal com PIB, demografia, emprego formal e contexto territorial.",
+    purpose: "Contextualizar Canoas com indicadores setoriais e institucionais de origem verificável.",
+    approach: "Consulta ao painel original; importação somente com API pública ou exportação documentada, unidade e referência.",
+  },
+  {
+    id: "sebrae_observatorio", name: "Observatório Setorial Territorial", organization: "Sebrae",
+    url: "https://observatorio.sebrae.com.br/", description: "Indicadores municipais, pequenos negócios e ambiente empresarial.",
+    purpose: "Contextualizar Canoas com indicadores setoriais e institucionais de origem verificável.",
+    approach: "Consulta ao painel original; importação somente com API pública ou exportação documentada, unidade e referência.",
+  },
+  {
+    id: "sebrae_rs", name: "DataSebrae RS", organization: "Sebrae RS",
+    url: "https://datasebrae.com.br/rs", description: "Painéis e relatórios do perfil econômico e de pequenos negócios.",
+    purpose: "Contextualizar Canoas com indicadores setoriais e institucionais de origem verificável.",
+    approach: "Consulta ao painel original; importação somente com API pública ou exportação documentada, unidade e referência.",
+  },
+  {
+    id: "invest_canoas", name: "InvestCanoas", organization: "Prefeitura de Canoas / SMDEI",
+    url: "https://investcanoas.canoas.rs.gov.br/", description: "Portal municipal de atração de investimentos e informações sobre o ambiente de negócios.",
+    purpose: "Contextualizar Canoas com indicadores setoriais e institucionais de origem verificável.",
+    approach: "Consulta ao painel original; importação somente com API pública ou exportação documentada, unidade e referência.",
+  },
+  {
+    id: "redesim_jucisrs", name: "REDESIM / JucisRS", organization: "JucisRS / REDESIM",
+    url: "https://www.redesim.rs.gov.br/", description: "Abertura, legalização e viabilidade, com consulta de processos; dados individuais de workflow não publicados como API aberta.",
+    purpose: "Contextualizar Canoas com indicadores setoriais e institucionais de origem verificável.",
+    approach: "Consulta ao painel original; importação somente com API pública ou exportação documentada, unidade e referência.",
+  }
 ];
 
 export const INDICATOR_LABELS: Record<IndicatorId, string> = {
