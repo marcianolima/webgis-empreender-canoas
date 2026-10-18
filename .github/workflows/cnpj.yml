@@ -1,0 +1,120 @@
+name: CNPJ Receita Federal | Carga integral e atualização
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/cnpj_pipeline.py
+      - .github/workflows/cnpj.yml
+  workflow_dispatch:
+    inputs:
+      reference:
+        description: "Competência AAAA-MM ou auto (última pasta RFB completa)"
+        required: false
+        type: string
+        default: auto
+  schedule:
+    - cron: "37 8 12 * *"
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: canoas-cnpj-full-snapshot
+  cancel-in-progress: false
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    outputs:
+      reference: ${{ steps.month.outputs.reference }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - id: month
+        name: Exigir mês com todos os 23 arquivos necessários
+        env:
+          REQUESTED_REFERENCE: ${{ inputs.reference || 'auto' }}
+        run: |
+          set -euo pipefail
+          python scripts/cnpj_pipeline.py discover --reference "$REQUESTED_REFERENCE" | tee /tmp/cnpj-ref.txt
+          REF="$(sed -n 's/^snapshot=//p' /tmp/cnpj-ref.txt | tail -n 1)"
+          test -n "$REF"
+          echo "reference=$REF" >> "$GITHUB_OUTPUT"
+  establishments:
+    needs: discover
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        index: [0,1,2,3,4,5,6,7,8,9]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Ler ZIP RFB e filtrar Canoas sem criar dados
+        run: python scripts/cnpj_pipeline.py shard --reference "${{ needs.discover.outputs.reference }}" --index "${{ matrix.index }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cnpj-part-${{ matrix.index }}
+          path: |
+            work/cnpj/shard-${{ matrix.index }}.csv.gz
+            work/cnpj/shard-${{ matrix.index }}.json
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+  assemble:
+    needs: [discover, establishments]
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cnpj-part-*
+          path: work/shards
+          merge-multiple: true
+      - name: Cruzar dez Empresas + Simples, validar e produzir agregado
+        run: python scripts/cnpj_pipeline.py assemble --reference "${{ needs.discover.outputs.reference }}" --source-dir work/shards
+      - name: Testar publicação anônima e a cobertura integral
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("public/data/cnpj.json").read_text())
+          assert d["status"]=="official"
+          assert d["coverage"]["establishmentShards"]==10
+          assert d["coverage"]["companyShards"]==10
+          assert d["coverage"]["simplesLoaded"]
+          assert d["coverage"]["recordsMunicipality"]==d["kpis"]["total"]
+          assert d["kpis"]["active"]<=d["kpis"]["total"]
+          assert sum(x["count"] for x in d["bySector"])==d["kpis"]["active"]
+          assert all(x["count"]>=5 for x in d["districtSectorCells"])
+          assert not any(k in d for k in ("cnpj","razao_social","cpf","logradouro","email"))
+          print("Dados verificados:",d["reference"],"estabelecimentos:",d["kpis"]["total"])
+          PY
+      - name: Commit apenas dos agregados, nunca dos arquivos CNPJ individuais
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/cnpj.json
+          if git diff --cached --quiet; then
+            echo "Sem alterações"
+          else
+            git commit -m "data(cnpj): fotografia RFB ${{ needs.discover.outputs.reference }} integral validada"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Publicar atualização via workflow do GitHub Pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --ref main
