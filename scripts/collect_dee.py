@@ -65,9 +65,9 @@ def extract_csv(body, sourceId, info):
         raise ValueError("Ausência da coluna ibge")
     years=[]
     for column in reader.fieldnames:
-        found=re.search(r"\b(20\d{2})\b",column)
-        if found and int(found.group(1))>=info["minYear"]:
-            years.append((column,int(found.group(1))))
+        found=re.findall(r"\b(20\d{2})\b",column)
+        if found and int(found[-1])>=info["minYear"]:
+            years.append((column,int(found[-1])))
     if not years:
         raise ValueError("Não foram detectados anos válidos na fonte")
     total=0
@@ -80,8 +80,9 @@ def extract_csv(body, sourceId, info):
             if municipal is not None:
                 raise ValueError("Duplicidade do município 4304606")
             municipal=row
-    if total<450 or municipal is None:
-        raise ValueError(f"Conjunto estadual incompleto ou Canoas ausente: {total} municípios")
+    minimum=200 if sourceId=="exportacoes_usd" else 450
+    if total<minimum or municipal is None:
+        raise ValueError(f"Conjunto incompleto ou Canoas ausente: {total} municípios (mínimo {minimum})")
     result=[]
     for column,year in years:
         value=number(municipal.get(column,""))
