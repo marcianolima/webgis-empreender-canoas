@@ -42,7 +42,7 @@ RS_DATASETS = {
 }
 
 
-def download(url: str, *, retries: int = 2, max_bytes: int = 8_000_000) -> bytes:
+def download(url: str, *, retries: int = 1, max_bytes: int = 8_000_000) -> bytes:
     err = None
     for attempt in range(retries + 1):
         try:
@@ -51,7 +51,7 @@ def download(url: str, *, retries: int = 2, max_bytes: int = 8_000_000) -> bytes
                 "Accept": "application/json,text/csv,*/*",
                 "Accept-Encoding": "identity",
             })
-            with urllib.request.urlopen(request, timeout=45) as reply:
+            with urllib.request.urlopen(request, timeout=18) as reply:
                 if reply.status != 200:
                     raise RuntimeError(f"HTTP {reply.status}")
                 payload = reply.read(max_bytes + 1)
@@ -223,7 +223,7 @@ def collect_rs(group: str, slug: str) -> list[dict]:
         resources.append((int(match.group(1)), url))
     # Recursos de 2023 em diante, sem supor periodicidade completa.
     output = []
-    for year, url in sorted(resources):
+    for year, url in sorted(resources)[-2:]:
         output.extend(parse_rs_csv(download(url), year, group, url))
     return sorted(output, key=lambda x: x["month"])
 
