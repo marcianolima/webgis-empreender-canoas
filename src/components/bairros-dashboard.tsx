@@ -40,7 +40,7 @@ function colorExpression(choices:Choice[]):ExpressionSpecification{
  const match=byId.length?["match",["get","oid"],...byId,-1]:["literal",-1];
  const lookup:unknown[]=["step",match,COLORS[0]];
  steps.forEach((t,i)=>{lookup.push(t,COLORS[Math.min(i+1,COLORS.length-1)]);});
- return ["case",["==",match,-1],"#e2e8f0",lookup] as ExpressionSpecification;
+ return ["case",["==",match,-1],"#e2e8f0",lookup] as unknown as ExpressionSpecification;
 }
 function appendLine(root:HTMLElement,label:string,value:string){
  const p=document.createElement("p");p.className="py-1";
@@ -120,7 +120,7 @@ export function BairrosDashboard(){
     getKey:()=>url,
     async getBytes(offset:number,length:number){
      if(offset<0||length<0||offset+length>bytes.length)throw Error("Requisição fora do arquivo PMTiles");
-     return {data:bytes.slice(offset,offset+length)};
+     return {data:bytes.slice(offset,offset+length).buffer as ArrayBuffer};
     },
    };
    const pm=new PMTiles(source);
