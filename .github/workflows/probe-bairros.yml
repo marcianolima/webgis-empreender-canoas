@@ -25,4 +25,19 @@ jobs:
               else:
                 print("METADATA",suffix,json.dumps({k:payload.get(k) for k in ["error","layers","spatialReference","capabilities","maxRecordCount","geometryType","fields","objectIdField","name","extent","advancedQueryCapabilities","supportedQueryFormats","supportsPagination"]},ensure_ascii=False)[:14000],flush=True)
             except Exception as e:print("ERROR",suffix,repr(e),flush=True)
+          for qs in [
+            {"where":"1=1","outFields":"BAIRRO,POPULACAO_2022,OBJECTID_1","returnGeometry":"false","f":"json"},
+            {"where":"1=1","outFields":"*","returnGeometry":"true","outSR":"4326","f":"geojson"},
+            {"where":"1=1","returnIdsOnly":"true","f":"json"},
+            {"where":"OBJECTID_1 > 0","outFields":"BAIRRO","returnGeometry":"false","f":"json"},
+            {"objectIds":"1","outFields":"BAIRRO","returnGeometry":"true","f":"json"},
+            {"where":"1=1","returnExtentOnly":"true","f":"json"},
+          ]:
+            from urllib.parse import urlencode
+            target=url+"/0/query?"+urlencode(qs)
+            try:
+              with urllib.request.urlopen(target,timeout=30) as response:
+                b=response.read(250000).decode("utf-8","replace")
+              print("QUERY",qs,"SIZE",len(b),"TEXT",b[:5200],flush=True)
+            except Exception as e:print("QUERY_ERROR",qs,repr(e),flush=True)
           PY
