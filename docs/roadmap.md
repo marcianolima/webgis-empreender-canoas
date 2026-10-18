@@ -86,3 +86,13 @@
 - [x] Explorador genérico adaptado a telas menores, com diferenciação entre dados extraídos e cubos somente catalogados.
 - [ ] Resolver cubos sem limite municipal ou sem fatos para Canoas com fontes primárias e estudo metodológico.
 - [ ] Validar interativamente cada combinação arbitrária disponível na interface Sebrae além das consultas já materializadas.
+
+### Etapa 9 — Inteligência territorial em PMTiles
+- [x] Validado FeatureServer BAIRROSOFICIAL: 18 polígonos, EPSG:31982 e POPULACAO_2022.
+- [x] Criado ETL de bairros com geometrias oficiais EPSG:4326, aliases explícitos e controle de não conciliados.
+- [x] PMTiles v3 vetorial real, com geração mensal no GitHub Actions, SHA256 e publicação estática.
+- [x] Indicadores CNPJ por bairro, CNAE, densidade por km² e por população 2022 da camada GeoCanoas.
+- [x] Arquivo temporal de snapshots por bairro e visualização histórica sem pontos inventados.
+- [x] Página cartográfica mobile-first com MapLibre e exportação CSV.
+- [ ] Incorporar endereços completos RFB no processamento reservado e testar geocodificação oficial (lotes/vias), medir classe de precisão e impacto LGPD.
+- [ ] Produzir grades/hexágonos ou heatmaps somente após validação de coordenadas pontuais reais.

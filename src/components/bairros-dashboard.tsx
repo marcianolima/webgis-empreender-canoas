@@ -131,7 +131,7 @@ export function BairrosDashboard(){
    maplibregl.addProtocol("pmtiles",protocol.tile);protocolRef.current=protocol;registered=true;
    map=new maplibregl.Map({
     container:element.current!,center:[-51.19,-29.915],zoom:11,minZoom:9,maxZoom:16,
-    style:{version:8,sources:{
+    style:{version:8,glyphs:"https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",sources:{
      osm:{type:"raster",tiles:["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],tileSize:256,
       attribution:"© OpenStreetMap contributors"},
      bairros:{type:"vector",url:"pmtiles://"+url,attribution:"© GeoCanoas — Prefeitura de Canoas"}
@@ -179,7 +179,7 @@ export function BairrosDashboard(){
    });
    map.on("mouseenter","bairros-fill",()=>{if(map)map.getCanvas().style.cursor="pointer";});
    map.on("mouseleave","bairros-fill",()=>{if(map)map.getCanvas().style.cursor="";});
-   map.on("error",e=>{if(!aborted)setMapError(String(e.error?.message||"Falha na camada cartográfica"));});
+   map.on("error",e=>{const message=String(e.error?.message||"");if(!aborted&&/pmtiles|bairros|source-layer|vector tile/i.test(message))setMapError(message);});
   })().catch(e=>{if(!aborted)setMapError(String(e));});
   return ()=>{aborted=true;map?.remove();if(registered)maplibregl.removeProtocol("pmtiles");protocolRef.current=null;mapRef.current=null;};
  },[data]);

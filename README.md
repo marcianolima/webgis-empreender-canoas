@@ -111,3 +111,17 @@ O explorador registra cubos sem dados municipais, filtros não suportados e font
 ### Consulta OLAP pública avançada (sem servidor adicional)
 
 A rota `/sebrae/consulta` permite executar consultas anônimas em cubos públicos com suporte a `Municipality=4304606`, medidas e dimensões escolhidas pelo usuário, filtros de membros, séries cronológicas, exportação CSV e visualizações próprias. A API confirmou resposta `Access-Control-Allow-Origin: *` para a origem GitHub Pages. O limite de 3.000 registros impede gráficos incompletos; consultas que excedam esse teto requerem recorte adicional. Resultados dinâmicos não entram automaticamente no histórico Git — para arquivamento permanente, acrescentar a respectiva combinação a `scripts/sebrae_series_specs.json` e executar a coleta no GitHub Actions.
+
+## Geografia empresarial — GeoCanoas / PMTiles
+
+A rota `/bairros` utiliza a camada **BAIRROSOFICIAL/FeatureServer/0** da Prefeitura de Canoas (18 polígonos, EPSG:31982), reprojetada para EPSG:4326 e empacotada em PMTiles 3. A referência cartográfica e as dimensões oficiais `POPULACAO_2022` e `BAIRRO` são extraídas diretamente via ArcGIS REST e verificadas antes de publicar.
+
+O coletor `scripts/collect_bairros.py` associa a fotografia mensal de estabelecimentos ativos da Receita Federal aos nomes de bairros reconhecidos e a alguns **aliases estritamente documentados**. Não distribui CNPJs de vilas, parcelamentos, bairros ambíguos ou bairros não publicados por aproximação. O processamento registra cobertura, denominações pendentes, soma dos bairros e as 303 células CNAE originalmente publicadas. As células com menos de cinco registros não são inferidas como zero.
+
+**A primeira competência processada (2026-10)** produziu 18 bairros, 59.553 CNPJs ativos associados de 60.243 (98,855%), 345 CNPJs em nomes declarados não conciliados e 345 registros fora dos 50 grupos publicados. Área conjunta dos polígonos: 128,171 km². O campo populacional da própria camada GeoCanoas soma 351.463 e **difere** do Censo 2022 municipal do IBGE; tal divergência é informada na interface e nunca é escondida.
+
+O resultado validado é publicado em `public/data/bairros-economia.pmtiles` (~281 KB), `public/data/bairros-economia.json` e `public/data/bairros-economia-series.json`. O último armazena fotografias mensais por bairro e permite a navegação histórica com o mesmo conjunto de limites de referência (mudanças de limites exigem versionamento próprio). `.github/workflows/bairros.yml` coleta mensalmente e após nova fotografia CNPJ, gera PMTiles a partir dos polígonos oficiais, confere formato, SHA256 e atribuição territorial e só então comita sobre main.
+
+MapLibre GL usa o protocolo PMTiles. Para robustez em GitHub Pages, que pode responder a solicitações HTTP Range inconsistentes, o pequeno arquivo municipal é carregado uma vez e o protocolo entrega fatias de bytes em memória, preservando PMTiles como fonte vetorial real.
+
+O mapa apresenta quantidade absoluta, densidade por km² e estabelecimentos por 1.000 habitantes, filtro CNAE, legenda, seleção de bairros, ranking e CSV. **Não** existem pontos de CNPJ: a geocodificação individual dependerá de endereços completos, base oficial de vias/lotes, validação e gestão de dados pessoais.

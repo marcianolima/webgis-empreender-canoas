@@ -107,6 +107,16 @@ jobs:
               assert next(row["Workers"] for row in ra["rows"] if row["Year"]==2025)==95355
           assert (p/"sebrae/series/index.html").exists(),"página das séries não exportada"
           assert (p/"sebrae/consulta/index.html").exists(),"página de consulta avançada não exportada"
+          assert (p/"bairros/index.html").exists(),"página de bairros não exportada"
+          mapmeta=json.loads((p/"data/bairros-economia.json").read_text())
+          assert mapmeta["territory"]=="4304606"
+          assert mapmeta["status"] in ("not_loaded","verified")
+          if mapmeta["status"]=="verified":
+              tile=p/"data/bairros-economia.pmtiles"
+              assert tile.exists() and tile.read_bytes()[:8]==b"PMTiles\\x03".decode("unicode_escape").encode("latin1")
+              assert len(mapmeta["neighborhoods"])==18
+              assert mapmeta["coverage"]["activeTotal"]==cnpj["kpis"]["active"]
+              assert mapmeta["coverage"]["matched"]<=mapmeta["coverage"]["activeTotal"]
           print("Dados:",len(d["cempre"]),"CEMPRE,",len(d["gdp"]),"PIB,",len(d["cnae"]),"CNAE,",len(d["rsBusiness"]),"meses RS")
           PY
           touch out/.nojekyll
@@ -148,6 +158,16 @@ jobs:
                   get("sobre/")
                   get("sebrae/series/")
                   get("sebrae/consulta/")
+                  get("bairros/")
+                  try:
+                      b=json.loads(get("data/bairros-economia.json"))
+                      if b.get("status")=="verified":
+                          pm=get("data/bairros-economia.pmtiles")
+                          assert pm[:8]==bytes((80,77,84,105,108,101,115,3))
+                          assert len(b["neighborhoods"])==18
+                          print("BAIRROS_PM_TILES_HTTP_OK",len(pm),flush=True)
+                  except Exception as err:
+                      raise AssertionError("Falha na publicação cartográfica: "+str(err))
                   query=json.loads(get("data/sebrae-series.json"))
                   assert query["municipalityIbgeCode"]=="4304606"
                   print("Sebrae séries municipais:",query["coverage"],flush=True)
