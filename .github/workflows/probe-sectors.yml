@@ -22,6 +22,8 @@ jobs:
             "https://servicodados.ibge.gov.br/api/v3/agregados/5938/metadados",
             "https://dados.rs.gov.br/api/3/action/package_search?q=exportacoes&rows=5",
             "https://dados.rs.gov.br/api/3/action/package_search?q=emprego&rows=5",
+            "https://dados.rs.gov.br/api/3/action/package_show?id=dee-4948",
+            "https://dados.rs.gov.br/api/3/action/package_show?id=dee-5468",
           ]
           for url in urls:
             try:
@@ -35,5 +37,6 @@ jobs:
                 else:
                   ds=d.get("result",{}).get("results",[]) if isinstance(d,dict) else []
                   print("CKAN",url,[(v.get("name"),v.get("title"),len(v.get("resources",[]))) for v in ds],flush=True)
+                  if "package_show" in url: print("RESOURCES",[(e.get("name"),e.get("url"),e.get("format")) for e in d.get("result",{}).get("resources",[])],flush=True)
             except Exception as ex:print("ERROR",url,repr(ex),flush=True)
           PY
