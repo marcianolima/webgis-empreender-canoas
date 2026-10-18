@@ -28,7 +28,9 @@ ALLOWED_SOURCES = {
     "datasebrae_tempo": ("datasebrae.com.br",),
     "rs_em_dados": ("rsemdados.com.br", "investrs.org.br", "desenvolvimento.rs.gov.br"),
     "mapa_empresas": ("gov.br", "estatistica.redesim.gov.br"),
-    "dados_rs": ("dados.rs.gov.br", "data.rs.gov.br", "dados.rs.gov.br"),
+    "dados_rs": ("dados.rs.gov.br", "data.rs.gov.br"),
+    "redesim_jucisrs": ("redesim.rs.gov.br", "jucisrs.rs.gov.br", "gov.br"),
+    "datars": ("data.rs.gov.br",),
 }
 ALLOWED_METRICS = {
     "datasebrae_aberturas": {"aberturas", "baixas", "ativas"},
@@ -46,6 +48,11 @@ ALLOWED_METRICS = {
     "dados_rs": {
         "aberturas", "baixas", "ativas", "pib_brl",
         "empregos_formais", "exportacoes_usd",
+    },
+    "datars": {"pib_brl", "empregos_formais", "exportacoes_usd"},
+    "redesim_jucisrs": {
+        "aberturas", "baixas", "tempo_abertura_horas",
+        "tempo_viabilidade_horas", "tempo_registro_horas",
     },
 }
 METRIC_UNITS = {
