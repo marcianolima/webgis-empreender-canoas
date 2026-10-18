@@ -1,168 +1,57 @@
 # Canoas Empreende
-### Observatório de Desenvolvimento Econômico e Dinâmica Empresarial de Canoas/RS
 
-[![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-2563eb.svg)](LICENSE)
-![Situação](https://img.shields.io/badge/estado-funda%C3%A7%C3%A3o%20t%C3%A9cnica-amber.svg)
-![Fonte principal](https://img.shields.io/badge/dados-Receita%20Federal%20%2F%20CNPJ-047857.svg)
+**WebGIS e Observatório Econômico de Canoas/RS — dados exclusivamente oficiais.**
 
-Plataforma **WebGIS + dashboard**, aberta e orientada a evidências, para compreender **onde** estão os estabelecimentos, **quais** setores predominam e **como** evolui a atividade empresarial em Canoas, Rio Grande do Sul.
+**Site:** https://marcianolima.github.io/webgis-empreender-canoas/
 
-> [!IMPORTANT]
-> **Estado do projeto — etapa 1:** estrutura técnica e protótipo de interface. A interface inicial utiliza **amostra sintética sinalizada como demonstração**. **Nenhum indicador demonstrativo representa estatística oficial de Canoas.** Os dados municipais definitivos serão publicados apenas após ingestão, conferência e geocodificação da base real.
+**Workflow:** https://github.com/marcianolima/webgis-empreender-canoas/actions/workflows/deploy.yml
 
-## Visão do produto
+> Não existem dados fictícios, marcadores simulados ou estatísticas inventadas. Indicadores ausentes aparecem como indisponíveis. Valores estaduais são sempre identificados como RS.
 
-- **Observatório**: estabelecimentos ativos, aberturas, baixas, saldo, porte, CNAE, MEI e Simples.
-- **Mapa de empresas**: pontos de estabelecimentos geocodificados, clusters, calor, bairros e recortes territoriais, sempre explicitando a precisão de localização.
-- **Filtros únicos**: o mesmo recorte deve repercutir no mapa, indicadores e gráficos.
-- **Transparência**: datas de referência, definição das métricas, rastreabilidade, cobertura e limitações.
-- **Fontes complementares**: DataSebrae, RS em Dados, Mapa de Empresas e Dados RS, com importação opcional de indicadores agregados auditados.
-- **Uso público**: desenho responsivo e acessível, pensado para gestores, empreendedores e pesquisadores.
+## Fontes e funcionalidades
 
-### O que está implementado nesta etapa
-
-| Entrega | Situação |
-| --- | --- |
-| Repositório público, licença MIT, organização de pastas | Estruturado |
-| Documentação de fontes, métricas, geocodificação, atualização e limitações | Inicial |
-| Next.js (App Router), TypeScript, Tailwind, Zustand, Recharts e MapLibre | Base criada |
-| Dashboard + mapa com amostra sintética, filtros integrados | Protótipo, não homologado |
-| Ingestão local de arquivos da Receita (ZIP/CSV) com filtro para Canoas | Script inicial |
-| Catálogo de painéis públicos + importador de indicadores agregados | Base criada; sem valores importados |
-| Série mensal oficial auditada e cruzamento espacial validado | Pendente |
-| Atualização mensal automática e implantação Vercel | Pendente |
-
-## Público
-
-Secretaria Municipal de Desenvolvimento Econômico e Inovação (SMDEI), demais órgãos municipais, empreendedores, investidores, pesquisadores e população. Projeto independente, **sem declaração de endosso oficial** até eventual homologação institucional.
-
-## Fontes e prioridade
-
-| Fonte | Uso previsto | Status de integração |
+| Dado | Território | Fonte |
 | --- | --- | --- |
-| [Receita Federal — CNPJ](https://dados.gov.br/dados/conjuntos-dados/cadastro-nacional-da-pessoa-juridica---cnpj) | Estabelecimentos, empresas, CNAE, situação, porte, Simples/MEI | Ingestor local inicial; sem base baixada |
-| [Leiaute da Receita](https://www.gov.br/receitafederal/dados/cnpj-metadados.pdf) | Tipagem e interpretação de campos | Documentado |
-| [IBGE — malhas de setores e bairros](https://www.ibge.gov.br/geociencias/organizacao-do-territorio/estrutura-territorial/26565-malhas-de-setores-censitarios-divisoes-intramunicipais.html) | Limites e contexto censitário | Planejado |
-| [GeoCanoas](https://geo.canoas.rs.gov.br/portal/) | Limites municipais/bairros e referências territoriais | A avaliar serviços e permissões |
-| [Prefeitura de Canoas](https://www.canoas.rs.gov.br/) | Dados locais disponíveis e validação institucional | A avaliar |
-| [OpenStreetMap](https://www.openstreetmap.org/) | Referência de ruas e enriquecimento cartográfico | Mapa-base e geocodificação a homologar |
-| [Mapa de Empresas — Governo Federal](https://www.gov.br/empresas-e-negocios/pt-br/mapa-de-empresas) | Confronto de indicadores agregados | Planejado |
+| Empresas e outras organizações (até 2021), seções CNAE 2021 | Canoas | [IBGE CEMPRE, SIDRA 993](https://sidra.ibge.gov.br/tabela/993) |
+| PIB municipal a preços correntes (mil reais na origem) | Canoas | [IBGE, SIDRA 5938](https://sidra.ibge.gov.br/tabela/5938) |
+| População do Censo 2022 | Canoas | [IBGE, SIDRA 4714](https://sidra.ibge.gov.br/tabela/4714) |
+| Limite municipal (GeoJSON) | Canoas | [IBGE, API de Malhas](https://servicodados.ibge.gov.br/api/v3/malhas/municipios/4304606?formato=application/vnd.geo%2Bjson&qualidade=minima) |
+| Constituições/extinções e filiais | Estado RS (não Canoas) | [Dados RS / JUCISRS](https://dados.rs.gov.br/dataset/empresas-constituidas) — CC0-1.0 |
+| Fundo cartográfico | Canoas | [OpenStreetMap](https://www.openstreetmap.org/copyright) |
 
-### Fontes complementares e painel de referência
+O painel inclui indicadores com ano e fonte, séries IBGE e JUCISRS, filtros de seção CNAE e série estadual, mapa com contorno real de Canoas, exportação CSV, catálogo de fontes e metodologia.
 
-A rota **`/fontes`** cataloga DataSebrae (abertura e tempo), RS em Dados, Mapa de Empresas e Dados RS/JUCISRS. Dados agregados, se exportados legalmente e revisados, podem ser convertidos em série no projeto com `scripts/import_external_indicators.py`. **Atualmente nenhuma série externa foi importada.** Relatórios Power BI consultáveis não implicam API pública de extração.
+**Comparabilidade:** CEMPRE é um universo estatístico de empresas e organizações; não corresponde a todos os estabelecimentos CNPJ ativos. A série municipal utilizada termina em 2021. Dados de abertura/baixa JUCISRS disponíveis são agregados estaduais. Nenhuma taxa de geocodificação é calculada sem pontos reais. Não são exibidas aberturas/baixas CNPJ municipais sem extração real.
 
-Consulte [docs/fontes.md](docs/fontes.md) e [docs/fontes-complementares.md](docs/fontes-complementares.md) antes de utilizar um dado como indicador oficial.
+## Arquitetura somente com GitHub
 
-## Arquitetura proposta
+- **GitHub Actions** executa scripts/collect_official.py para coletar IBGE SIDRA, malha IBGE e CSVs JUCISRS (sem chave de API), com testes Python, lint e TypeScript.
+- **Next.js 15, TypeScript, Tailwind, MapLibre e Recharts** exportam site estático para out/ com basePath correto.
+- **GitHub Pages** publica o artefato da workflow, sem Vercel, backend persistente ou serviço pago.
+- **Atualização:** em pushes para main, manualmente por workflow_dispatch e toda segunda-feira às 10:27 UTC (agendamentos podem atrasar).
 
-\`\`\`text
-Arquivos públicos mensais da Receita Federal (ZIP, CSV)
-      │
-      ▼
-scripts/ingest_cnpj.py  ──► data/processed/*.csv (fora do Git)
-      │                            │
-      │                    QA + geocodificação
-      ▼                            ▼
-data snapshots / indicadores     GeoJSON / Parquet validados
-      │                            │
-      └────────► publicação de artefatos leves ◄─────────┘
-                              │
-                 Next.js / TypeScript (Vercel)
-                 ├─ App Router
-                 ├─ Zustand (filtros)
-                 ├─ Recharts (visualizações)
-                 └─ MapLibre (cartografia)
-\`\`\`
+## Configuração GitHub Pages
 
-**Decisão de escalabilidade:** processar os grandes arquivos CNPJ **fora** do build/deploy Vercel; o site recebe somente recortes ou agregados derivados, versionados e auditados. Não enviar os ZIPs nacionais à Vercel ou ao repositório.
+Em Settings → Pages → Build and deployment → Source, selecione **GitHub Actions** caso ainda não esteja habilitado. Consulte a execução em Actions e confirme a URL pública após o deploy.
 
-## Como executar a interface
+## Execução local
 
-**Pré-requisitos:** Node.js 20+ e npm; Python 3.11+ para ingestão.
+Requisitos: Node 22+ e Python 3.12+.
 
-\`\`\`bash
-git clone https://github.com/marcianolima/webgis-empreender-canoas.git
-cd webgis-empreender-canoas
-npm install
-npm run dev
-\`\`\`
+1. Clone o repositório.
+2. Execute: python -m unittest discover -s tests -v
+3. Execute: python scripts/collect_official.py
+4. Execute: npm install
+5. Execute: npm run dev
 
-Abra http://localhost:3000. Na etapa 1, a interface exibe apenas **dados de demonstração** identificados. Os registros fictícios não possuem CNPJ de empresas reais.
+Abra http://localhost:3000. A compilação estática é executada com npm run build. Os arquivos reais gerados aparecem em public/data/ e no artefato do GitHub Pages; o arquivo base do Git pode conter apenas o esquema vazio até a coleta.
 
-Comandos: \`npm run dev\`, \`npm run build\`, \`npm run lint\`, \`npm run typecheck\`.
+## Próximas entregas (dados reais somente)
 
-## Ingestão local inicial (base CNPJ)
+1. Ingestão mensal completa da Receita Federal CNPJ em job independente, preservando competência, todos fragmentos, validação de registros e LGPD.
+2. Aberturas, baixas, MEI, Simples e CNAE atuais de Canoas, após extração e reconciliação com Mapa de Empresas.
+3. Geocodificação confiável de estabelecimentos e integração de bairros GeoCanoas; publicar pontos apenas após QA, revisão de direitos e privacidade.
+4. DataSebrae e RS em Dados por API ou exportação documentada, com fonte e território explícitos.
+5. Testes de acessibilidade WCAG 2.1 AA e homologação em dispositivos reais.
 
-1. Acesse o catálogo oficial da Receita e baixe **todos** os ZIPs \`Estabelecimentos\` e \`Empresas\` do **mesmo mês de referência**; opcionalmente \`Simples\`; e a tabela \`Municipios\`.
-2. Salve os arquivos fora do repositório público, por exemplo \`data/raw/2026-09/\`. Confira nomes e leiaute conforme documentação da Receita.
-3. Execute (substitua \`ANO-MES\` e nomes conforme os arquivos baixados):
-
-\`\`\`bash
-python scripts/ingest_cnpj.py \
-  --estabelecimentos data/raw/ANO-MES/Estabelecimentos*.zip \
-  --empresas data/raw/ANO-MES/Empresas*.zip \
-  --municipios data/raw/ANO-MES/Municipios.zip \
-  --simples data/raw/ANO-MES/Simples.zip \
-  --referencia ANO-MES
-\`\`\`
-
-**Importante:** os padrões \`*.zip\` são expandidos pelo shell em Linux/macOS. No PowerShell, forneça caminhos individuais ou uma lista explícita. O ingestor aceita múltiplos arquivos nos argumentos \`--estabelecimentos\` e \`--empresas\`. Alternativamente, forneça \`--codigo-municipio\` após conferir o código na tabela da própria Receita.
-
-A saída inicial é \`data/processed/estabelecimentos_canoas.csv\` e \`data/processed/metadata.json\`, **sem coordenadas**. O script não consulta geocodificador nem publica endereços automaticamente. Ver [docs/atualizacao-mensal.md](docs/atualizacao-mensal.md) e [docs/geocodificacao.md](docs/geocodificacao.md).
-
-## Interpretação correta dos indicadores
-
-**Unidade de análise:** estabelecimento CNPJ completo (14 posições no layout tradicional), não raiz de empresa. Matriz e filial contam separadamente.
-
-- **Ativos:** situação cadastral 02 na fotografia do mês.
-- **Aberturas:** data de início da atividade cadastral na janela selecionada; não implica que o estabelecimento continue ativo.
-- **Baixas:** situação 08 com data da situação cadastral no período, **conforme último estado visível na fotografia**.
-- **Saldo:** aberturas menos baixas **segundo essas regras**; não equivale necessariamente à variação entre dois estoques.
-- **MEI:** optante MEI no arquivo Simples correspondente, **não** inferido apenas do porte.
-- **Localização:** endereço cadastral não é prova de operação no local ou de existência física.
-
-As fotografias mensais do CNPJ **não são um log completo de eventos históricos**. Para análises longitudinais robustas de situação e movimentação, o projeto deverá armazenar snapshots mensais, versionar regras de reconciliação e confrontar agregados do Mapa de Empresas. Nunca misturar valores de recortes ou datas distintas sem indicação.
-
-## Qualidade, acessibilidade e privacidade
-
-A publicação oficial exige data de referência, versão do pipeline, registros elegíveis, duplicidades, consistência temporal, taxa de geocodificação e distribuição de métodos/precisão. Ponto aproximado (rua, CEP, bairro) não será apresentado como número exato. CNPJ e razão social podem ser públicos, mas disponibilização de dados individualizados passará por análise de LGPD, risco de exposição de empresários individuais e termos/licenças das fontes. Dados de sócios/CPF não integram o escopo público.
-
-Design mobile-first, navegação por teclado, foco visível, contraste e textos alternativos são requisitos permanentes. A conformidade WCAG 2.1 AA **ainda precisa de auditoria**.
-
-## Estrutura
-
-\`\`\`text
-src/
-  app/                 rotas, layout e estilos globais
-  components/          dashboard, mapa e filtros
-  data/                amostra sintética de demonstração
-  lib/                 agregações e utilitários
-  store/               estado compartilhado (Zustand)
-  types/               contratos TypeScript
-scripts/               ingestão CNPJ e importação de indicadores agregados
-docs/                  metodologia e governança de dados
-data/raw/              ZIPs originais (ignorado pelo Git)
-data/processed/        dados derivados (ignorado pelo Git)
-public/                recursos estáticos leves
-\`\`\`
-
-## Roadmap
-
-**Etapa 1 — Fundação:** configuração, documentação, interface demonstrativa e ingestor local.
-
-**Etapa 2 — Dados reais:** baixar lote CNPJ completo, resolver CNAE/natureza jurídica, testar consistência, construir séries por snapshots e reconciliação com Mapa de Empresas.
-
-**Etapa 3 — Inteligência territorial:** integrar bairros oficiais, pipeline de endereços e geocodificação por níveis de confiança, agregar pontos com controle de exposição.
-
-**Etapa 4 — Observatório 1.0 homologado:** indicadores auditados, filtros hierárquicos, mapa de clusters/calor, exportações, testes WCAG, testes móveis e publicação Vercel.
-
-**Etapa 5 — Evolução:** atualizações automatizadas, painéis por setor e bairro, demografia e renda, API pública, metadados e painel de monitoramento operacional.
-
-Veja [docs/roadmap.md](docs/roadmap.md) para critérios de aceite e dependências.
-
-## Contribuições e licença
-
-Contribuições por issues e pull requests são bem-vindas. Não suba base nacional completa nem informações pessoais desnecessárias. Código sob [MIT](LICENSE); **bases de terceiros têm licenças e condições próprias**. Mapas e dados devem trazer atribuição compatível com cada origem.
-
-**Aviso:** informação estatística para análise territorial, não certidão de regularidade, autorização comercial, comprovação de endereço nem consulta oficial ao CNPJ.
+Código sob [MIT](LICENSE). As bases públicas e os tiles externos mantêm condições próprias. Consulte [docs](docs/) e [Metodologia](src/app/sobre/page.tsx).

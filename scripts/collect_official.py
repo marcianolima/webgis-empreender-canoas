@@ -8,6 +8,7 @@ Uso: python scripts/collect_official.py
 from __future__ import annotations
 
 import csv
+import gzip
 import io
 import json
 import re
@@ -65,7 +66,10 @@ def download(url: str, *, retries: int = 2, max_bytes: int = 8_000_000) -> bytes
 
 
 def get_json(url: str):
-    return json.loads(download(url).decode("utf-8-sig"))
+    raw = download(url)
+    if raw[:2] == b"\x1f\x8b":
+        raw = gzip.decompress(raw)
+    return json.loads(raw.decode("utf-8-sig"))
 
 
 def numeric(value: str):
