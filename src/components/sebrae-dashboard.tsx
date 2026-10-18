@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import {useEffect,useMemo,useState} from "react";
+import {useEffect,useState} from "react";
 import {ResponsiveContainer,LineChart,Line,CartesianGrid,XAxis,YAxis,Tooltip,BarChart,Bar} from "recharts";
 import {ArrowUpRight,Download,ExternalLink,Search,ShieldAlert} from "lucide-react";
 import type {SebraeDocument,SebraeMetric,SebraeTheme} from "@/types/sebrae";
@@ -43,7 +43,7 @@ function ThematicComparison({theme,doc}:{theme:SebraeTheme;doc:SebraeDocument}){
  const archive=doc.archived.observations;
  const all=[...doc.metrics,...archive];
  const get=(code:string)=>all.find(r=>r.code===code)?.value;
- let title="";let unit="";let notes="";let rows:{label:string;value:number}[]=[];
+ let title="";let unit="";let notes="";const rows:{label:string;value:number}[]=[];
  const addRow=(label:string,code:string)=>{const value=get(code);if(value!==undefined)rows.push({label,value});};
  if(theme==="empresas"){
    title="Empresas ativas por classificação de porte";unit="estabelecimentos";
@@ -112,8 +112,7 @@ export function SebraeDashboard(){
   return ()=>ctrl.abort();
  },[]);
  const source=doc?.metrics||[];
- const historic=archived?doc?.archived.observations||[]:[];
- const all=useMemo(()=>[...source,...historic],[source,historic]);
+ const all=[...source,...(archived?doc?.archived.observations||[]:[])];
  const filtered=all.filter(x=>x.theme===theme&&(x.label+" "+x.provider+" "+x.notes).toLocaleLowerCase("pt-BR").includes(query.toLocaleLowerCase("pt-BR"))).sort((a,b)=>b.year-a.year||a.label.localeCompare(b.label,"pt-BR"));
  const historicalCodes=new Set(doc?.archived.observations.map(x=>x.code)||[]);
  const get=(code:string)=>source.find(x=>x.code===code);
