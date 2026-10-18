@@ -1,0 +1,54 @@
+name: Pesquisar perfil público Observatório Sebrae Canoas
+on:
+  push:
+    paths: [.github/workflows/probe-sebrae.yml]
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspecionar HTML e metadados HTTP do portal público
+        run: |
+          python - <<'PY'
+          import urllib.request,re
+          u="https://observatorio.sebrae.com.br/profile/geo/canoas"
+          for ua in ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36","Googlebot"):
+            try:
+              req=urllib.request.Request(u,headers={"User-Agent":ua,"Accept":"text/html"})
+              with urllib.request.urlopen(req,timeout=30) as f:
+                b=f.read(2_000_000).decode("utf-8","replace")
+                print("HTTP",f.status,"UA",ua[:20],"LEN",len(b),"URL",f.url,"TITLE",re.findall(r'<title[^>]*>(.*?)</title',b,re.I|re.S)[:2],"SCRIPTS",re.findall(r'<script[^>]+src="([^"]+)',b)[:12],flush=True)
+                print("PHRASES",[(x,b.find(x)) for x in ["Iniciando sessão","__NEXT_DATA__","Número de empregados","Empresas Ativas","Canoas","RAIS","__NUXT__"]],flush=True)
+                print("FIRST",b[:1200],flush=True)
+            except Exception as e:print("HTTP_ERROR",repr(e),flush=True)
+          PY
+      - name: Instalar navegador automatizado somente para verificar página pública
+        run: |
+          python -m pip install --quiet playwright
+          python -m playwright install --with-deps chromium >/dev/null
+      - name: Verificar renderização pública e requests autorizados
+        run: |
+          python - <<'PY'
+          import asyncio
+          from playwright.async_api import async_playwright
+          async def main():
+            async with async_playwright() as p:
+              browser=await p.chromium.launch(headless=True)
+              page=await browser.new_page(viewport={"width":1280,"height":850})
+              requests=[]
+              page.on("response",lambda r: requests.append((r.status,r.url[:260])) if any(s in r.url for s in ("api/","graphql","query","cube","data","sebrae")) else None)
+              try:
+                await page.goto("https://observatorio.sebrae.com.br/profile/geo/canoas",wait_until="domcontentloaded",timeout=45000)
+                await page.wait_for_timeout(12000)
+                body=await page.locator("body").inner_text(timeout=10000)
+                print("BROWSER",page.url,"TITLE",await page.title(),"BODY_LEN",len(body),flush=True)
+                print("BODY_START",body[:10000],flush=True)
+                print("BODY_END",body[-8000:],flush=True)
+                print("REQUESTS",requests[-40:],flush=True)
+              except Exception as e: print("BROWSER_ERROR",repr(e),flush=True)
+              await browser.close()
+          asyncio.run(main())
+          PY
