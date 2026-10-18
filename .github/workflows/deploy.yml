@@ -10,7 +10,7 @@ permissions:
   pages: write
   id-token: write
 concurrency:
-  group: canoas-empreende-pages
+  group: canoas-empreende-pages-v2
   cancel-in-progress: true
 jobs:
   build:
@@ -23,9 +23,28 @@ jobs:
           python-version: "3.12"
       - name: Testar coletores Python
         run: python -m unittest discover -s tests -v
-      - name: Coletar dados oficiais IBGE e JUCISRS
+      - name: Atualizar conjunto oficial com preservação do último snapshot validado
+        if: github.event_name != 'push'
         timeout-minutes: 6
-        run: python scripts/collect_official.py
+        run: |
+          cp public/data/official.json /tmp/official-verified.json
+          cp public/data/canoas.geojson /tmp/canoas-verified.geojson
+          if timeout 250s python scripts/collect_official.py; then
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("public/data/official.json")
+          data=json.loads(p.read_text())
+          assert data["municipality"]["code"]=="4304606"
+          assert data["cempre"] or data["gdp"] or data["population"]
+          assert Path("public/data/canoas.geojson").exists()
+          print("Atualização validada",data["quality"]["status"])
+          PY
+          else
+            echo "Coleta externa indisponível: mantendo dados verificados anteriores"
+            cp /tmp/official-verified.json public/data/official.json
+            cp /tmp/canoas-verified.geojson public/data/canoas.geojson
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: "22"

@@ -1,22 +1,59 @@
 {
   "schemaVersion": 1,
-  "generatedAt": null,
+  "generatedAt": "2026-10-18T04:09:55Z",
   "municipality": {
     "code": "4304606",
     "name": "Canoas",
     "state": "RS"
   },
-  "sources": [],
-  "cempre": [],
+  "sources": [
+    {
+      "name": "IBGE / CEMPRE - empresas e outras organizações",
+      "url": "https://sidra.ibge.gov.br/tabela/993",
+      "territory": "4304606",
+      "reference": "2021"
+    },
+    {
+      "name": "IBGE / PIB dos Municípios (mil R$)",
+      "url": "https://sidra.ibge.gov.br/tabela/5938",
+      "territory": "4304606",
+      "reference": "2023"
+    },
+    {
+      "name": "IBGE / Censo Demográfico 2022",
+      "url": "https://sidra.ibge.gov.br/tabela/4714",
+      "territory": "4304606",
+      "reference": "2022"
+    }
+  ],
+  "cempre": [
+    {
+      "year": 2021,
+      "value": 12555
+    }
+  ],
   "cnae": [],
-  "gdp": [],
-  "population": [],
+  "gdp": [
+    {
+      "year": 2023,
+      "value": 29166697
+    }
+  ],
+  "population": [
+    {
+      "year": 2022,
+      "value": 347657
+    }
+  ],
   "rsBusiness": [],
   "quality": {
-    "status": "not_collected",
+    "status": "partial",
     "errors": [],
     "notes": [
-      "Dados oficiais são obtidos pelo GitHub Actions durante a publicação. Nenhuma amostra simulada está presente."
+      "Dados verificados em respostas da API SIDRA/IBGE durante a implantação, em 18/10/2026.",
+      "Série municipal CEMPRE da tabela 993 encerrada em 2021; estoque CNPJ atual não disponível neste conjunto.",
+      "Desagregação CNAE e movimentação estadual JUCISRS aguardam coleta estruturada validada.",
+      "Nenhuma empresa individual e nenhuma coordenada empresarial foram simuladas."
     ]
   }
 }
