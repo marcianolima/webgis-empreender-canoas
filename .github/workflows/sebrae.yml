@@ -1,0 +1,81 @@
+name: Observatório Sebrae Canoas | Coleta municipal auditada
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/sebrae.yml
+      - scripts/collect_sebrae.py
+      - src/data/sebrae-archive-2026-10.json
+  workflow_dispatch:
+  schedule:
+    - cron: "23 10 15 * *"
+permissions:
+  contents: write
+concurrency:
+  group: canoas-sebrae-verified
+  cancel-in-progress: false
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Testar validação territorial e privacidade
+        run: python -m unittest discover -s tests -p 'test_sebrae_public.py' -v
+      - name: Consultar somente página pública e extrair indicadores de Canoas
+        run: python scripts/collect_sebrae.py
+      - name: Conferir completude e natureza das séries
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path("public/data/sebrae.json").read_text())
+          assert a["schemaVersion"]==1 and a["status"]=="verified"
+          assert a["municipalityIbgeCode"]=="4304606"
+          assert len(a["metrics"])>=15 and len(a["archived"]["observations"])>=45
+          assert a["archived"]["observedOn"]=="2026-10-18"
+          k={x["code"]:x for x in a["metrics"]}
+          assert k["rais_vinculos"]["year"]>=2025
+          assert k["rf_empresas_ativas_sebrae"]["value"]>=50000
+          assert len(a["history"]["rais_vinculos"])>=2
+          assert all(row["year"]>=2024 for row in a["history"]["rais_vinculos"])
+          assert len(set(x["code"] for x in a["metrics"]))==len(a["metrics"])
+          assert all(x["sourceUrl"]==a["sourceUrl"] for x in a["metrics"])
+          assert all(x["provider"] for x in a["metrics"])
+          print("SEBRAE_VALIDATED",len(a["metrics"]),len(a["archived"]["observations"]),flush=True)
+          PY
+      - name: Guardar resultado verificado como artefato por 30 dias
+        uses: actions/upload-artifact@v4
+        with:
+          name: sebrae-canoas-dados-publicos-verificados
+          path: public/data/sebrae.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Registrar apenas indicadores agregados no Git atual, sem conflito
+        run: |
+          set -euo pipefail
+          cp public/data/sebrae.json /tmp/sebrae-reviewed.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            cp /tmp/sebrae-reviewed.json public/data/sebrae.json
+            git add public/data/sebrae.json
+            if git diff --cached --quiet; then
+              echo "Dados atuais já presentes"
+              exit 0
+            fi
+            git commit -m "data(sebrae): atualizar indicadores municipais agregados Canoas"
+            if git push origin HEAD:main; then
+              echo "Concluído: publicação acionada pelo push"
+              exit 0
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "Não foi possível atualizar a branch após tentativas concorrentes"
+              exit 1
+            fi
+          done
