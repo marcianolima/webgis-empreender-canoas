@@ -1,0 +1,101 @@
+name: Canoas Empreende | Dados oficiais e GitHub Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "27 10 * * 1"
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: canoas-empreende-pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Testar coletores Python
+        run: python -m unittest discover -s tests -v
+      - name: Coletar dados oficiais IBGE e JUCISRS
+        run: python scripts/collect_official.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Instalar dependências
+        run: npm install --no-audit --no-fund
+      - name: Verificar código
+        run: |
+          npm run lint
+          npm run typecheck
+      - name: Exportar Next.js estático
+        run: npm run build
+      - name: Validar site e integridade territorial
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("out")
+          for name in ("index.html","sobre/index.html","fontes/index.html","atualizacao/index.html"):
+              assert (p/name).exists(), name+" não foi gerado"
+          html=(p/"index.html").read_text()
+          assert "/webgis-empreender-canoas/_next/" in html, "Next.js sem basePath Pages"
+          d=json.loads((p/"data/official.json").read_text())
+          assert d["municipality"]["code"]=="4304606"
+          assert d["quality"]["status"] in ("ok","partial")
+          assert d["cempre"] or d["gdp"] or d["population"]
+          assert all(r["territory"]=="43" for r in d["rsBusiness"]), "JUCISRS estadual classificado como municipal"
+          assert all(r["value"]>=0 for r in d["rsBusiness"])
+          assert (p/"data/canoas.geojson").exists(), "malha IBGE ausente"
+          print("Dados:",len(d["cempre"]),"CEMPRE,",len(d["gdp"]),"PIB,",len(d["cnae"]),"CNAE,",len(d["rsBusiness"]),"meses RS")
+          PY
+          touch out/.nojekyll
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.publish.outputs.page_url }}
+    steps:
+      - id: publish
+        uses: actions/deploy-pages@v4
+      - name: Validar o site HTTP
+        env:
+          PAGE_URL: ${{ steps.publish.outputs.page_url }}
+        run: |
+          python - <<'PY'
+          import json,os,time,urllib.request
+          base=os.environ["PAGE_URL"].rstrip("/")+"/"
+          if not base.startswith("https://"):
+              raise ValueError("URL não é HTTPS")
+          for attempt in range(12):
+              try:
+                  def get(path):
+                      with urllib.request.urlopen(base+path,timeout=15) as response:
+                          assert response.status==200
+                          return response.read()
+                  page=get("").decode()
+                  assert "Canoas Empreende" in page
+                  d=json.loads(get("data/official.json"))
+                  assert d["municipality"]["code"]=="4304606"
+                  get("data/canoas.geojson")
+                  get("sobre/")
+                  print("GitHub Pages validado:",base,d["quality"]["status"])
+                  break
+              except Exception as exc:
+                  if attempt==11:raise
+                  print("Tentativa",attempt+1,str(exc),flush=True)
+                  time.sleep(5)
+          PY

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": null,
+  "municipality": {
+    "code": "4304606",
+    "name": "Canoas",
+    "state": "RS"
+  },
+  "sources": [],
+  "cempre": [],
+  "cnae": [],
+  "gdp": [],
+  "population": [],
+  "rsBusiness": [],
+  "quality": {
+    "status": "not_collected",
+    "errors": [],
+    "notes": [
+      "Dados oficiais são obtidos pelo GitHub Actions durante a publicação. Nenhuma amostra simulada está presente."
+    ]
+  }
+}

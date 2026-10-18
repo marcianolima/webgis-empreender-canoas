@@ -1,24 +1,18 @@
 import Link from "next/link";
-
-export const metadata = { title: "Sobre e metodologia | Canoas Empreende" };
-
+export const metadata = { title: "Metodologia | Canoas Empreende" };
 export default function Sobre() {
-  return (
-    <main className="mx-auto max-w-3xl px-5 py-12 text-ink">
-      <Link href="/" className="text-sm font-semibold text-brand-700">← Voltar ao observatório</Link>
-      <h1 className="mt-8 text-3xl font-extrabold">Sobre o Canoas Empreende</h1>
-      <p className="mt-4 leading-relaxed text-slate-600">Observatório WebGIS de dinâmica empresarial em Canoas/RS. A etapa atual é um protótipo demonstrativo com registros e coordenadas inteiramente fictícios. Não há, neste momento, estatísticas municipais homologadas.</p>
-      <h2 className="mt-8 text-xl font-bold">Fontes oficiais previstas</h2>
-      <p className="mt-2 leading-relaxed text-slate-600">A base principal será a Receita Federal (dados abertos do CNPJ). IBGE, GeoCanoas, Prefeitura de Canoas, OpenStreetMap e Mapa de Empresas serão utilizados como complementos, sujeitos à validação, compatibilidade metodológica e condições de uso.</p>
-      <h2 className="mt-8 text-xl font-bold">Fontes complementares</h2>
-      <p className="mt-2 leading-relaxed text-slate-600">Os painéis do DataSebrae, RS em Dados e Mapa de Empresas são catalogados em uma <Link href="/fontes" className="font-semibold text-brand-700 underline">página própria</Link>. Dados desses portais só serão exibidos como série estatística quando existirem exportações legítimas, referências completas e validação metodológica. Nenhum valor foi importado nesta etapa.</p>
-      <h2 className="mt-8 text-xl font-bold">Interpretação dos indicadores</h2>
-      <p className="mt-2 leading-relaxed text-slate-600">A unidade de contagem é o estabelecimento CNPJ (inclui matriz e filiais). Ativo significa situação cadastral 02 no período de referência. Aberturas utilizam data de início de atividade; baixas usam situação 08 e data da situação. Retratos cadastrais não são histórico exaustivo de eventos, e o saldo não necessariamente equivale à variação do estoque.</p>
-      <h2 className="mt-8 text-xl font-bold">Geocodificação e qualidade</h2>
-      <p className="mt-2 leading-relaxed text-slate-600">Endereço cadastral não confirma localização da atividade. Cada coordenada deverá ter método e confiança documentados, com taxa de cobertura, validação territorial e ressalva quando aproximada. A geocodificação real ainda não foi realizada.</p>
-      <h2 className="mt-8 text-xl font-bold">Transparência, licenças e privacidade</h2>
-      <p className="mt-2 leading-relaxed text-slate-600">O código utiliza MIT; as fontes externas têm termos próprios. A publicação de dados individualizados, especialmente os de empresários individuais, requer avaliação de privacidade, minimização e finalidade pública. Não serão incluídos dados de sócios e CPF.</p>
-      <p className="mt-8 text-sm text-slate-500">Consulte a documentação técnica completa no <a className="underline" href="https://github.com/marcianolima/webgis-empreender-canoas/tree/main/docs">repositório GitHub</a>.</p>
-    </main>
-  );
+  return <main className="mx-auto max-w-3xl px-5 py-12 text-ink">
+    <Link href="/" className="text-sm font-semibold text-brand-700">← Voltar ao observatório</Link>
+    <h1 className="mt-8 text-3xl font-extrabold">Sobre, metodologia e limitações</h1>
+    <p className="mt-4 leading-relaxed text-slate-600">Observatório WebGIS estático de Canoas, baseado exclusivamente em dados oficiais agregados. O site é gerado pelo GitHub Actions e servido pelo GitHub Pages. Nenhuma estatística ou coordenada fictícia é publicada.</p>
+    <h2 className="mt-8 text-xl font-bold">Empresas — CEMPRE</h2>
+    <p className="mt-2 leading-relaxed text-slate-600">Empresas e outras organizações por ano na tabela <a className="text-brand-700 underline" href="https://sidra.ibge.gov.br/tabela/993">993 do SIDRA/IBGE</a>, cuja série municipal foi encerrada em 2021. Esse universo estatístico não corresponde ao estoque mensal de estabelecimentos CNPJ ativos. As seções CNAE provêm da mesma tabela.</p>
+    <h2 className="mt-8 text-xl font-bold">PIB e população</h2>
+    <p className="mt-2 leading-relaxed text-slate-600">PIB municipal a preços correntes na tabela <a className="text-brand-700 underline" href="https://sidra.ibge.gov.br/tabela/5938">5938 do IBGE</a>, divulgado em mil reais, multiplicado por mil no cartão. População do Censo 2022, tabela <a className="text-brand-700 underline" href="https://sidra.ibge.gov.br/tabela/4714">4714</a>.</p>
+    <h2 className="mt-8 text-xl font-bold">Movimentação estadual JUCISRS</h2>
+    <p className="mt-2 leading-relaxed text-slate-600">Constituições, extinções e movimentos de filiais dos CSVs da <a className="text-brand-700 underline" href="https://dados.rs.gov.br/dataset/empresas-constituidas">JUCISRS / Dados RS</a> (licença CC0-1.0). Esses arquivos fornecem totais estaduais, não dados exclusivos de Canoas. Meses com valores em branco não viram zeros, e somas parciais não são descritas como anos completos.</p>
+    <h2 className="mt-8 text-xl font-bold">Mapa oficial e limites</h2>
+    <p className="mt-2 leading-relaxed text-slate-600">Malha territorial oficial do IBGE para município 4304606 e mapa-base OpenStreetMap com atribuição. Ainda não há registros de estabelecimentos geocodificados: por isso não existem pontos empresariais nesta versão. A ingestão mensal completa do CNPJ da Receita Federal e geocodificação exigem validação de cobertura, confidencialidade, termos e LGPD.</p>
+    <p className="mt-8 text-sm"><Link href="/fontes" className="font-semibold text-brand-700 underline">Fontes adicionais: DataSebrae, Mapa de Empresas e RS em Dados →</Link></p>
+  </main>;
 }
