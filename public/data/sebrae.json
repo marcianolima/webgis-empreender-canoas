@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "status": "not_loaded",
+  "municipality": "Canoas",
+  "municipalityIbgeCode": "4304606",
+  "sourceUrl": "https://observatorio.sebrae.com.br/profile/geo/canoas",
+  "generatedAt": null,
+  "groups": {
+    "empresas": "Empresas e empreendedorismo",
+    "emprego": "Emprego",
+    "ocupacoes": "Ocupações",
+    "demografia": "Demografia",
+    "educacao": "Educação",
+    "financas": "Finanças",
+    "desenvolvimento": "Inclusão",
+    "agro": "Agro",
+    "comercio": "Comércio exterior"
+  },
+  "metrics": [],
+  "history": {},
+  "archived": {
+    "observedOn": "2026-10-18",
+    "observations": []
+  },
+  "quality": {
+    "notes": [
+      "Coleta complementar não concluída. Nenhum indicador foi inventado."
+    ],
+    "limits": []
+  }
+}
