@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "status": "not_loaded",
+  "territory": "4304606",
+  "municipality": "Canoas",
+  "generatedAt": null,
+  "observations": [],
+  "quality": {
+    "errors": [],
+    "notes": [
+      "Valores DEE/DataRS serão publicados após conferência dos códigos municipais e do conteúdo original dos CSVs.",
+      "Nenhum dado demonstrativo."
+    ]
+  }
+}
