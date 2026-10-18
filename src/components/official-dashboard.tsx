@@ -93,6 +93,7 @@ export function OfficialDashboard() {
           <Link href="/cnpj" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">Empresas CNPJ</Link>
           <Link href="/setores" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">Setores</Link>
           <Link href="/trabalho" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">Emprego e exportações</Link>
+          <Link href="/redesim" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">REDESIM</Link>
           <Link href="/fontes" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">Fontes</Link>
           <Link href="/sobre" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">Sobre</Link>
         </nav>

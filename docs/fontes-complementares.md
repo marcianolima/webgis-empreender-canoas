@@ -74,3 +74,13 @@ Preencher valores apenas após conferência documental. **Não carregar totais e
 - Criar adaptadores específicos por leiaute de exportação disponibilizado; evitar scraping dependente de DOM privado.
 - Automatizar conjuntos CSV públicos do Dados RS apenas após verificar o recurso, data, licença, unidade territorial e esquema.
 - Implementar checagens cruzadas com CNPJ por universo e competência, com divergências justificadas, sem substituir os KPIs internos.
+
+## REDESIM/JucisRS — dados de viabilidade, registro e tempo
+
+- Fluxo oficial: https://www.redesim.rs.gov.br/.
+- Painel de estatísticas: https://www.gov.br/empresas-e-negocios/pt-br/mapa-de-empresas/painel-mapa-de-empresas.
+- O painel Mapa de Empresas declara que a partir de dezembro/2025 a implantação do MAT alterou os tempos reportados.
+- Registro de tempo vem de processos REDESIM, não da diferença entre datas CNPJ.
+- Não foi encontrada API pública aberta que permita colher todos os tempos de Canoas diretamente sem autenticação. Painéis Power BI não autorizam automaticamente endpoints privados.
+- Importação suportada em `scripts/import_external_indicators.py` com `fonte=redesim_jucisrs` ou `fonte=mapa_empresas`. É necessário extrair por mecanismo oficial e preencher competência, IBGE 4304606, universo, unidade, segmento e URL de origem, preservando arquivo original e licença.
+- O painel `/redesim` exibe dados validados, ou informação explícita de indisponibilidade (nunca estimativa).

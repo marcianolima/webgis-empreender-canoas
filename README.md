@@ -68,3 +68,7 @@ A rotina volumosa da Receita é separada do deploy estático e roda mensalmente 
 ### DEE/DataRS: indicadores municipais já integrados ao código
 
 A rota `/trabalho` utiliza o coletor `scripts/collect_dee.py` e os arquivos CSV oficiais [Exportações — Total](https://data.rs.gov.br/download/dee-4949.csv) e [Emprego — Número de Vínculos Empregatícios](https://data.rs.gov.br/download/dee-5483.csv). O filtro usa exatamente o código IBGE **4304606** e exige cobertura municipal no conjunto antes de disponibilizar valores. A unidade de exportação é US$ FOB; a unidade do emprego são vínculos formais (não pessoas únicas). Sem inferência de anos indisponíveis.
+
+### REDESIM e Mapa de Empresas
+
+A rota `/redesim` é exclusiva para séries de tempo de abertura, viabilidade, registro e formalização, com proveniência. A entrada é o CSV agregado validado por `scripts/import_external_indicators.py`, com `fonte=mapa_empresas` ou `fonte=redesim_jucisrs` e `territorio=4304606`. Como não foi confirmada uma API de extração pública livre de autenticação para os indicadores municipais processuais, nenhum prazo é gerado ou estimado. Ver [orientações oficiais](https://www.gov.br/empresas-e-negocios/pt-br/mapa-de-empresas/painel-mapa-de-empresas) e [JucisRS](https://www.redesim.rs.gov.br/). Há quebra de metodologia de tempos a partir de dezembro/2025.
