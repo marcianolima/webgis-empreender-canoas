@@ -57,3 +57,6 @@
 
 - [x] Criar importador DEE/DataRS com filtro IBGE Canoas, validação de 450+ municípios, valores anuais e unidades oficiais.
 - [x] Adicionar página de trabalho e exportações e importação no deploy GitHub Pages.
+
+- [x] PIB: último ano obtido via metadados oficiais da tabela SIDRA 5938, série histórica longa e nota pública de metodologia para 2022–2023; revisão esperada em 2027.
+- [x] CEMPRE: integrar tabela atual 9582 (2022+) separada da histórica 993 (2006–2021); impedir interpretação da quebra de 2022 como crescimento.

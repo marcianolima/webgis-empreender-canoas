@@ -53,10 +53,11 @@ export function OfficialDashboard() {
       }).catch((err) => { if (err.name !== "AbortError") setError("Não foi possível carregar os indicadores oficiais: " + err.message); });
     return () => controller.abort();
   }, []);
-  const lastCempre = data?.cempre.at(-1);
+  const lastCempre = data?.cempreCurrent?.at(-1) ?? data?.cempre.at(-1);
+  const hasNewCempre = Boolean(data?.cempreCurrent?.length);
   const lastGdp = data?.gdp.at(-1);
   const lastPopulation = data?.population.at(-1);
-  const sections = useMemo(() => (data?.cnae || []).filter((r) => section === "all" || r.category === section), [data, section]);
+  const sections = useMemo(() => (data?.cnaeCurrent?.length ? data.cnaeCurrent : data?.cnae || []).filter((r) => section === "all" || r.category === section), [data, section]);
   const years = useMemo(() => Array.from(new Set((data?.rsBusiness || []).map((r) => r.month.slice(0, 4)))).sort((a, b) => b.localeCompare(a)), [data]);
   const selectedYear = years.includes(year) ? year : (years[0] || "");
   const rs = useMemo(() => (data?.rsBusiness || [])
@@ -68,7 +69,8 @@ export function OfficialDashboard() {
   const exportData = () => {
     if (!data) return;
     const table: (string | number)[][] = [["territorio", "fonte", "indicador", "referencia", "valor", "unidade"]];
-    data.cempre.forEach((r) => table.push(["4304606", "IBGE/CEMPRE", "empresas_ou_organizacoes", r.year, r.value, "unidades"]));
+    data.cempre.forEach((r) => table.push(["4304606", "IBGE/CEMPRE_993_SÉRIE_ANTIGA", "empresas_ou_organizacoes", r.year, r.value, "unidades"]));
+    data.cempreCurrent?.forEach((r) => table.push(["4304606", "IBGE/CEMPRE_9582_SÉRIE_NOVA", "empresas_ou_organizacoes", r.year, r.value, "unidades"]));
     data.gdp.forEach((r) => table.push(["4304606", "IBGE/PIB", "pib", r.year, r.value, "mil_reais"]));
     data.population.forEach((r) => table.push(["4304606", "IBGE/Censo", "populacao", r.year, r.value, "pessoas"]));
     data.rsBusiness.forEach((r) => table.push(["43", "JUCISRS", r.group, r.month, r.value, "registros"]));
@@ -116,29 +118,49 @@ export function OfficialDashboard() {
       <section id="canoas" className="space-y-4">
         <h2 className="flex items-center gap-2 text-xl font-bold text-ink"><Landmark size={21} className="text-brand-700"/> Panorama de Canoas</h2>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          <Card icon={<Building2 size={19}/>} label="Empresas e organizações" value={lastCempre && number.format(lastCempre.value)} note={"IBGE CEMPRE " + (lastCempre?.year ?? "—") + " · Não é o estoque atual de CNPJs."}/>
+          <Card icon={<Building2 size={19}/>} label="Empresas e organizações" value={lastCempre && number.format(lastCempre.value)} note={"IBGE CEMPRE " + (lastCempre?.year ?? "—") + (hasNewCempre ? " · Série nova (2022+)." : " · Série antiga, até 2021.") + " Não são CNPJs atuais."}/>
           <Card icon={<TrendingUp size={19}/>} label="PIB municipal" value={lastGdp && money.format(lastGdp.value * 1000)} note={"IBGE " + (lastGdp?.year ?? "—") + " · Preços correntes, unidade original em mil reais."}/>
           <Card icon={<Users size={19}/>} label="População residente" value={lastPopulation && number.format(lastPopulation.value)} note={"IBGE Censo " + (lastPopulation?.year ?? "—") + " · Contexto demográfico."}/>
         </div>
       </section>
       <div className="grid min-w-0 gap-5 lg:grid-cols-2">
-        <Panel title="Empresas e organizações no tempo" note="CEMPRE / IBGE: série municipal histórica encerrada em 2021. Não representa todas as inscrições CNPJ.">
+        <Panel title="Empresas e organizações no tempo" note="Séries separadas: 2006–2021 (tabela 993) e 2022 em diante (tabela 9582). Houve mudança metodológica em 2022; a transição não deve ser interpretada como crescimento.">
           {data?.cempre.length ? <div className="h-[280px] w-full" role="img" aria-label="Evolução anual de empresas e outras organizações de Canoas">
             <ResponsiveContainer width="100%" height="100%"><LineChart data={data.cempre} margin={{ left: 0, right: 18, bottom: 4 }}><CartesianGrid vertical={false} stroke="#e3e9ed"/><XAxis dataKey="year" tick={{ fontSize: 11 }}/><YAxis width={60} tickFormatter={(v: number) => number.format(v)} tick={{ fontSize: 10 }}/><Tooltip formatter={(v) => number.format(Number(v))}/><Line dataKey="value" name="Organizações" stroke="#0b806a" strokeWidth={3}/></LineChart></ResponsiveContainer>
           </div> : <Empty label="Aguardando dados municipais CEMPRE."/>}
-          <SourceLink href="https://sidra.ibge.gov.br/tabela/993">Fonte SIDRA / CEMPRE</SourceLink>
+          {data?.cempreCurrent?.length ? <div className="mt-5 border-t border-slate-200 pt-4">
+            <p className="mb-3 text-sm font-bold text-ink">Nova série metodológica — 2022 em diante</p>
+            <div className="h-[210px] w-full" role="img" aria-label="Nova série oficial de organizações no CEMPRE a partir de 2022">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data.cempreCurrent}>
+                  <CartesianGrid vertical={false} stroke="#e3e9ed"/>
+                  <XAxis dataKey="year" tick={{fontSize:11}}/>
+                  <YAxis width={60} tick={{fontSize:10}} tickFormatter={(v:number)=>number.format(v)}/>
+                  <Tooltip formatter={(v)=>number.format(Number(v))}/>
+                  <Line dataKey="value" name="Organizações · nova série" stroke="#247f96" strokeWidth={3}/>
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <SourceLink href="https://sidra.ibge.gov.br/tabela/9582">Fonte SIDRA 9582 · CEMPRE 2022+</SourceLink>
+            <p className="mt-2 text-xs text-amber-800">Quebra estatística em 2022: não calcular a variação entre 2021 e 2022.</p>
+          </div> : null}
+          <SourceLink href="https://sidra.ibge.gov.br/tabela/993">Fonte histórica SIDRA 993</SourceLink>
         </Panel>
-        <Panel title="Evolução do PIB municipal" note="PIB a preços correntes, em bilhões de reais. Não corrigido pela inflação.">
+        <Panel title="Evolução do PIB municipal" note="PIB oficial mais recente disponível, a preços correntes, em bilhões de reais. Série nominal; não é crescimento real descontado da inflação.">
           {data?.gdp.length ? <div className="h-[280px] w-full" role="img" aria-label="Produto Interno Bruto anual de Canoas, fonte IBGE">
             <ResponsiveContainer width="100%" height="100%"><BarChart data={data.gdp.map((r) => ({year: r.year, value: r.value / 1_000_000}))} margin={{ left: -8, right: 14, bottom: 4 }}><CartesianGrid vertical={false} stroke="#e3e9ed"/><XAxis dataKey="year" tick={{ fontSize: 11 }}/><YAxis width={58} tick={{ fontSize: 11 }}/><Tooltip formatter={(v) => money.format(Number(v)) + " bilhões"}/><Bar dataKey="value" name="PIB" fill="#0b806a" radius={[5, 5, 0, 0]}/></BarChart></ResponsiveContainer>
           </div> : <Empty label="Aguardando dados municipais do PIB."/>}
-          <SourceLink href="https://sidra.ibge.gov.br/tabela/5938">Fonte SIDRA / PIB</SourceLink>
+          <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
+            <strong>Aviso metodológico (IBGE):</strong> em 2022 e 2023, durante a reformulação das Contas Nacionais, foram adotados procedimentos especiais e não foi divulgada a abertura setorial tradicional do valor adicionado. A série referência 2010 será revista na nova referência 2021, prevista para 2027. Interprete comparações interanuais com ressalva; valores apresentados são nominais.
+          </p>
+          <SourceLink href="https://www.ibge.gov.br/estatisticas/economicas/contas-nacionais/9088-produto-interno-bruto-dos-municipios.html">Metodologia oficial PIB municipal · IBGE</SourceLink>
+          <span className="ml-3"><SourceLink href="https://sidra.ibge.gov.br/tabela/5938">SIDRA 5938</SourceLink></span>
         </Panel>
       </div>
-      <Panel title="Atividades econômicas por seção CNAE" note="Empresas e outras organizações do CEMPRE 2021 (histórico, não estoque cadastral atualizado).">
+      <Panel title="Atividades econômicas por seção CNAE" note="Seções CNAE do CEMPRE no último ano disponível: usa 2022+ (tabela 9582) quando disponível; caso contrário, série antiga 2021 (tabela 993). Não é estoque CNPJ mensal.">
         <label className="block max-w-md text-xs font-semibold text-slate-600">Seção CNAE
           <select value={section} onChange={(e) => setSection(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal">
-            <option value="all">Todas as seções</option>{(data?.cnae || []).map((r) => <option key={r.category} value={r.category}>{r.label}</option>)}
+            <option value="all">Todas as seções</option>{(data?.cnaeCurrent?.length ? data.cnaeCurrent : data?.cnae || []).map((r) => <option key={r.category} value={r.category}>{r.label}</option>)}
           </select>
         </label>
         {sections.length ? <div className="mt-4 grid gap-4 lg:grid-cols-2">
@@ -147,7 +169,7 @@ export function OfficialDashboard() {
           </div>
           <div className="max-h-[330px] overflow-y-auto">{sections.map((r) => <div key={r.category} className="flex justify-between gap-3 border-b border-slate-100 py-2.5 text-xs"><span className="text-slate-600">{r.label}</span><strong className="shrink-0 text-ink">{number.format(r.value)}</strong></div>)}</div>
         </div> : <div className="mt-4"><Empty label="Desagregação por CNAE indisponível: nenhum dado estimado."/></div>}
-        <SourceLink href="https://sidra.ibge.gov.br/tabela/993">Fonte SIDRA / CEMPRE</SourceLink>
+        <SourceLink href={data?.cnaeCurrent?.length ? "https://sidra.ibge.gov.br/tabela/9582" : "https://sidra.ibge.gov.br/tabela/993"}>Fonte SIDRA / CEMPRE</SourceLink>
       </Panel>
       <section id="rs" className="space-y-4">
         <h2 className="flex items-center gap-2 text-xl font-bold text-ink"><Globe2 size={21} className="text-brand-700"/> Contexto estadual — RS</h2>

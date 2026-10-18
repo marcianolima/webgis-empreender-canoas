@@ -76,6 +76,9 @@ jobs:
           assert d["municipality"]["code"]=="4304606"
           assert d["quality"]["status"] in ("ok","partial")
           assert d["cempre"] or d["gdp"] or d["population"]
+          if d.get("cempreCurrent"):
+              assert min(x["year"] for x in d["cempreCurrent"])>=2022
+              assert max(x["year"] for x in d["cempre"])<=2021
           assert all(r["territory"]=="43" for r in d["rsBusiness"]), "JUCISRS estadual classificado como municipal"
           assert all(r["value"]>=0 for r in d["rsBusiness"])
           assert (p/"data/canoas.geojson").exists(), "malha IBGE ausente"

@@ -144,6 +144,58 @@ def sidra_sections() -> list[dict]:
     return sorted(unique.values(), key=lambda x: -x["value"])
 
 
+def most_recent_year(table: int) -> int:
+    """Obtém do provedor o último ano divulgado, não usa ano fixo do software."""
+    meta = get_json(f"{IBGE}/{table}/metadados")
+    return int(meta["periodicidade"]["fim"])
+
+
+def sidra_new_cempre_sections() -> list[dict]:
+    """Seções CNAE no CEMPRE após a quebra de série em 2022."""
+    table = 9582
+    meta = get_json(f"{IBGE}/{table}/metadados")
+    year = int(meta["periodicidade"]["fim"])
+    cnae = next(
+        c for c in meta["classificacoes"]
+        if "CNAE" in c["nome"].upper() or "ATIVIDADES ECON" in c["nome"].upper()
+    )
+    categories = {str(c["id"]): c["nome"] for c in cnae["categorias"] if c.get("nivel") == 1}
+    dimensions = "%7C".join(
+        f'{c["id"]}%5B{"all" if c["id"] == cnae["id"] else "0"}%5D'
+        for c in meta["classificacoes"]
+    )
+    url = (
+        f"{IBGE}/{table}/periodos/{year}/variaveis/2585"
+        f"?localidades=N6%5B{MUNICIPIO}%5D&classificacao={dimensions}"
+    )
+    results = get_json(url)
+    values = {}
+    for var in results:
+        if str(var.get("id")) != "2585":
+            continue
+        for result in var.get("resultados", []):
+            dimension = next(
+                (d for d in result.get("classificacoes", []) if str(d["id"]) == str(cnae["id"])), None
+            )
+            if not dimension:
+                continue
+            for category in dimension.get("categoria", {}):
+                if category not in categories:
+                    continue
+                for location in result.get("series", []):
+                    if str(location.get("localidade", {}).get("id")) != MUNICIPIO:
+                        continue
+                    value = numeric(location.get("serie", {}).get(str(year), ""))
+                    if value is not None:
+                        values[category] = {
+                            "category": category, "label": categories[category],
+                            "value": value, "year": year,
+                        }
+    if not values:
+        raise ValueError("CEMPRE 9582 não disponibilizou seções CNAE para Canoas")
+    return sorted(values.values(), key=lambda x: -x["value"])
+
+
 def normalize(text: str):
     value = unicodedata.normalize("NFKD", text.strip().upper())
     return "".join(c for c in value if not unicodedata.combining(c))
@@ -246,11 +298,16 @@ def collect() -> tuple[dict, dict | None]:
         "sources": [],
         "cempre": [],
         "cnae": [],
+        "cempreCurrent": [],
+        "cnaeCurrent": [],
         "gdp": [],
         "population": [],
         "rsBusiness": [],
         "quality": {"status": "partial", "errors": [], "notes": [
-            "O CEMPRE é anual e possui universo diferente do CNPJ. Série municipal da tabela 993 encerrada em 2021.",
+            "CEMPRE 993 encerrou em 2021; CEMPRE 9582 constitui NOVA SÉRIE desde 2022. Há quebra metodológica: não calcular variação 2021–2022.",
+            "CEMPRE não inclui MEIs no conjunto estatístico atual; não confundir com o estoque de CNPJs.",
+            "PIB municipal 2022–2023: dados divulgados com procedimentos especiais durante reformulação das contas nacionais, referência 2010; revisão prevista em 2027 (ano-base 2021).",
+            "PIB a preços correntes não é crescimento econômico real, pois não desconta inflação.",
             "Dados de registros JUCISRS são totais do estado do RS, não de Canoas.",
             "Não há pontos geocodificados de estabelecimentos; nenhum ponto é simulado.",
         ]},
@@ -277,9 +334,21 @@ def collect() -> tuple[dict, dict | None]:
     pull("IBGE CNAE CEMPRE", sidra_sections, "cnae",
          {"name": "IBGE / CEMPRE - seções CNAE", "url": "https://sidra.ibge.gov.br/tabela/993",
           "reference": "2021", "territory": MUNICIPIO})
-    pull("IBGE PIB Canoas", lambda: sidra_series(5938, 37, list(range(2018, 2024))),
+    pull("IBGE CEMPRE série nova (2022+)", lambda: sidra_series(
+        9582, 2585, list(range(2022, most_recent_year(9582) + 1))),
+        "cempreCurrent", {"name": "IBGE CEMPRE nova série a partir de 2022",
+        "url": "https://sidra.ibge.gov.br/tabela/9582",
+        "reference": "2022–último ano publicado, metodologia nova",
+        "territory": MUNICIPIO})
+    pull("IBGE CNAE CEMPRE série nova", sidra_new_cempre_sections,
+         "cnaeCurrent", {"name": "IBGE CEMPRE seções CNAE nova série",
+         "url": "https://sidra.ibge.gov.br/tabela/9582",
+         "reference": "último ano publicado; não comparar com série 993",
+         "territory": MUNICIPIO})
+    pull("IBGE PIB Canoas", lambda: sidra_series(
+        5938, 37, list(range(2010, most_recent_year(5938) + 1))),
          "gdp", {"name": "IBGE / PIB dos Municípios (mil R$)", "url": "https://sidra.ibge.gov.br/tabela/5938",
-                 "reference": "2018–2023", "territory": MUNICIPIO})
+                 "reference": "2010–último ano publicado (revisões e ressalvas 2022–2023)", "territory": MUNICIPIO})
     pull("IBGE Censo Canoas", lambda: sidra_series(4714, 93, [2022]),
          "population", {"name": "IBGE / Censo Demográfico 2022", "url": "https://sidra.ibge.gov.br/tabela/4714",
                         "reference": "2022", "territory": MUNICIPIO})
@@ -330,6 +399,8 @@ def main() -> int:
         "status": data["quality"]["status"],
         "municipio": MUNICIPIO,
         "cempre": data["cempre"],
+        "cempreCurrent": data["cempreCurrent"],
+        "cnaeCurrent": len(data["cnaeCurrent"]),
         "gdp": data["gdp"],
         "population": data["population"],
         "cnae_sections": len(data["cnae"]),

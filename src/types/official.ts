@@ -8,6 +8,8 @@ export type OfficialEconomy = {
   municipality: { code: "4304606"; name: string; state: "RS" };
   sources: DataSource[];
   cempre: AnnualObservation[];
+  cempreCurrent?: AnnualObservation[];
+  cnaeCurrent?: CnaeObservation[];
   cnae: CnaeObservation[];
   gdp: AnnualObservation[];
   population: AnnualObservation[];
