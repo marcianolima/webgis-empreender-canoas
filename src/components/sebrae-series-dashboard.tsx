@@ -48,12 +48,14 @@ function periods(row:SeriesRow,axis:string):string{
 }
 function safeCsv(value:unknown):string{
  const text=String(value??"");
- const protectedText=/^[=+\-@\t\r]/.test(text)?"'"+text:text;
+ const numeric=/^[+-]?(?:\d+(?:\.\d+)?|\d{1,3}(?:\.\d{3})+(?:,\d+)?)$/.test(text);
+ const protectedText=!numeric&&/^[=+\-@\t\r]/.test(text)?"'"+text:text;
  return '"'+protectedText.replaceAll('"','""')+'"';
 }
 function saveCsv(dataset:SebraeSeriesDataset,rows:SeriesRow[]){
- const columns=[...dataset.dimensions,...(dataset.measures||[])];
- const body="\ufeff"+[columns,...rows.map(r=>columns.map(k=>String(r[k]??"")))]
+ const columns=["municipio_ibge","cubo","filtros_fixos","data_coleta",...dataset.dimensions,...(dataset.measures||[])];
+ const preface=["4304606",dataset.cube,JSON.stringify(dataset.filters),dataset.lastSuccessAt||""];
+ const body="\ufeff"+[columns,...rows.map(r=>[...preface,...dataset.dimensions.map(k=>String(r[k]??"")),...(dataset.measures||[]).map(k=>String(r[k]??""))])]
    .map(row=>row.map(safeCsv).join(";")).join("\r\n");
  const url=URL.createObjectURL(new Blob([body],{type:"text/csv;charset=utf-8"}));
  const a=document.createElement("a");a.href=url;a.download="canoas-sebrae-"+dataset.id+".csv";
