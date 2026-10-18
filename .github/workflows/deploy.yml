@@ -43,6 +43,14 @@ jobs:
           else
             echo "Fonte indisponível; mantendo snapshot real ou situação sem dados"
           fi
+      - name: Coletar exportações e emprego formal DEE/DataRS (Canoas)
+        timeout-minutes: 2
+        run: |
+          if timeout 95s python scripts/collect_dee.py; then
+            echo "DEE/DataRS municipal verificado"
+          else
+            echo "DataRS indisponível; preservando última fotografia real ou estado sem dados"
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -77,6 +85,9 @@ jobs:
           sectors=json.loads((p/"data/sectors.json").read_text())
           assert sectors["territory"]=="4304606"
           assert all(r["territory"]=="4304606" for r in sectors["observations"])
+          dee=json.loads((p/"data/dee.json").read_text())
+          assert dee["territory"]=="4304606"
+          assert all(r["territory"]=="4304606" for r in dee["observations"])
           print("Dados:",len(d["cempre"]),"CEMPRE,",len(d["gdp"]),"PIB,",len(d["cnae"]),"CNAE,",len(d["rsBusiness"]),"meses RS")
           PY
           touch out/.nojekyll

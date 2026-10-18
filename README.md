@@ -64,3 +64,7 @@ Código sob [MIT](LICENSE). As bases públicas e os tiles externos mantêm condi
 - **DEE/BI Setorial, DataRS, RS em Dados, DataSebrae, Sebrae, InvestCanoas**: catálogo atualizado com links para os painéis temáticos; números só entram na base própria quando a exportação está licenciada e conferida.
 
 A rotina volumosa da Receita é separada do deploy estático e roda mensalmente no GitHub Actions. A fotografia anterior continua disponível se qualquer fragmento falhar; nunca apresentar 1 ou 9 partes como se fossem 10.
+
+### DEE/DataRS: indicadores municipais já integrados ao código
+
+A rota `/trabalho` utiliza o coletor `scripts/collect_dee.py` e os arquivos CSV oficiais [Exportações — Total](https://data.rs.gov.br/download/dee-4949.csv) e [Emprego — Número de Vínculos Empregatícios](https://data.rs.gov.br/download/dee-5483.csv). O filtro usa exatamente o código IBGE **4304606** e exige cobertura municipal no conjunto antes de disponibilizar valores. A unidade de exportação é US$ FOB; a unidade do emprego são vínculos formais (não pessoas únicas). Sem inferência de anos indisponíveis.

@@ -54,3 +54,6 @@
 - [ ] Importar dados municipais de tempo de abertura REDESIM mediante exportação oficial estruturada.
 - [ ] Adicionar exportações e emprego municipal do DEE após validação do esquema do CSV.
 - [ ] Homologar geocodificação e privacidade para pontos reais.
+
+- [x] Criar importador DEE/DataRS com filtro IBGE Canoas, validação de 450+ municípios, valores anuais e unidades oficiais.
+- [x] Adicionar página de trabalho e exportações e importação no deploy GitHub Pages.
