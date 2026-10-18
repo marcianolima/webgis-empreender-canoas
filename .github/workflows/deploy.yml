@@ -23,25 +23,15 @@ jobs:
           python-version: "3.12"
       - name: Testar coletores Python
         run: python -m unittest discover -s tests -v
-      - name: Atualizar conjunto oficial com preservação do último snapshot validado
-        if: github.event_name != 'push'
+      - name: Atualizar dados oficiais; preservar snapshot anterior se falhar
         timeout-minutes: 6
         run: |
           cp public/data/official.json /tmp/official-verified.json
           cp public/data/canoas.geojson /tmp/canoas-verified.geojson
-          if timeout 250s python scripts/collect_official.py; then
-            python - <<'PY'
-          import json
-          from pathlib import Path
-          p=Path("public/data/official.json")
-          data=json.loads(p.read_text())
-          assert data["municipality"]["code"]=="4304606"
-          assert data["cempre"] or data["gdp"] or data["population"]
-          assert Path("public/data/canoas.geojson").exists()
-          print("Atualização validada",data["quality"]["status"])
-          PY
+          if timeout 240s python scripts/collect_official.py && python -c 'import json; from pathlib import Path; d=json.loads(Path("public/data/official.json").read_text()); assert d["municipality"]["code"]=="4304606"; assert len(d["cempre"])>0 and len(d["gdp"])>0 and len(d["population"])>0; assert Path("public/data/canoas.geojson").exists(); assert all(r["territory"]=="43" for r in d["rsBusiness"])'; then
+            echo "Nova coleta oficial validada e selecionada para publicação"
           else
-            echo "Coleta externa indisponível: mantendo dados verificados anteriores"
+            echo "Fonte indisponível ou validação falhou; preservando snapshot real verificado"
             cp /tmp/official-verified.json public/data/official.json
             cp /tmp/canoas-verified.geojson public/data/canoas.geojson
           fi

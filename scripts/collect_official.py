@@ -47,7 +47,7 @@ def download(url: str, *, retries: int = 1, max_bytes: int = 8_000_000) -> bytes
     for attempt in range(retries + 1):
         try:
             request = urllib.request.Request(url, headers={
-                "User-Agent": "CanoasEmpreende/1.0 (dados públicos agregados)",
+                "User-Agent": "Mozilla/5.0 (CanoasEmpreende/0.2)",
                 "Accept": "application/json,text/csv,*/*",
                 "Accept-Encoding": "identity",
             })
