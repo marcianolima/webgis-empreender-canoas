@@ -72,3 +72,12 @@ A rota `/trabalho` utiliza o coletor `scripts/collect_dee.py` e os arquivos CSV 
 ### REDESIM e Mapa de Empresas
 
 A rota `/redesim` é exclusiva para séries de tempo de abertura, viabilidade, registro e formalização, com proveniência. A entrada é o CSV agregado validado por `scripts/import_external_indicators.py`, com `fonte=mapa_empresas` ou `fonte=redesim_jucisrs` e `territorio=4304606`. Como não foi confirmada uma API de extração pública livre de autenticação para os indicadores municipais processuais, nenhum prazo é gerado ou estimado. Ver [orientações oficiais](https://www.gov.br/empresas-e-negocios/pt-br/mapa-de-empresas/painel-mapa-de-empresas) e [JucisRS](https://www.redesim.rs.gov.br/). Há quebra de metodologia de tempos a partir de dezembro/2025.
+
+## Política de atualidade e continuidade histórica (2026-10)
+
+- **Última competência oficial** por série: SIDRA usa o ano final de seus metadados; fontes mensais MDIC, MTE e Receita dependem da publicação/carga oficial confirmada.
+- **CEMPRE**: tabela 993 (2006–2021) e tabela 9582 (2022–2024) são séries independentes; quebra em 2022 — não calcular variação cruzando a quebra.
+- **PIB**: tabela 5938 (desde 2002), último ano oficial 2023. Os resultados de 2022–2023 exigem nota do IBGE sobre procedimentos especiais e revisão futura da base 2010 para 2021 em 2027. Valores nominais não equivalem a crescimento real.
+- **População**: Censo 2022 preservado; estimativa anual 2026 por tabela IBGE 6579. Não misturar estimativa e recenseamento em taxas como se fossem mesmo levantamento.
+- **Novas fontes prioritárias**: MDIC/Comex Stat 2026-09, MTE/Novo Caged 2026-08, IDESE Revisão 2026 (dados 2022–2024), BNDES desembolsos por município, BCB/ESTBAN.
+- **Garantia:** toda atualização deve preservar o histórico anterior e registrar ano/período de referência, fonte, unidade e ressalvas de série, sem imputar zeros.

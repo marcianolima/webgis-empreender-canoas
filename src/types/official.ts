@@ -13,6 +13,7 @@ export type OfficialEconomy = {
   cnae: CnaeObservation[];
   gdp: AnnualObservation[];
   population: AnnualObservation[];
+  populationEstimate?: AnnualObservation[];
   rsBusiness: RsObservation[];
   quality: { status: "not_collected" | "ok" | "partial" | "unavailable"; errors: string[]; notes: string[] };
 };

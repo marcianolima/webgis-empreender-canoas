@@ -56,7 +56,9 @@ export function OfficialDashboard() {
   const lastCempre = data?.cempreCurrent?.at(-1) ?? data?.cempre.at(-1);
   const hasNewCempre = Boolean(data?.cempreCurrent?.length);
   const lastGdp = data?.gdp.at(-1);
-  const lastPopulation = data?.population.at(-1);
+  const lastPopulation = data?.populationEstimate?.at(-1) ?? data?.population.at(-1);
+  const hasPopulationEstimate = Boolean(data?.populationEstimate?.length);
+  const censusPopulation = data?.population.at(-1);
   const sections = useMemo(() => (data?.cnaeCurrent?.length ? data.cnaeCurrent : data?.cnae || []).filter((r) => section === "all" || r.category === section), [data, section]);
   const years = useMemo(() => Array.from(new Set((data?.rsBusiness || []).map((r) => r.month.slice(0, 4)))).sort((a, b) => b.localeCompare(a)), [data]);
   const selectedYear = years.includes(year) ? year : (years[0] || "");
@@ -72,7 +74,8 @@ export function OfficialDashboard() {
     data.cempre.forEach((r) => table.push(["4304606", "IBGE/CEMPRE_993_SÉRIE_ANTIGA", "empresas_ou_organizacoes", r.year, r.value, "unidades"]));
     data.cempreCurrent?.forEach((r) => table.push(["4304606", "IBGE/CEMPRE_9582_SÉRIE_NOVA", "empresas_ou_organizacoes", r.year, r.value, "unidades"]));
     data.gdp.forEach((r) => table.push(["4304606", "IBGE/PIB", "pib", r.year, r.value, "mil_reais"]));
-    data.population.forEach((r) => table.push(["4304606", "IBGE/Censo", "populacao", r.year, r.value, "pessoas"]));
+    data.population.forEach((r) => table.push(["4304606", "IBGE/Censo_2022", "populacao_censitaria", r.year, r.value, "pessoas"]));
+    data.populationEstimate?.forEach((r) => table.push(["4304606", "IBGE/ESTIMATIVA_6579", "populacao_estimada", r.year, r.value, "pessoas"]));
     data.rsBusiness.forEach((r) => table.push(["43", "JUCISRS", r.group, r.month, r.value, "registros"]));
     const csv = "\ufeff" + table.map((r) => r.map((v) => '"' + String(v).replaceAll('"', '""') + '"').join(";")).join("\r\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
@@ -120,13 +123,13 @@ export function OfficialDashboard() {
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <Card icon={<Building2 size={19}/>} label="Empresas e organizações" value={lastCempre && number.format(lastCempre.value)} note={"IBGE CEMPRE " + (lastCempre?.year ?? "—") + (hasNewCempre ? " · Série nova (2022+)." : " · Série antiga, até 2021.") + " Não são CNPJs atuais."}/>
           <Card icon={<TrendingUp size={19}/>} label="PIB municipal" value={lastGdp && money.format(lastGdp.value * 1000)} note={"IBGE " + (lastGdp?.year ?? "—") + " · Preços correntes, unidade original em mil reais."}/>
-          <Card icon={<Users size={19}/>} label="População residente" value={lastPopulation && number.format(lastPopulation.value)} note={"IBGE Censo " + (lastPopulation?.year ?? "—") + " · Contexto demográfico."}/>
+          <Card icon={<Users size={19}/>} label={hasPopulationEstimate ? "População estimada" : "População residente"} value={lastPopulation && number.format(lastPopulation.value)} note={"IBGE " + (hasPopulationEstimate ? "Estimativa" : "Censo") + " " + (lastPopulation?.year ?? "—") + ". " + (hasPopulationEstimate ? "Estimativa anual, não contagem censitária. Censo 2022: " + (censusPopulation ? number.format(censusPopulation.value) : "N/D") + "." : "Contagem censitária, distinta de estimativas.")}/>
         </div>
       </section>
       <div className="grid min-w-0 gap-5 lg:grid-cols-2">
         <Panel title="Empresas e organizações no tempo" note="Séries separadas: 2006–2021 (tabela 993) e 2022 em diante (tabela 9582). Houve mudança metodológica em 2022; a transição não deve ser interpretada como crescimento.">
           {data?.cempre.length ? <div className="h-[280px] w-full" role="img" aria-label="Evolução anual de empresas e outras organizações de Canoas">
-            <ResponsiveContainer width="100%" height="100%"><LineChart data={data.cempre} margin={{ left: 0, right: 18, bottom: 4 }}><CartesianGrid vertical={false} stroke="#e3e9ed"/><XAxis dataKey="year" tick={{ fontSize: 11 }}/><YAxis width={60} tickFormatter={(v: number) => number.format(v)} tick={{ fontSize: 10 }}/><Tooltip formatter={(v) => number.format(Number(v))}/><Line dataKey="value" name="Organizações" stroke="#0b806a" strokeWidth={3}/></LineChart></ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%"><LineChart data={data.cempre} margin={{ left: 0, right: 18, bottom: 4 }}><CartesianGrid vertical={false} stroke="#e3e9ed"/><XAxis dataKey="year" tick={{ fontSize: 11 }} minTickGap={18}/><YAxis width={60} tickFormatter={(v: number) => number.format(v)} tick={{ fontSize: 10 }}/><Tooltip formatter={(v) => number.format(Number(v))}/><Line dataKey="value" name="Organizações" stroke="#0b806a" strokeWidth={3}/></LineChart></ResponsiveContainer>
           </div> : <Empty label="Aguardando dados municipais CEMPRE."/>}
           {data?.cempreCurrent?.length ? <div className="mt-5 border-t border-slate-200 pt-4">
             <p className="mb-3 text-sm font-bold text-ink">Nova série metodológica — 2022 em diante</p>
@@ -148,7 +151,7 @@ export function OfficialDashboard() {
         </Panel>
         <Panel title="Evolução do PIB municipal" note="PIB oficial mais recente disponível, a preços correntes, em bilhões de reais. Série nominal; não é crescimento real descontado da inflação.">
           {data?.gdp.length ? <div className="h-[280px] w-full" role="img" aria-label="Produto Interno Bruto anual de Canoas, fonte IBGE">
-            <ResponsiveContainer width="100%" height="100%"><BarChart data={data.gdp.map((r) => ({year: r.year, value: r.value / 1_000_000}))} margin={{ left: -8, right: 14, bottom: 4 }}><CartesianGrid vertical={false} stroke="#e3e9ed"/><XAxis dataKey="year" tick={{ fontSize: 11 }}/><YAxis width={58} tick={{ fontSize: 11 }}/><Tooltip formatter={(v) => money.format(Number(v)) + " bilhões"}/><Bar dataKey="value" name="PIB" fill="#0b806a" radius={[5, 5, 0, 0]}/></BarChart></ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%"><BarChart data={data.gdp.map((r) => ({year: r.year, value: r.value / 1_000_000}))} margin={{ left: -8, right: 14, bottom: 4 }}><CartesianGrid vertical={false} stroke="#e3e9ed"/><XAxis dataKey="year" tick={{ fontSize: 11 }} minTickGap={18}/><YAxis width={58} tick={{ fontSize: 11 }}/><Tooltip formatter={(v) => money.format(Number(v)) + " bilhões"}/><Bar dataKey="value" name="PIB" fill="#0b806a" radius={[5, 5, 0, 0]}/></BarChart></ResponsiveContainer>
           </div> : <Empty label="Aguardando dados municipais do PIB."/>}
           <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
             <strong>Aviso metodológico (IBGE):</strong> em 2022 e 2023, durante a reformulação das Contas Nacionais, foram adotados procedimentos especiais e não foi divulgada a abertura setorial tradicional do valor adicionado. A série referência 2010 será revista na nova referência 2021, prevista para 2027. Interprete comparações interanuais com ressalva; valores apresentados são nominais.

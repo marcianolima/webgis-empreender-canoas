@@ -60,3 +60,10 @@
 
 - [x] PIB: último ano obtido via metadados oficiais da tabela SIDRA 5938, série histórica longa e nota pública de metodologia para 2022–2023; revisão esperada em 2027.
 - [x] CEMPRE: integrar tabela atual 9582 (2022+) separada da histórica 993 (2006–2021); impedir interpretação da quebra de 2022 como crescimento.
+
+- [x] Adicionada estimativa populacional IBGE/SIDRA 6579 até 2026 em série própria, sem substituir a série censitária 2022.
+- [x] Ampliado histórico CEMPRE antiga série desde 2006, PIB desde 2002 e JUCISRS desde 2023 (conforme cobertura disponível).
+- [ ] Integrar Comex Stat/MDIC mensal por município (até setembro/2026 verificado); manter série DEE 2010–2023 como histórico separado.
+- [ ] Integrar Novo Caged do MTE (até agosto/2026 verificado); manter RAIS/DEE 2022–2023 como estoque de vínculos histórico.
+- [ ] Integrar IDESE Revisão 2026 (série 2022–2024) para comparativos Canoas × RS × municípios.
+- [ ] Integrar BNDES desembolsos municipais e Banco Central ESTBAN em abas financeiras.

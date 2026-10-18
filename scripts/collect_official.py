@@ -275,7 +275,7 @@ def collect_rs(group: str, slug: str) -> list[dict]:
         resources.append((int(match.group(1)), url))
     # Recursos de 2023 em diante, sem supor periodicidade completa.
     output = []
-    for year, url in sorted(resources)[-2:]:
+    for year, url in sorted(resources):
         output.extend(parse_rs_csv(download(url), year, group, url))
     return sorted(output, key=lambda x: x["month"])
 
@@ -302,12 +302,16 @@ def collect() -> tuple[dict, dict | None]:
         "cnaeCurrent": [],
         "gdp": [],
         "population": [],
+        "populationEstimate": [],
         "rsBusiness": [],
         "quality": {"status": "partial", "errors": [], "notes": [
             "CEMPRE 993 encerrou em 2021; CEMPRE 9582 constitui NOVA SÉRIE desde 2022. Há quebra metodológica: não calcular variação 2021–2022.",
             "CEMPRE não inclui MEIs no conjunto estatístico atual; não confundir com o estoque de CNPJs.",
             "PIB municipal 2022–2023: dados divulgados com procedimentos especiais durante reformulação das contas nacionais, referência 2010; revisão prevista em 2027 (ano-base 2021).",
             "PIB a preços correntes não é crescimento econômico real, pois não desconta inflação.",
+            "Estimativas anuais populacionais (SIDRA 6579) não equivalem à contagem censitária de 2022; não unir em uma série sem anotação.",
+            "Os anos 2022 e 2023 não possuem estimativas na tabela 6579; não interpolar.",
+
             "Dados de registros JUCISRS são totais do estado do RS, não de Canoas.",
             "Não há pontos geocodificados de estabelecimentos; nenhum ponto é simulado.",
         ]},
@@ -327,9 +331,9 @@ def collect() -> tuple[dict, dict | None]:
             data["quality"]["errors"].append(msg)
             print("AVISO", msg, flush=True)
 
-    pull("IBGE CEMPRE Canoas", lambda: sidra_series(993, 2585, list(range(2016, 2022))),
+    pull("IBGE CEMPRE Canoas", lambda: sidra_series(993, 2585, list(range(2006, 2022))),
          "cempre", {"name": "IBGE / CEMPRE - empresas e outras organizações",
-                    "url": "https://sidra.ibge.gov.br/tabela/993", "reference": "2016–2021",
+                    "url": "https://sidra.ibge.gov.br/tabela/993", "reference": "2006–2021",
                     "territory": MUNICIPIO})
     pull("IBGE CNAE CEMPRE", sidra_sections, "cnae",
          {"name": "IBGE / CEMPRE - seções CNAE", "url": "https://sidra.ibge.gov.br/tabela/993",
@@ -346,9 +350,15 @@ def collect() -> tuple[dict, dict | None]:
          "reference": "último ano publicado; não comparar com série 993",
          "territory": MUNICIPIO})
     pull("IBGE PIB Canoas", lambda: sidra_series(
-        5938, 37, list(range(2010, most_recent_year(5938) + 1))),
+        5938, 37, list(range(2002, most_recent_year(5938) + 1))),
          "gdp", {"name": "IBGE / PIB dos Municípios (mil R$)", "url": "https://sidra.ibge.gov.br/tabela/5938",
-                 "reference": "2010–último ano publicado (revisões e ressalvas 2022–2023)", "territory": MUNICIPIO})
+                 "reference": "2002–último ano publicado (ressalvas 2022–2023)", "territory": MUNICIPIO})
+    pull("IBGE estimativa populacional Canoas", lambda: sidra_series(
+        6579, 9324, [y for y in range(2024, most_recent_year(6579) + 1)]),
+        "populationEstimate", {"name": "IBGE / Estimativas de População — diferente do Censo",
+        "url": "https://sidra.ibge.gov.br/tabela/6579",
+        "reference": "2024–último ano publicado (estimativa, não contagem censitária)",
+        "territory": MUNICIPIO})
     pull("IBGE Censo Canoas", lambda: sidra_series(4714, 93, [2022]),
          "population", {"name": "IBGE / Censo Demográfico 2022", "url": "https://sidra.ibge.gov.br/tabela/4714",
                         "reference": "2022", "territory": MUNICIPIO})
@@ -403,6 +413,7 @@ def main() -> int:
         "cnaeCurrent": len(data["cnaeCurrent"]),
         "gdp": data["gdp"],
         "population": data["population"],
+        "populationEstimate": data["populationEstimate"],
         "cnae_sections": len(data["cnae"]),
         "rs_months": len(data["rsBusiness"]),
         "errors": data["quality"]["errors"],
