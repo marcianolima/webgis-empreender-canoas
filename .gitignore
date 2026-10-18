@@ -1,0 +1,40 @@
+# Node / Next
+node_modules/
+.next/
+out/
+.vercel/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+yarn-error.log*
+
+# local configuration
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# CNPJ archives, intermediate datasets & caches
+data/raw/**
+data/processed/**
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+*.duckdb
+*.duckdb.wal
+*.sqlite
+*.sqlite3
+*.parquet
+*.zip
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
