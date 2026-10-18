@@ -98,7 +98,7 @@ export const EXTERNAL_SOURCES: {
     description: "Conjuntos abertos CSV, incluindo estatísticas da JUCISRS e indicadores econômicos do DEE.",
     purpose: "Agregar séries estaduais e municipais com licenças e metodologias explícitas.",
     approach: "Preferir CSV/licença do conjunto de dados e API CKAN quando aplicável.",
-  },,
+  },
   {
     id: "dee_agronegocio", name: "Agronegócio", organization: "DEE / Governo do RS",
     url: "https://bi.dee.rs.gov.br/agronegocio/", description: "Painel temático de indicadores do agronegócio e atividades relacionadas.",
