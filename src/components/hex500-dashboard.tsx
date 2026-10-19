@@ -196,7 +196,7 @@ export function Hex500Dashboard(){
       {id:"selected-hex",type:"line",source:"grid","source-layer":"hex500",
        filter:["==",["get","cell"],"____"],
        paint:{"line-color":"#de6f17","line-width":3}},
-     ]},;
+     ]};
    map=new maplibregl.Map({
     container:canvas.current!,
     center:[-51.19,-29.914],zoom:11.2,minZoom:9,maxZoom:16,
