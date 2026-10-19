@@ -365,7 +365,23 @@ export function Hex500Dashboard(){
      </select>
     </label>
    </section>
-   {bairro!=="all"&&<p className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900"><LocateFixed className="mt-0.5 shrink-0" size={15}/> <span>Bairro <strong>{bairro}</strong>: {num.format(visibleCells.length)} hexágonos associados pelo ponto representativo à geometria oficial. Células que cruzam limites não foram subdivididas: esta seleção é exploratória e não substitui o total cadastral por bairro. Perímetros dos núcleos municipais ficam ocultos durante o recorte.</span></p>}
+   {bairro!=="all"&&<section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
+    <h2 className="flex items-center gap-2 text-sm font-bold"><LocateFixed size={16}/> Diagnóstico geométrico · {bairro}</h2>
+    {hasOverlay&&neighborhoodStats?<>
+     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {[
+       ["Endereços CNEFE no bairro",fmt(neighborhoodStats.observedAddresses),"Contagem direta das coordenadas observadas"],
+       ["Densidade por km²",fmt(neighborhoodStats.observedPerKm2),"Território completo, inclusive áreas não urbanizadas"],
+       ["Hexágonos integralmente contidos",num.format(neighborhoodStats.fullCells),"Contagens atribuíveis sem rateio"],
+       ["Fragmentos de divisa",num.format(neighborhoodStats.borderFragments),"Geometria, sem repartir observações"],
+      ].map(([label,val,note])=><div key={label} className="rounded-xl bg-slate-50 p-3">
+       <p className="text-xs font-semibold text-slate-600">{label}</p>
+       <p className="mt-1 text-lg font-extrabold tabular-nums">{val}</p>
+       <p className="text-[11px] leading-relaxed text-slate-500">{note}</p></div>)}
+     </div>
+     <p className="text-xs leading-relaxed text-slate-600">Área oficial: {fmt(neighborhoodStats.areaKm2)} km². Interseções calculadas em EPSG:31982. <strong>Partes de divisa aparecem em bege</strong> sem receber as contagens de todo o hexágono. CNPJs publicados em células integralmente contidas: {fmt(neighborhoodStats.cnpjPublishedFullCells)}, em {num.format(neighborhoodStats.cnpjCellsPublished)} células publicáveis. Esse subtotal abrange somente o subconjunto geocodificado e não o universo empresarial do bairro.</p>
+    </>:<p className="text-xs text-amber-900">O PMTiles ainda não inclui as interseções: permanece a seleção exploratória pelo ponto representativo das células.</p>}
+   </section>
    {!!data.economicHotspots?.length&&<section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
      <div className="flex flex-wrap items-center justify-between gap-3">
       <div><h2 className="text-sm font-bold text-amber-900">Núcleos contíguos de concentração empresarial</h2>
@@ -392,6 +408,7 @@ export function Hex500Dashboard(){
      </div>
      {mode==="hex"?<div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-700" aria-label={"Legenda quantitativa: "+metricLabel}>
        <span className="inline-flex items-center gap-1"><span className="h-3 w-4 rounded bg-slate-200"/> N/D ou suprimido (1–4)</span>
+       {bairro!=="all"&&hasOverlay&&<span className="inline-flex items-center gap-1"><span className="h-3 w-4 rounded bg-[#f0d5a8]"/> Divisa · sem rateio</span>}
        {bands.map((band,i)=><span key={i} className="inline-flex items-center gap-1"><span className="h-3 w-4 rounded" style={{backgroundColor:band.color}}/>{band.label}</span>)}
       </div>:<p className="mt-3 text-xs leading-relaxed text-amber-900">O calor usa os <strong>centros dos hexágonos ponderados</strong> {metric==="n"&&data.heatMetricsVersion!==2?"pelas coordenadas de maior qualidade (arquivo cartográfico anterior)":"pelas contagens publicáveis da variável selecionada"}; esses centros não são localizações individuais de empresas ou endereços. É uma superfície suavizada de intensidade espacial.</p>}
      {metric==="d_km2"&&<p className="mt-3 text-xs text-slate-600">A taxa por km² é representada somente no mapa coroplético: a interpolação entre células distorceria o denominador territorial.</p>}
@@ -401,6 +418,7 @@ export function Hex500Dashboard(){
     <aside className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
      <h2 className="font-bold">Células mais concentradas</h2><p className="mt-1 text-xs text-slate-500">{num.format(ranking.length)} hexágonos com valor publicável na variável selecionada{bairro!=="all"?" · "+bairro:""}.</p>
      <label className="mt-3 flex items-center gap-2 rounded-lg border border-slate-200 px-2.5 py-2"><Search size={15}/><input value={search} onChange={e=>setSearch(e.target.value)} className="min-w-0 flex-1 text-xs outline-none" placeholder="Filtrar identificador de grade" aria-label="Filtrar hexágonos"/></label>
+     {hasOverlay&&bairro!=="all"&&<p className="mt-2 text-xs text-slate-500">Ranking exclusivo dos hexágonos totalmente contidos no bairro; células que cruzam divisas não possuem contagens territorializadas.</p>}
      <div className="mt-3 max-h-[495px] space-y-1 overflow-auto">
       {ranking.filter(c=>c.cell.toLowerCase().includes(search.toLowerCase())).slice(0,120).map((c,i)=><button key={c.cell} onClick={()=>{setSelected(c.cell);mapRef.current?.flyTo({center:[c.lon,c.lat],zoom:14.2})}}
         className={"flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-left "+(selected===c.cell?"border-brand-600 bg-brand-50":"border-slate-100 bg-slate-50 hover:border-brand-200")}>
