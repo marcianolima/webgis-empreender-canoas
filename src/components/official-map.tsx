@@ -3,6 +3,7 @@
 import {useEffect,useRef,useState} from "react";
 import maplibregl,{LngLatBounds,type Map} from "maplibre-gl";
 import {PMTiles,Protocol,type Source} from "pmtiles";
+import {OPENFREEMAP_POSITRON,installCanoasOverlays} from "@/lib/openfreemap-basemap";
 import {ExternalLink,MapPinned} from "lucide-react";
 
 const prefix=process.env.NEXT_PUBLIC_BASE_PATH||"";
@@ -52,31 +53,33 @@ export default function OfficialMap(){
     protocol.add(archive);
     maplibregl.addProtocol("pmtiles",protocol.tile);
     registered=true;
-    map=new maplibregl.Map({
-     container:container.current!,
-     center:[-51.175,-29.917],zoom:11,minZoom:8,maxZoom:18,
-     style:{version:8,glyphs:"https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+    const overlayStyle:maplibregl.StyleSpecification={version:8,glyphs:"https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
       sources:{
-       osm:{type:"raster",tiles:["https://basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"],tileSize:256,attribution:"© OpenStreetMap contributors · © CARTO"},
+       
        bairros:{type:"vector",url:"pmtiles://"+url,attribution:"Bairros oficiais © GeoCanoas · Prefeitura de Canoas"},
        rotulos:{type:"geojson",data:prefix+"/data/bairros-rotulos.geojson"}
       },
       layers:[
-       {id:"osm",type:"raster",source:"osm"},
+       
        {id:"bairros-area",type:"fill",source:"bairros","source-layer":"bairros",
         paint:{"fill-color":"#0c806b","fill-opacity":.16}},
        {id:"bairros-border",type:"line",source:"bairros","source-layer":"bairros",
         paint:{"line-color":"#086a58","line-width":1.6}},
        {id:"bairros-labels",type:"symbol",source:"rotulos",
-        layout:{"text-field":["get","bairro"],"text-size":11,"text-font":["Open Sans Regular","Arial Unicode MS Regular"],"text-max-width":10},
+        layout:{"text-field":["get","bairro"],"text-size":11,"text-font":["Noto Sans Regular"],"text-max-width":10},
         paint:{"text-color":"#173c35","text-halo-color":"#ffffff","text-halo-width":1.3}}
-      ]}
+      ]};
+    map=new maplibregl.Map({
+     container:container.current!,
+     center:[-51.175,-29.917],zoom:11,minZoom:8,maxZoom:18,
+     style:OPENFREEMAP_POSITRON,
     });
     const current=map;
     mapRef.current=map;
     current.addControl(new maplibregl.NavigationControl({showCompass:false}),"top-right");
     current.on("load",()=>{
      if(cancelled)return;
+     installCanoasOverlays(current,overlayStyle);
      const bounds=new LngLatBounds([header.minLon,header.minLat],[header.maxLon,header.maxLat]);
      if(!bounds.isEmpty())current.fitBounds(bounds,{padding:28,maxZoom:12.8,duration:0});
      setStatus("ready");

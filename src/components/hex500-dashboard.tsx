@@ -3,6 +3,7 @@ import {CnpjSpatialInsights} from "@/components/cnpj-spatial-insights";
 import {useEffect,useMemo,useRef,useState} from "react";
 import maplibregl,{LngLatBounds,type ExpressionSpecification,type FilterSpecification} from "maplibre-gl";
 import {PMTiles,Protocol,type Source} from "pmtiles";
+import {OPENFREEMAP_POSITRON,installCanoasOverlays,setBasemapVisible} from "@/lib/openfreemap-basemap";
 import {Download,Layers3,Flame,Hexagon,MapPin,ShieldCheck,Info,ExternalLink,Search,LocateFixed} from "lucide-react";
 import {assignBairros,type BairrosGeometry} from "@/lib/hex-geography";
 
@@ -155,19 +156,15 @@ export function Hex500Dashboard(){
    if(header.tileType!==1)throw Error("Arquivo não contém MVT");
    if(dead)return;
    const protocol=new Protocol();protocol.add(archive);maplibregl.addProtocol("pmtiles",protocol.tile);registered=true;
-   map=new maplibregl.Map({
-    container:canvas.current!,
-    center:[-51.19,-29.914],zoom:11.2,minZoom:9,maxZoom:16,
-    style:{version:8,glyphs:"https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+   const overlayStyle:maplibregl.StyleSpecification={version:8,glyphs:"https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
      sources:{
-      osm:{type:"raster",tiles:["https://basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"],
-       tileSize:256,attribution:"© OpenStreetMap contributors · © CARTO"},
+      
       grid:{type:"vector",url:"pmtiles://"+url,
        attribution:"Endereços não domiciliares IBGE CNEFE 2022, polígonos GeoCanoas"},
       bairros:{type:"geojson",data:base+"/data/bairros-oficiais.geojson"},
        rotulos:{type:"geojson",data:base+"/data/bairros-rotulos.geojson"},
      },layers:[
-      {id:"osm",type:"raster",source:"osm"},
+      
       {id:"hex-fill",type:"fill",source:"grid","source-layer":"hex500",
        paint:{"fill-color":C[2],"fill-opacity":.85}},
       {id:"hex-line",type:"line",source:"grid","source-layer":"hex500",
@@ -194,17 +191,22 @@ export function Hex500Dashboard(){
        filter:["==",["get","BAIRRO"],"__nenhum__"],
        paint:{"line-color":"#d97706","line-width":3.5}},
       {id:"official-label",type:"symbol",source:"rotulos",
-       layout:{"text-field":["get","bairro"],"text-size":11,"text-font":["Open Sans Regular","Arial Unicode MS Regular"],"text-max-width":10},
+       layout:{"text-field":["get","bairro"],"text-size":11,"text-font":["Noto Sans Regular"],"text-max-width":10},
        paint:{"text-color":"#173c35","text-halo-color":"#ffffff","text-halo-width":1.2}},
       {id:"selected-hex",type:"line",source:"grid","source-layer":"hex500",
        filter:["==",["get","cell"],"____"],
        paint:{"line-color":"#de6f17","line-width":3}},
-     ]},
+     ]};
+   map=new maplibregl.Map({
+    container:canvas.current!,
+    center:[-51.19,-29.914],zoom:11.2,minZoom:9,maxZoom:16,
+    style:OPENFREEMAP_POSITRON,
    });
    mapRef.current=map;
    map.addControl(new maplibregl.NavigationControl({showCompass:false}),"top-right");
    map.on("load",()=>{
      if(dead)return;
+     installCanoasOverlays(map!,overlayStyle);
      const bbox=new LngLatBounds([header.minLon,header.minLat],[header.maxLon,header.maxLat]);
      if(!bbox.isEmpty())map!.fitBounds(bbox,{padding:22,duration:0,maxZoom:13});
      setMapReady(true);
@@ -288,7 +290,7 @@ export function Hex500Dashboard(){
       ["to-number",["get",activeHeatKey],0],5,.16,100,1] as ExpressionSpecification);
   }
  },[mode,selectedMetric,thresholds,mapReady,selected,showHotspots,bairro,visibleIds,activeHeatKey,hasOverlay]);
- useEffect(()=>{const map=mapRef.current;if(map&&mapReady)map.setLayoutProperty("osm","visibility",osm?"visible":"none")},[osm,mapReady]);
+ useEffect(()=>{const map=mapRef.current;if(map&&mapReady)setBasemapVisible(map,osm)},[osm,mapReady]);
  function chooseBairro(next:string){
   setBairro(next);setSelected("");if(next!=="all")setMode("hex");
   const map=mapRef.current;

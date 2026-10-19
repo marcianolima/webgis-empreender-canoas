@@ -4,6 +4,7 @@ import Link from "next/link";
 import {useEffect,useMemo,useRef,useState} from "react";
 import maplibregl,{LngLatBounds,type ExpressionSpecification} from "maplibre-gl";
 import {PMTiles,Protocol,type Source} from "pmtiles";
+import {OPENFREEMAP_POSITRON,installCanoasOverlays,setBasemapVisible} from "@/lib/openfreemap-basemap";
 import {Building2,Download,Layers3,MapPinned,Info,ExternalLink,Search} from "lucide-react";
 import type {BairrosGeoData,BairrosGeoHistory,BairrosGeoRow,BairrosSnapshot} from "@/types/bairros";
 
@@ -130,15 +131,12 @@ export function BairrosDashboard(){
    if(aborted)return;
    const protocol=new Protocol();protocol.add(pm);
    maplibregl.addProtocol("pmtiles",protocol.tile);protocolRef.current=protocol;registered=true;
-   map=new maplibregl.Map({
-    container:element.current!,center:[-51.19,-29.915],zoom:11,minZoom:9,maxZoom:16,
-    style:{version:8,glyphs:"https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",sources:{
-     osm:{type:"raster",tiles:["https://basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"],tileSize:256,
-      attribution:"© OpenStreetMap contributors · © CARTO"},
+   const overlayStyle:maplibregl.StyleSpecification={version:8,glyphs:"https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",sources:{
+     
      bairros:{type:"vector",url:"pmtiles://"+url,attribution:"© GeoCanoas — Prefeitura de Canoas"},
       rotulos:{type:"geojson",data:base+"/data/bairros-rotulos.geojson"}
     },layers:[
-     {id:"base-osm",type:"raster",source:"osm"},
+     
      {id:"bairros-fill",type:"fill",source:"bairros","source-layer":"bairros",
       paint:{"fill-color":"#b4d9c8","fill-opacity":.77}},
      {id:"bairros-border",type:"line",source:"bairros","source-layer":"bairros",
@@ -147,14 +145,18 @@ export function BairrosDashboard(){
       filter:["==",["get","oid"],-1],paint:{"line-color":"#da741c","line-width":4}},
      {id:"bairros-name",type:"symbol",source:"rotulos",
       layout:{"text-field":["get","bairro"],"text-size":11,"text-max-width":12,
-       "text-font":["Open Sans Regular","Arial Unicode MS Regular"]},
+       "text-font":["Noto Sans Regular"]},
       paint:{"text-color":"#163d35","text-halo-color":"#ffffff","text-halo-width":1.2}}
-    ]},
+    ]};
+   map=new maplibregl.Map({
+    container:element.current!,center:[-51.19,-29.915],zoom:11,minZoom:9,maxZoom:16,
+    style:OPENFREEMAP_POSITRON,
    });
    mapRef.current=map;
    map.addControl(new maplibregl.NavigationControl({showCompass:false}),"top-right");
    map.on("load",()=>{
     if(aborted)return;
+    installCanoasOverlays(map!,overlayStyle);
     const bounds=new LngLatBounds(
      [header.minLon,header.minLat],[header.maxLon,header.maxLat]);
     if(!bounds.isEmpty())map!.fitBounds(bounds,{padding:25,duration:0,maxZoom:12.8});
@@ -194,7 +196,7 @@ export function BairrosDashboard(){
  useEffect(()=>{
   const map=mapRef.current;
   if(!map||!ready)return;
-  map.setLayoutProperty("base-osm","visibility",basemap?"visible":"none");
+  setBasemapVisible(map,basemap);
  },[basemap,ready]);
 
  return <main className="mx-auto max-w-[1500px] space-y-5 px-4 pb-16 pt-8 text-ink sm:px-6">
