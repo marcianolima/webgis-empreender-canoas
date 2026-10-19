@@ -94,7 +94,8 @@ jobs:
                 assert "PMTiles indisponível" not in content,content[-3000:]
                 assert "Carregando PMTiles" not in content,content[-3000:]
                 topbar=page.get_by_label("Cabeçalho do observatório")
-                assert await topbar.get_by_role("link",name="Hexágonos e calor").count()==1
+                print("HEADER_LINKS",label,await topbar.locator("a").evaluate_all("(links)=>links.map(a=>({href:a.getAttribute('href'),name:a.getAttribute('aria-label')}))"),flush=True)
+                await topbar.get_by_role("link",name="Hexágonos e calor").wait_for(timeout=12000)
                 assert await page.get_by_text("← Observatório econômico").count()==0
                 assert await page.get_by_text("Hexágonos 500 m e mapa de calor →").count()==0
                 assert not errors,errors
