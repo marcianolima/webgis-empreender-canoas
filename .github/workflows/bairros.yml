@@ -49,6 +49,9 @@ jobs:
           cnpj=json.loads((base/"cnpj.json").read_text())
           assert x["schemaVersion"]==1 and x["status"]=="verified"
           assert x["territory"]=="4304606" and x["reference"]==cnpj["reference"]
+          geo=json.loads((base/"bairros-oficiais.geojson").read_text())
+          assert len(geo["features"])==18
+          assert {int(f["id"]) for f in geo["features"]}=={r["id"] for r in x["neighborhoods"]}
           assert len(x["neighborhoods"])==18
           assert len({r["id"] for r in x["neighborhoods"]})==18
           assert len({r["name"] for r in x["neighborhoods"]})==18
@@ -71,6 +74,7 @@ jobs:
           name: bairros-canoas-pmtiles-geocanoas-verificados
           path: |
             public/data/bairros-economia.pmtiles
+            public/data/bairros-oficiais.geojson
             public/data/bairros-economia.json
             public/data/bairros-economia-series.json
           retention-days: 30
@@ -79,14 +83,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/canoas-geo-approved
-          cp public/data/bairros-economia.pmtiles public/data/bairros-economia.json public/data/bairros-economia-series.json /tmp/canoas-geo-approved/
+          cp public/data/bairros-economia.pmtiles public/data/bairros-economia.json public/data/bairros-economia-series.json public/data/bairros-oficiais.geojson /tmp/canoas-geo-approved/
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           for i in 1 2 3 4 5; do
             git fetch origin main
             git reset --hard origin/main
             cp /tmp/canoas-geo-approved/* public/data/
-            git add public/data/bairros-economia.pmtiles public/data/bairros-economia.json public/data/bairros-economia-series.json
+            git add public/data/bairros-economia.pmtiles public/data/bairros-economia.json public/data/bairros-economia-series.json public/data/bairros-oficiais.geojson
             if git diff --cached --quiet; then echo "Sem alterações"; exit 0; fi
             git commit -m "data(geo): malha BAIRROSOFICIAL e agregados CNPJ PMTiles $(python -c 'import json; print(json.load(open("public/data/cnpj.json"))["reference"])')"
             if git push origin HEAD:main; then echo "BAIRROS_PM_COMMITTED"; exit 0; fi
