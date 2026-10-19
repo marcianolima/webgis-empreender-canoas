@@ -83,18 +83,14 @@ def cnefe_index():
                     stats["address_candidates"]+=1
     return seen,stats
 
-def match_shard(reference,index,archive,csv_zip):
+def match_shard(reference,index,municipio,archive,csv_zip):
     cache,stats=cnefe_index()
     cells=Counter();sectors=Counter();active=matched=eligible=0
     # section categorization from the same official CNAE mapping as RFB pipeline
     from cnpj_pipeline import section
     for r in csv_zip(archive):
-        if len(r)<21 or r[5].strip()!="02" or r[19].strip()!="RS":
+        if len(r)<21 or r[5].strip()!="02" or r[19].strip()!="RS" or r[20].strip()!=municipio:
             continue
-        # RFB municipality is filtered via CNEFE's Canoas-specific CEP +
-        # the verified municipal shard filter in cnpj_pipeline.shard.
-        if r[20].strip() not in ("8651",):  # actual municipal code checked against accompanying shard
-            pass  # exact municipio is passed from the parent official shard below
         active+=1
         k=(cep(r[18]),street(r[13],r[14]),number(r[15]))
         if not all(k):continue
