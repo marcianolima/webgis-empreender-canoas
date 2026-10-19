@@ -85,6 +85,16 @@ jobs:
                 content=await hp.locator("body").inner_text()
                 assert "superfície suavizada" in content
                 assert not h_errors,h_errors
+                await hp.get_by_label("Variável").select_option("cnpj")
+                await hp.wait_for_timeout(900)
+                content=await hp.locator("body").inner_text()
+                assert "13.154" in content,content[-2400:]
+                assert "Cruzamento CNPJ × CNEFE" in content
+                await hp.get_by_label("Seção CNAE do CNPJ coincidente").select_option("G")
+                await hp.wait_for_timeout(600)
+                assert "CNAE seção G" in (await hp.locator("body").inner_text())
+                assert not h_errors,h_errors
+                print("CNPJ_HEAT_FILTER_OK",label,"matched",13154,"CNAE_G",flush=True)
                 if label=="mobile":
                   m=await hp.evaluate("({scroll:document.documentElement.scrollWidth,window:window.innerWidth})")
                   print("HEX_MOBILE_OVERFLOW",m,flush=True)
