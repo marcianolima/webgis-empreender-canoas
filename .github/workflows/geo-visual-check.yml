@@ -95,6 +95,15 @@ jobs:
                 assert "CNAE seção G" in (await hp.locator("body").inner_text())
                 assert not h_errors,h_errors
                 print("CNPJ_HEAT_FILTER_OK",label,"matched",13154,"CNAE_G",flush=True)
+                assert "Onde se concentram os CNPJs com endereço conciliado?" in (await hp.locator("body").inner_text())
+                assert "Há 1 fotografia geográfica homologada" in (await hp.locator("body").inner_text())
+                hotspot=hp.get_by_label("Mostrar perímetros dos núcleos")
+                assert await hotspot.count()==1
+                await hotspot.check()
+                await hp.wait_for_timeout(1100)
+                assert await hotspot.is_checked()
+                assert await hp.get_by_text("5 agrupamentos identificados",exact=False).count()>0
+                print("HOTSPOT_500M_UI_OK",label,"five contiguous regions",flush=True)
                 if label=="mobile":
                   m=await hp.evaluate("({scroll:document.documentElement.scrollWidth,window:window.innerWidth})")
                   print("HEX_MOBILE_OVERFLOW",m,flush=True)
