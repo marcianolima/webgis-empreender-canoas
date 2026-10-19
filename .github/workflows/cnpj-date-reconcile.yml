@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/cnpj-date-reconcile.yml
+      - scripts/reconcile_cnpj_dates.py
   workflow_dispatch:
 permissions:
   contents: write
