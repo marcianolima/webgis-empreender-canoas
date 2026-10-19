@@ -14,11 +14,16 @@ const C=["#e4f1eb","#bbdfcf","#80c5a8","#409d7c","#136747"];
 type Cell={cell:string;n:number|null;n_high:number|null;a_km2:number;d_km2?:number;
  lon:number;lat:number;[key:string]:string|number|null|undefined};
 type SourceData={schemaVersion:1;status:"verified"|"not_loaded";territory:string;reference:string;cellWidthMeters:number;
- generatedAt:string;heatMetricsVersion?:number;pmtiles:null|{path:string;layers:string[];bytes:number;sha256:string};
+ generatedAt:string;heatMetricsVersion?:number;spatialOverlayVersion?:number;pmtiles:null|{path:string;layers:string[];bytes:number;sha256:string};
  coverage:null|{allCnefeRecords:number;nonResidentialWithCoordinatesInOfficialBairros:number;
  notInOfficialBairros:number;invalidCoordinates:number;gridCells:number;
  cellsWithNonResidential:number;heatCellsAtLeastFiveHighQualityAddresses:number;
  kindCounts:Record<string,number>;geocodingLevelCounts:Record<string,number>};
+ spatialTopology?:{fragments:number;fullyContainedHexagons:number;crossBorderHexagons:number;
+  unassignedCnefePointBoundary:number;ambiguousCnefePointBoundary:number;
+  fullCellBairro:Record<string,string>;neighborhoods:Array<{bairro:string;areaKm2:number;fullCells:number;
+  borderFragments:number;fullCellAreaKm2:number;partialAreaKm2:number;cnpjPublishedFullCells:number|null;cnpjCellsPublished:number;
+  observedAddresses:number|null;highQualityAddresses:number|null;observedPerKm2:number|null;kinds:Record<string,number|null>}>};
  kinds?:Record<string,string>;cells?:Cell[];notes?:string[];privacy?:{individualCoordinatesPublished:boolean};cnpjMatch?:{active:number;hasUsableAddress:number;matched:number;matchedPercent:number;cellsPublished:number;matchedInPublishedCells:number;unpublishedBelowPrivacyThreshold?:number;diagnostics?:Record<string,number>}|null;cnpjReference?:string|null;economicHotspots?:{id:string;rank:number;matched:number;hexagons:number;lon:number;lat:number}[];hotspotMethod?:string};
 type Metric="n"|"n_high"|"d_km2"|"k3"|"k4"|"k5"|"k6"|"k8"|"cnpj";
 type Mode="hex"|"heat";
@@ -68,7 +73,7 @@ function add(root:HTMLElement,label:string,value:string){
  line.append(b,document.createTextNode(value));root.append(line);
 }
 function csvExport(data:SourceData,cells:Cell[],metric:string,bairroPorCelula:Map<string,string>){
- const header=["territorio_ibge","fonte","referencia","id_hex","largura_faces_m","lon_centro_estatistico","lat_centro_estatistico","area_recortada_km2","bairro_por_centro_representativo","indicador","valor"];
+ const header=["territorio_ibge","fonte","referencia","id_hex","largura_faces_m","lon_centro_estatistico","lat_centro_estatistico","area_recortada_km2","bairro_contencao_integral","indicador","valor"];
  const rows=cells.map(c=>["4304606","IBGE CNEFE 2022","2022",c.cell,"500",String(c.lon),String(c.lat),
   String(c.a_km2),bairroPorCelula.get(c.cell)||"",metric,String(numberIn(c,metric)??"")]);
  const quote=(s:string)=>'"'+(/^[=+\-@]/.test(s)&&!/^-?\d+(\.\d+)?$/.test(s)?"'"+s:s).replaceAll('"','""')+'"';
@@ -96,7 +101,11 @@ export function Hex500Dashboard(){
  const cells=useMemo(()=>data?.cells||[],[data]);
  const bairroPorCelula=useMemo(()=>assignBairros(cells,bairros),[cells,bairros]);
  const bairroNames=useMemo(()=>[...new Set((bairros?.features||[]).map(f=>f.properties.BAIRRO))].sort((a,b)=>a.localeCompare(b,"pt-BR")),[bairros]);
- const visibleCells=useMemo(()=>bairro==="all"?cells:cells.filter(c=>bairroPorCelula.get(c.cell)===bairro),[cells,bairroPorCelula,bairro]);
+ const hasOverlay=data?.spatialOverlayVersion===1&&!!data.spatialTopology&&!!data.pmtiles?.layers.includes("hex_bairros");
+ const neighborhoodStats=data?.spatialTopology?.neighborhoods.find(n=>n.bairro===bairro);
+ const visibleCells=useMemo(()=>bairro==="all"?cells:hasOverlay?
+  cells.filter(c=>data?.spatialTopology?.fullCellBairro[c.cell]===bairro):
+  cells.filter(c=>bairroPorCelula.get(c.cell)===bairro),[cells,hasOverlay,data,bairroPorCelula,bairro]);
  const sectorsCnpj=useMemo(()=>Array.from(new Set(cells.flatMap(c=>Object.keys(c).filter(k=>/^cs[A-U]$/.test(k)).map(k=>k.slice(-1))))).sort(),[cells]);
  const selectedMetric=metric==="cnpj"&&cnpjSector!=="all"?"cs"+cnpjSector:metric;
  const ranking=useMemo(()=>visibleCells.filter(c=>numberIn(c,selectedMetric)!==null).sort((a,b)=>(numberIn(b,selectedMetric)||0)-(numberIn(a,selectedMetric)||0)),[visibleCells,selectedMetric]);
@@ -162,6 +171,12 @@ export function Hex500Dashboard(){
        paint:{"fill-color":C[2],"fill-opacity":.85}},
       {id:"hex-line",type:"line",source:"grid","source-layer":"hex500",
        paint:{"line-color":"#426b5d","line-width":.45,"line-opacity":.45}},
+      ...(data.spatialOverlayVersion===1&&data.pmtiles?.layers.includes("hex_bairros")?[
+       {id:"hex-bairro-fill",type:"fill",source:"grid","source-layer":"hex_bairros",layout:{visibility:"none"},
+        paint:{"fill-color":"#e3e9e6","fill-opacity":.82}},
+       {id:"hex-bairro-border",type:"line",source:"grid","source-layer":"hex_bairros",layout:{visibility:"none"},
+        paint:{"line-color":"#736d61","line-width":.55,"line-opacity":.7}}
+      ] as maplibregl.LayerSpecification[]:[]),
       {id:"heat",type:"heatmap",source:"grid","source-layer":"heat500",layout:{visibility:"none"},
        paint:{"heatmap-weight":["interpolate",["linear"],["to-number",["get","w"],0],5,.16,100,1],
         "heatmap-intensity":["interpolate",["linear"],["zoom"],9,.6,15,1.5],
@@ -209,6 +224,32 @@ export function Hex500Dashboard(){
      add(root,"Referência","CNEFE/IBGE 2022");
      new maplibregl.Popup({maxWidth:"275px"}).setLngLat(e.lngLat).setDOMContent(root).addTo(map);
    });
+   if(data.spatialOverlayVersion===1&&data.pmtiles?.layers.includes("hex_bairros")){
+    map.on("click","hex-bairro-fill",(e)=>{
+     const props=e.features?.[0]?.properties;
+     if(!props||!map)return;
+     const full=Number(props.full)===1;
+     const root=document.createElement("div");
+     const strong=document.createElement("strong");
+     strong.textContent=String(props.bairro)+" · "+String(props.cell);root.append(strong);
+     add(root,"Área interseção",n2.format(Number(props.area_km2))+" km²");
+     add(root,"Participação no hexágono",n2.format(Number(props.share_pct))+"%");
+     if(!full){
+      add(root,"Contagens","Não atribuídas: célula atravessa divisas");
+      setSelected("");
+     }else{
+      setSelected(String(props.cell));
+      const st=current.current;
+      const cell=st?.cells.find(c=>c.cell===props.cell);
+      add(root,"Indicador selecionado",st&&cell?fmt(numberIn(cell,st.metric)):"N/D");
+      add(root,"Endereços CNEFE",cell?fmt(numberIn(cell,"n")):"N/D");
+     }
+     add(root,"Geometria","Interseção real GeoCanoas · EPSG:31982");
+     new maplibregl.Popup({maxWidth:"300px"}).setLngLat(e.lngLat).setDOMContent(root).addTo(map);
+    });
+    map.on("mouseenter","hex-bairro-fill",()=>{if(map)map.getCanvas().style.cursor="pointer"});
+    map.on("mouseleave","hex-bairro-fill",()=>{if(map)map.getCanvas().style.cursor=""});
+   }
    map.on("mouseenter","hex-fill",()=>{if(map)map.getCanvas().style.cursor="pointer"});
    map.on("mouseleave","hex-fill",()=>{if(map)map.getCanvas().style.cursor=""});
    map.on("error",e=>{const message=String(e.error?.message||"");if(!dead&&/PMTiles|hex500|heat500|source-layer/i.test(message))setMapError(message)});
