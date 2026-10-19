@@ -96,3 +96,12 @@
 - [x] Página cartográfica mobile-first com MapLibre e exportação CSV.
 - [ ] Incorporar endereços completos RFB no processamento reservado e testar geocodificação oficial (lotes/vias), medir classe de precisão e impacto LGPD.
 - [ ] Produzir grades/hexágonos ou heatmaps somente após validação de coordenadas pontuais reais.
+
+### Etapa 10 — Grade de 500 metros e calor a partir de pontos reais IBGE
+- [x] Download público da base CNEFE 2022 de Canoas com coordenadas e espécies de endereço.
+- [x] Bairros oficiais integrais e georreferenciados persistidos em GeoJSON no repositório.
+- [x] 662 hexágonos regulares de 500m recortados à malha oficial, projeção EPSG:31982.
+- [x] 17.851 endereços de espécies não domiciliares localizados, 17.683 de qualidade 1–2.
+- [x] PMTiles hex500 + heat500, sem divulgação de endereço individual, histórico/fonte e metadados.
+- [x] Interface móvel de hexágonos, seleção de espécie, nível de precisão, mapa de calor e exportação.
+- [ ] Geocodificar o CNPJ 2026 sobre endereços CNEFE via correspondência exata com CEP, logradouro e número, com validação e preservação de privacidade; não confundir com CNEFE.

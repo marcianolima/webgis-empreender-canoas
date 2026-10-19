@@ -108,6 +108,19 @@ jobs:
           assert (p/"sebrae/series/index.html").exists(),"página das séries não exportada"
           assert (p/"sebrae/consulta/index.html").exists(),"página de consulta avançada não exportada"
           assert (p/"bairros/index.html").exists(),"página de bairros não exportada"
+          assert (p/"hex500/index.html").exists(),"página hexagonal não exportada"
+          assert (p/"data/bairros-oficiais.geojson").exists(),"malha GeoCanoas não armazenada"
+          bounds=json.loads((p/"data/bairros-oficiais.geojson").read_text())
+          assert len(bounds["features"])==18
+          hexinfo=json.loads((p/"data/cnefe-hex500.json").read_text())
+          assert hexinfo["territory"]=="4304606"
+          assert hexinfo["status"] in ("verified","not_loaded")
+          if hexinfo["status"]=="verified":
+              hextiles=p/"data/cnefe-hex500.pmtiles"
+              assert hextiles.exists() and hextiles.read_bytes()[:8]==bytes((80,77,84,105,108,101,115,3))
+              assert hexinfo["cellWidthMeters"]==500
+              assert hexinfo["coverage"]["gridCells"]>=300
+              assert hexinfo["privacy"]["individualCoordinatesPublished"] is False
           mapmeta=json.loads((p/"data/bairros-economia.json").read_text())
           assert mapmeta["territory"]=="4304606"
           assert mapmeta["status"] in ("not_loaded","verified")
@@ -159,6 +172,15 @@ jobs:
                   get("sebrae/series/")
                   get("sebrae/consulta/")
                   get("bairros/")
+                  get("hex500/")
+                  detail=json.loads(get("data/cnefe-hex500.json"))
+                  assert detail["territory"]=="4304606"
+                  if detail.get("status")=="verified":
+                      pmh=get("data/cnefe-hex500.pmtiles")
+                      assert pmh[:8]==bytes((80,77,84,105,108,101,115,3))
+                      print("CNEFE_HEX_PM_HTTP_OK",len(pmh),flush=True)
+                  official_geo=json.loads(get("data/bairros-oficiais.geojson"))
+                  assert len(official_geo["features"])==18
                   try:
                       b=json.loads(get("data/bairros-economia.json"))
                       if b.get("status")=="verified":

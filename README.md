@@ -125,3 +125,13 @@ O resultado validado é publicado em `public/data/bairros-economia.pmtiles` (~28
 MapLibre GL usa o protocolo PMTiles. Para robustez em GitHub Pages, que pode responder a solicitações HTTP Range inconsistentes, o pequeno arquivo municipal é carregado uma vez e o protocolo entrega fatias de bytes em memória, preservando PMTiles como fonte vetorial real.
 
 O mapa apresenta quantidade absoluta, densidade por km² e estabelecimentos por 1.000 habitantes, filtro CNAE, legenda, seleção de bairros, ranking e CSV. **Não** existem pontos de CNPJ: a geocodificação individual dependerá de endereços completos, base oficial de vias/lotes, validação e gestão de dados pessoais.
+
+## Camada CNEFE/IBGE: hexágonos 500 metros e superfície de calor (outubro/2026)
+
+Implementada em `/hex500`, utilizando arquivo oficial IBGE [CNEFE/Canoas/2022](https://ftp.ibge.gov.br/Cadastro_Nacional_de_Enderecos_para_Fins_Estatisticos/Censo_Demografico_2022/Arquivos_CNEFE/CSV/Municipio/43_RS/4304606_CANOAS.zip) (3,55 MB ZIP), com endereços georreferenciados. Os endereços não domiciliares (espécies IBGE 3 agropecuário, 4 ensino, 5 saúde, 6 demais finalidades, 8 religioso) são agregados a hexágonos regulares de **500 m entre faces paralelas**, em EPSG:31982, e recortados aos bairros oficiais. Domicílios e edificações em construção são excluídos. O pipeline NÃO publica endereços ou posições individuais.
+
+O método reúne 17.851 registros CNEFE não domiciliares sobre 662 células oficiais; **17.683 de melhor qualidade geográfica (níveis 1–2)**, dos quais 310 hexágonos permitem exibição do calor após supressão de células com menos de cinco observações. O arquivo PMTiles v3 (duas camadas, `hex500` e `heat500`) mede ~312 KB; o resumo de contagens anonimizadas e atributos da grade fica em `public/data/cnefe-hex500.json`.
+
+O calor é uma **suavização dos centros estatísticos de hexágonos**, ponderados pelas contagens de coordenadas de melhor qualidade do IBGE; não é uma nuvem de pontos CNPJ ou um mapa de negócios ativos em 2026. O mapa por bairro mantém os dados atuais da Receita Federal de forma separada. A comparação é contextual, pois conceitos/universos/competências diferem.
+
+A camada BAIRROSOFICIAL com seus 18 polígonos completos fica agora também salva no projeto em `public/data/bairros-oficiais.geojson`, fonte GeoCanoas pública; o CNEFE faz recorte unicamente sobre esses polígonos. A rotina de geração está em `scripts/collect_hex500.py` e integrada à atualização cartográfica mensal `.github/workflows/bairros.yml`. Células de 1 a 4 ocorrências têm contagem suprimida; as categorias são divulgadas somente se a contagem e o complemento forem suficientemente grandes.

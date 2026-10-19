@@ -197,6 +197,7 @@ export function BairrosDashboard(){
 
  return <main className="mx-auto max-w-[1500px] space-y-5 px-4 pb-16 pt-8 text-ink sm:px-6">
   <Link href="/" className="text-sm font-semibold text-brand-700">← Observatório econômico</Link>
+  <Link href="/hex500" className="ml-4 inline-flex items-center rounded-xl border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-bold text-brand-900">Hexágonos 500 m e mapa de calor →</Link>
   <header className="flex flex-wrap items-end justify-between gap-4">
    <div className="max-w-4xl"><span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700"><MapPinned size={15}/> GeoCanoas · BAIRROSOFICIAL · PMTiles</span>
     <h1 className="mt-3 text-2xl font-extrabold sm:text-4xl">Geografia das empresas de Canoas</h1>
