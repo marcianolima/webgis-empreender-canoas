@@ -147,7 +147,7 @@ export function BairrosDashboard(){
       layout:{"text-field":["get","bairro"],"text-size":11,"text-max-width":12,
        "text-font":["Noto Sans Regular"]},
       paint:{"text-color":"#163d35","text-halo-color":"#ffffff","text-halo-width":1.2}}
-    ]},;
+    ]};
    map=new maplibregl.Map({
     container:element.current!,center:[-51.19,-29.915],zoom:11,minZoom:9,maxZoom:16,
     style:OPENFREEMAP_POSITRON,
