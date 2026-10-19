@@ -211,7 +211,7 @@ export function Hex500Dashboard(){
     </div>)}
    </section>
    {data.cnpjMatch&&<div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-xs leading-relaxed text-brand-900"><strong>Cruzamento CNPJ × CNEFE:</strong> {num.format(data.cnpjMatch.matched)} estabelecimentos ativos da Receita Federal, referência {data.cnpjReference}, associados por CEP, logradouro e número a endereço não domiciliar CNEFE de qualidade 1–2 ({n2.format(data.cnpjMatch.matchedPercent)}% de {num.format(data.cnpjMatch.active)} ativos). As demais empresas continuam sem geocodificação verificada; a cobertura é parcial e não deve representar todo o mercado.</div>}
-   {data.cnpjMatch?.diagnostics&&<section className="rounded-2xl border border-slate-200 bg-white p-4">
+   {!!Object.keys(data.cnpjMatch?.diagnostics||{}).length&&<section className="rounded-2xl border border-slate-200 bg-white p-4">
      <h2 className="text-sm font-bold">Diagnóstico de cobertura da geocodificação CNPJ</h2>
      <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
       {[
