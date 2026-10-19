@@ -86,6 +86,7 @@ def cnefe_index():
 def match_shard(reference,index,municipio,archive,csv_zip):
     cache,stats=cnefe_index()
     cells=Counter();sectors=Counter();active=matched=eligible=0
+    diagnostics=Counter()
     # section categorization from the same official CNAE mapping as RFB pipeline
     from cnpj_pipeline import section
     for r in csv_zip(archive):
@@ -93,11 +94,19 @@ def match_shard(reference,index,municipio,archive,csv_zip):
             continue
         active+=1
         k=(cep(r[18]),street(r[13],r[14]),number(r[15]))
-        if not all(k):continue
+        if not all(k):
+            diagnostics["missing_address_components"]+=1
+            continue
         eligible+=1
         cell=cache.get(k)
-        if not cell or cell=="AMBIGUOUS":continue
+        if cell=="AMBIGUOUS":
+            diagnostics["ambiguous_cnefe_geocodes"]+=1
+            continue
+        if not cell:
+            diagnostics["not_found_in_2022_cnefe"]+=1
+            continue
         matched+=1
+        diagnostics["exact_address_match"]+=1
         code=f"h{cell[0]}_{cell[1]}"
         cells[code]+=1
         sec=section(r[11].strip())
@@ -107,6 +116,7 @@ def match_shard(reference,index,municipio,archive,csv_zip):
     output={"schemaVersion":1,"reference":reference,"shard":index,"source":"RFB+IBGE_CNEFE2022",
        "active":active,"hasUsableAddress":eligible,"matched":matched,
        "matchKeys":len(cache),"ambiguousKeys":sum(v=="AMBIGUOUS" for v in cache.values()),
+       "diagnostics":dict(diagnostics),
        "cells":dict(cells),
        "sectors":[{"cell":c,"sector":sec,"count":v} for (c,sec),v in sorted(sectors.items())]}
     if active<200 or matched<10:raise RuntimeError(f"Insufficient deterministic address matches {index} {matched}/{active}")
@@ -115,16 +125,24 @@ def match_shard(reference,index,municipio,archive,csv_zip):
 
 def assemble(reference,path):
     bycell=Counter();bysector=Counter();active=matched=eligible=0
+    diagnostics=Counter()
     for i in range(10):
         data=json.loads((path/f"geo-part-{i}.json").read_text(encoding="utf-8"))
         if data["reference"]!=reference or data["shard"]!=i or data["source"]!="RFB+IBGE_CNEFE2022":
             raise RuntimeError("Missing/inconsistent RFB spatial fragment")
         active+=data["active"];matched+=data["matched"];eligible+=data["hasUsableAddress"]
+        diagnostics.update(data.get("diagnostics",{}))
         for key,v in data["cells"].items():bycell[key]+=v
         for row in data["sectors"]:bysector[(row["cell"],row["sector"])]+=row["count"]
     cnpj=json.loads((DATA/"cnpj.json").read_text(encoding="utf-8"))
     if cnpj["reference"]!=reference or active!=cnpj["kpis"]["active"] or sum(bycell.values())!=matched:
         raise RuntimeError(f"Cannot reconcile exact matches against full municipal RFB snapshot: {active=} {matched=}")
+    if diagnostics and (
+        diagnostics["missing_address_components"]+diagnostics["not_found_in_2022_cnefe"]
+        +diagnostics["ambiguous_cnefe_geocodes"]+matched != active
+        or diagnostics["exact_address_match"]!=matched
+    ):
+        raise RuntimeError("Address-reconciliation diagnostics do not balance to active total")
     # Publish ONLY cells of at least five. Suppress category count and its
     # complement if either is 1..4; no address/point/CNPJ identifier persists.
     published=[]
@@ -142,7 +160,9 @@ def assemble(reference,path):
       "privacy":{"individualCoordinatesPublished":False,"individualAddressesPublished":False,"minPublishedHexCount":5},
       "coverage":{"active":active,"hasUsableAddress":eligible,"matched":matched,
          "matchedPercent":round(100*matched/active,3),"cellsPublished":len(published),
-         "matchedInPublishedCells":sum(x["matched"] for x in published)},
+         "matchedInPublishedCells":sum(x["matched"] for x in published),
+         "unpublishedBelowPrivacyThreshold":matched-sum(x["matched"] for x in published),
+         "diagnostics":dict(diagnostics)},
       "cells":published,
       "notes":["É um subconjunto de estabelecimentos ativos na fotografia RFB de "+reference+" associados a endereços não domiciliares do CNEFE 2022.",
        "O CNEFE de 2022 e a Receita de 2026 podem ter mudanças de endereço, número ou composição empresarial. Cruzamento exato não garante que o negócio opere no endereço.",
