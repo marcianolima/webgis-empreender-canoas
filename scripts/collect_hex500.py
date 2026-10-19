@@ -137,6 +137,7 @@ def extract():
     hexes=[];heat=[];cells=[];totalcells=0
     hexjson=WORK/"hex500.geojson"
     heatjson=WORK/"heat500.geojson"
+    hotspotsjson=WORK/"hotspots500.geojson"
     for j in range(jmin,jmax+1):
         for i in range(imin,imax+1):
             hexshape=hexagon(i,j)
@@ -191,18 +192,68 @@ def extract():
                     "source":"cnefe2022_hex_center",**{k:v for k,v in props.items() if k.startswith("hk")},
                     **({("cws"+k[1:]):v for k,v in matched_cell.items() if k.startswith("s") and len(k)==2} if matched_cell else {})},
                     "geometry":{"type":"Point","coordinates":[lon,lat]}})
+    # Contiguous economic hotspots from the highest quartile of the verified
+    # geocoded CNPJ SUBSET. No points or new observations are inferred.
+    hotspot_features=[]
+    hotspot_summary=[]
+    if geo_cnpj:
+        pub={f["properties"]["cell"]:f for f in hexes
+             if isinstance(f["properties"].get("cnpj"),int)
+             and f["properties"]["cnpj"]>=MIN}
+        ordered=sorted(f["properties"]["cnpj"] for f in pub.values())
+        if len(ordered)>=20:
+            cutoff=ordered[math.floor((len(ordered)-1)*0.75)]
+            core={id:feature for id,feature in pub.items()
+                  if feature["properties"]["cnpj"]>=cutoff}
+            neighbors={}
+            for key in core:
+                ij=key.lstrip("h").split("_")
+                i,j=int(ij[0]),int(ij[1])
+                # Offset rows: even j connects to upper/lower i-1 and i;
+                # odd j to upper/lower i and i+1.
+                shift=[i-1,i] if j%2==0 else [i,i+1]
+                adjacent={(i-1,j),(i+1,j)}
+                adjacent.update((ii,jj) for jj in (j-1,j+1) for ii in shift)
+                neighbors[key]={f"h{a}_{b}" for a,b in adjacent if f"h{a}_{b}" in core}
+            visited=set()
+            components=[]
+            for key in sorted(core):
+                if key in visited:continue
+                stack=[key];visited.add(key);group=[]
+                while stack:
+                    cur=stack.pop();group.append(cur)
+                    for nxt in neighbors[cur]-visited:
+                        visited.add(nxt);stack.append(nxt)
+                size=sum(core[c]["properties"]["cnpj"] for c in group)
+                if len(group)>=3 and size>=60:
+                    components.append((size,group))
+            components.sort(key=lambda x:-x[0])
+            for rank,(sum_cnpj,group) in enumerate(components,1):
+                union=unary_union([shape(core[k]["geometry"]) for k in group])
+                if union.is_empty or union.geom_type not in ("Polygon","MultiPolygon"):
+                    raise RuntimeError("Hotspot has invalid polygon geometry")
+                point=union.representative_point()
+                region=f"nucleo_{rank}"
+                hotspot_features.append({"type":"Feature",
+                  "properties":{"id":region,"rank":rank,"matched":sum_cnpj,
+                      "hexes":len(group),"source":"CNPJ_exact_CNEFE_subset"},
+                  "geometry":mapping(union)})
+                hotspot_summary.append({"id":region,"rank":rank,
+                  "matched":sum_cnpj,"hexagons":len(group),
+                  "lon":round(point.x,6),"lat":round(point.y,6)})
     actual_heat=sum(1 for row in heat if row["properties"]["w"]>=MIN)
     matched_heat=sum(1 for row in heat if row["properties"]["cw"]>=MIN)
     if totalcells<300 or actual_heat<80:
         raise RuntimeError(f"Unexpected grid coverage {totalcells}, heat cells {len(heat)}")
     WORK.mkdir(parents=True,exist_ok=True)
-    for filename,features in ((hexjson,hexes),(heatjson,heat)):
+    for filename,features in ((hexjson,hexes),(heatjson,heat),(hotspotsjson,hotspot_features)):
         filename.write_text(json.dumps({"type":"FeatureCollection","features":features},
                            ensure_ascii=False,separators=(",",":")),encoding="utf-8")
     pm=DATA/"cnefe-hex500.pmtiles"
     subprocess.run(["tippecanoe","-f","-Z","9","-z","15",
        "--no-feature-limit","--no-tile-size-limit",
        "-L",f"hex500:{hexjson}","-L",f"heat500:{heatjson}",
+       "-L",f"hotspots500:{hotspotsjson}",
        "-o",str(pm)],check=True,timeout=120)
     if pm.open("rb").read(8)!=b"PMTiles\x03":
         raise RuntimeError("Generated PMTiles v3 is corrupt")
@@ -213,7 +264,7 @@ def extract():
           "bairrosSource":"https://geo.canoas.rs.gov.br/server/rest/services/BAIRROSOFICIAL/FeatureServer/0",
           "dataMeaning":"Endereços de estabelecimentos observados no CNEFE 2022; NÃO são CNPJs da Receita",
           "cellWidthMeters":500,"cellDefinition":"Hexágonos regulares com distância entre faces paralelas de 500 metros, EPSG:31982",
-          "pmtiles":{"path":"/data/cnefe-hex500.pmtiles","layers":["hex500","heat500"],
+          "pmtiles":{"path":"/data/cnefe-hex500.pmtiles","layers":["hex500","heat500","hotspots500"],
                      "bytes":pm.stat().st_size,"sha256":hashlib.sha256(pm.read_bytes()).hexdigest()},
           "coverage":{"allCnefeRecords":processed,"nonResidentialWithCoordinatesInOfficialBairros":selected,
              "notInOfficialBairros":outside,"invalidCoordinates":bad,
@@ -227,6 +278,8 @@ def extract():
           "cnpjMatch":(json.loads(geo_path.read_text(encoding="utf-8"))["coverage"] if geo_cnpj else None),
           "cnpjReference":(json.loads(geo_path.read_text(encoding="utf-8"))["reference"] if geo_cnpj else None),
           "cells":cells,
+          "economicHotspots":hotspot_summary,
+          "hotspotMethod":"Contiguidade entre hexágonos 500 m; quartil superior de contagens CNPJ conciliação exata, com pelo menos 3 células e 60 observações totais. Apenas o subconjunto geocodificado.",
           "privacy":{"minPublishedCellCount":MIN,
                      "individualCoordinatesPublished":False,
                      "householdsPublished":False,
@@ -240,7 +293,8 @@ def extract():
              "Coordenadas CNEFE nível 1–2 formam a camada preferencial de calor; demais níveis são aproximações ou setor.",
              "Células com contagem 1 a 4 são suprimidas nos atributos; valor ausente nunca equivale a zero.",
              "A densidade territorial em hexágonos muito recortados (menos de 25% da área cheia) é ocultada.",
-             "Não foram publicados pontos individuais nem dados cadastrais privados."
+             "Não foram publicados pontos individuais nem dados cadastrais privados.",
+             "Os núcleos contíguos são derivados apenas de hexágonos empresariais publicáveis do subconjunto RFB/CNEFE."
           ]}
     tmp=DATA/"cnefe-hex500.json.tmp"
     tmp.write_text(json.dumps(meta,ensure_ascii=False,separators=(",",":"))+"\n",encoding="utf-8")
