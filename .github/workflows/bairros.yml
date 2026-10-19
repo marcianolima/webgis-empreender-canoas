@@ -27,8 +27,8 @@ permissions:
   contents: write
   actions: write
 concurrency:
-  group: canoas-bairros-pmtiles
-  cancel-in-progress: false
+  group: canoas-bairros-pmtiles-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'prod' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   tiles:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
