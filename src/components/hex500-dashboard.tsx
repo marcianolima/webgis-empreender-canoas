@@ -2,7 +2,7 @@
 import Link from "next/link";
 import {CnpjSpatialInsights} from "@/components/cnpj-spatial-insights";
 import {useEffect,useMemo,useRef,useState} from "react";
-import maplibregl,{LngLatBounds,type ExpressionSpecification} from "maplibre-gl";
+import maplibregl,{LngLatBounds,type ExpressionSpecification,type FilterSpecification} from "maplibre-gl";
 import {PMTiles,Protocol,type Source} from "pmtiles";
 import {Download,Layers3,Flame,Hexagon,MapPin,ShieldCheck,Info,ExternalLink,Search,LocateFixed} from "lucide-react";
 import {assignBairros,type BairrosGeometry} from "@/lib/hex-geography";
@@ -219,7 +219,7 @@ export function Hex500Dashboard(){
   const map=mapRef.current;
   if(!map||!mapReady)return;
   map.setLayoutProperty("hex-fill","visibility","visible");
-  const spatialFilter=bairro==="all"?null:["in",["get","cell"],["literal",visibleIds]];
+  const spatialFilter:FilterSpecification|null=bairro==="all"?null:["in",["get","cell"],["literal",visibleIds]];
   map.setFilter("hex-fill",spatialFilter);
   map.setFilter("hex-line",spatialFilter);
   map.setFilter("bairro-focus",["==",["get","BAIRRO"],bairro==="all"?"__nenhum__":bairro]);
@@ -232,12 +232,24 @@ export function Hex500Dashboard(){
   map.setFilter("selected-hex",["==",["get","cell"],selected||"____"]);
   if(mode==="heat"&&activeHeatKey){
     const heatMin=[">=",["coalesce",["get",activeHeatKey],0],5];
-    map.setFilter("heat",spatialFilter?["all",heatMin,spatialFilter]:heatMin);
+    map.setFilter("heat",(spatialFilter?["all",heatMin,spatialFilter]:heatMin) as FilterSpecification);
     map.setPaintProperty("heat","heatmap-weight",["interpolate",["linear"],
       ["to-number",["get",activeHeatKey],0],5,.16,100,1] as ExpressionSpecification);
   }
  },[mode,selectedMetric,thresholds,mapReady,selected,showHotspots,bairro,visibleIds,activeHeatKey]);
  useEffect(()=>{const map=mapRef.current;if(map&&mapReady)map.setLayoutProperty("osm","visibility",osm?"visible":"none")},[osm,mapReady]);
+ function chooseBairro(next:string){
+  setBairro(next);setSelected("");
+  const map=mapRef.current;
+  if(!map)return;
+  if(next==="all"){map.flyTo({center:[-51.19,-29.914],zoom:11.2});return;}
+  const chosen=cells.filter(c=>bairroPorCelula.get(c.cell)===next);
+  if(chosen.length){
+   const bounds=new LngLatBounds();
+   chosen.forEach(c=>bounds.extend([c.lon,c.lat]));
+   if(!bounds.isEmpty())map.fitBounds(bounds,{padding:55,maxZoom:13.5,duration:650});
+  }
+ }
  return <main className="mx-auto max-w-[1540px] space-y-5 px-4 pb-16 pt-8 text-ink sm:px-6">
   <Link href="/bairros" className="text-sm font-semibold text-brand-700">← Mapa econômico de bairros</Link>
   <header className="flex flex-wrap items-end justify-between gap-3">
@@ -246,7 +258,7 @@ export function Hex500Dashboard(){
     <h1 className="mt-3 text-2xl font-extrabold sm:text-4xl">Concentração territorial de estabelecimentos</h1>
     <p className="mt-3 text-sm leading-relaxed text-slate-600">Grade hexagonal de 500 m e calor estatístico calculados a partir de endereços não domiciliares georreferenciados do IBGE. CNPJs com endereço exatamente conciliado só aparecem como agregado, quando a base correspondente estiver disponível.</p>
    </div>
-   {data?.status==="verified"&&<button onClick={()=>csvExport(data,cells,selectedMetric)} className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white"><Download size={16}/> Exportar CSV</button>}
+   {data?.status==="verified"&&<button onClick={()=>csvExport(data,visibleCells,selectedMetric,bairroPorCelula)} className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white"><Download size={16}/> Exportar CSV</button>}
   </header>
   {error&&<p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</p>}
   {data?.status==="not_loaded"&&<p className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">A coleta CNEFE e a geração dos hexágonos estão em validação; não há grade sintética ou contagens imputadas.</p>}
@@ -276,27 +288,34 @@ export function Hex500Dashboard(){
      </div>
      <p className="mt-3 text-xs leading-relaxed text-slate-600">Com endereço cadastral compatível: {num.format(matchCoverage.hasUsableAddress)}. Observações conciliadas abaixo do limiar de publicação de cinco ocorrências por hexágono: {num.format(matchCoverage.unpublishedBelowPrivacyThreshold||0)}. Os registros não localizados não são distribuídos geograficamente por aproximação.</p>
     </section>}
-   <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-3">
+   <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-2 xl:grid-cols-4">
     <div className="text-xs font-bold text-slate-600">Visualização
      <div className="mt-2 flex gap-2">
       <button onClick={()=>setMode("hex")} className={"flex flex-1 items-center justify-center gap-1 rounded-xl px-3 py-2.5 text-xs font-semibold "+(mode==="hex"?"bg-brand-600 text-white":"bg-slate-100 text-slate-600")}><Layers3 size={14}/> Hexágonos</button>
-      <button onClick={()=>setMode("heat")} className={"flex flex-1 items-center justify-center gap-1 rounded-xl px-3 py-2.5 text-xs font-semibold "+(mode==="heat"?"bg-brand-600 text-white":"bg-slate-100 text-slate-600")}><Flame size={14}/> Calor</button>
+      <button disabled={!activeHeatKey} title={metric==="d_km2"?"Densidade por área não pode ser interpolada como contagem":undefined} onClick={()=>setMode("heat")} className={"flex flex-1 items-center justify-center gap-1 rounded-xl px-3 py-2.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40 "+(mode==="heat"?"bg-brand-600 text-white":"bg-slate-100 text-slate-600")}><Flame size={14}/> Calor</button>
      </div>
     </div>
     <label className="text-xs font-bold text-slate-600">Variável
-     <select value={metric} onChange={e=>{setMetric(e.target.value as Metric);setSelected("")}} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-normal">
+     <select value={metric} onChange={e=>{const m=e.target.value as Metric;setMetric(m);setSelected("");if(m==="d_km2")setMode("hex")}} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-normal">
       {metrics.filter(m=>m.id!=="cnpj"||data.cnpjMatch).map(m=><option key={m.id} value={m.id}>{m.label}</option>)}
      </select>
     </label>
     {metric==="cnpj"&&data.cnpjMatch&&<label className="text-xs font-bold text-slate-600">Seção CNAE do CNPJ coincidente
      <select value={cnpjSector} onChange={e=>{setCnpjSector(e.target.value);setSelected("")}} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-normal"><option value="all">Todos os setores conciliados</option>{sectorsCnpj.map(x=><option key={x} value={x}>Seção {x} · células ≥5</option>)}</select>
     </label>}
+    <label className="text-xs font-bold text-slate-600">Bairro oficial · seleção espacial
+     <select value={bairro} onChange={e=>chooseBairro(e.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-normal">
+      <option value="all">Todo o município</option>
+      {bairroNames.map(name=><option key={name} value={name}>{name}</option>)}
+     </select>
+    </label>
     <label className="text-xs font-bold text-slate-600">Base cartográfica
      <select value={osm?"osm":"off"} onChange={e=>setOsm(e.target.value==="osm")} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-normal">
       <option value="osm">OSM e bairros oficiais</option><option value="off">Bairros oficiais sem ruas</option>
      </select>
     </label>
    </section>
+   {bairro!=="all"&&<p className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900"><LocateFixed className="mt-0.5 shrink-0" size={15}/> <span>Bairro <strong>{bairro}</strong>: {num.format(visibleCells.length)} hexágonos associados pelo ponto representativo à geometria oficial. Células que cruzam limites não foram subdivididas: esta seleção é exploratória e não substitui o total cadastral por bairro. Perímetros dos núcleos municipais ficam ocultos durante o recorte.</span></p>}
    {!!data.economicHotspots?.length&&<section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
      <div className="flex flex-wrap items-center justify-between gap-3">
       <div><h2 className="text-sm font-bold text-amber-900">Núcleos contíguos de concentração empresarial</h2>
@@ -321,15 +340,16 @@ export function Hex500Dashboard(){
       {!mapReady&&!mapError&&<div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/70 text-sm font-semibold text-slate-600">Carregando camada de hexágonos PMTiles…</div>}
       {mapError&&<div role="alert" className="absolute inset-0 flex items-center justify-center bg-white/90 p-5 text-center text-sm text-amber-800">Erro ao carregar o mapa: {mapError}</div>}
      </div>
-     {mode==="hex"?<div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-600">
-      <span className="inline-flex items-center gap-1"><span className="h-3 w-4 rounded bg-slate-200"/> N/D, contagem 1–4 suprimida</span>
-      {C.map((c,i)=><span key={i} className="inline-flex items-center gap-1"><span className="h-3 w-4 rounded" style={{backgroundColor:c}}/>{i===0?"Menor":i===4?"Maior":""}</span>)}
-     </div>:<p className="mt-3 text-xs leading-relaxed text-amber-900">O calor usa os <strong>centros dos hexágonos ponderados</strong> pelas contagens com coordenadas de maior qualidade; esses centros não são localizações individuais de empresas ou endereços. É uma superfície suavizada de intensidade espacial.</p>}
+     {mode==="hex"?<div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-700" aria-label={"Legenda quantitativa: "+metricLabel}>
+       <span className="inline-flex items-center gap-1"><span className="h-3 w-4 rounded bg-slate-200"/> N/D ou suprimido (1–4)</span>
+       {bands.map((band,i)=><span key={i} className="inline-flex items-center gap-1"><span className="h-3 w-4 rounded" style={{backgroundColor:band.color}}/>{band.label}</span>)}
+      </div>:<p className="mt-3 text-xs leading-relaxed text-amber-900">O calor usa os <strong>centros dos hexágonos ponderados</strong> {metric==="n"&&data.heatMetricsVersion!==2?"pelas coordenadas de maior qualidade (arquivo cartográfico anterior)":"pelas contagens publicáveis da variável selecionada"}; esses centros não são localizações individuais de empresas ou endereços. É uma superfície suavizada de intensidade espacial.</p>}
+     {metric==="d_km2"&&<p className="mt-3 text-xs text-slate-600">A taxa por km² é representada somente no mapa coroplético: a interpolação entre células distorceria o denominador territorial.</p>}
      {metric==="cnpj"&&<p className="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-900">Esta camada corresponde apenas a CNPJs cujo endereço cadastral foi conciliado exatamente a endereço não domiciliar do CNEFE 2022. O calor pondera centros de hexágonos, não divulga pontos nem substitui o total municipal de CNPJs.</p>}
      {metric.startsWith("k")&&<p className="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-900">Categorias do CNEFE representam espécies de endereço, não setores CNAE. O mapa de calor considera somente observações de melhor qualidade geográfica para esta espécie.</p>}
     </div>
     <aside className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
-     <h2 className="font-bold">Células mais concentradas</h2><p className="mt-1 text-xs text-slate-500">{num.format(ranking.length)} hexágonos com valor publicável na variável selecionada.</p>
+     <h2 className="font-bold">Células mais concentradas</h2><p className="mt-1 text-xs text-slate-500">{num.format(ranking.length)} hexágonos com valor publicável na variável selecionada{bairro!=="all"?" · "+bairro:""}.</p>
      <label className="mt-3 flex items-center gap-2 rounded-lg border border-slate-200 px-2.5 py-2"><Search size={15}/><input value={search} onChange={e=>setSearch(e.target.value)} className="min-w-0 flex-1 text-xs outline-none" placeholder="Filtrar identificador de grade" aria-label="Filtrar hexágonos"/></label>
      <div className="mt-3 max-h-[495px] space-y-1 overflow-auto">
       {ranking.filter(c=>c.cell.toLowerCase().includes(search.toLowerCase())).slice(0,120).map((c,i)=><button key={c.cell} onClick={()=>{setSelected(c.cell);mapRef.current?.flyTo({center:[c.lon,c.lat],zoom:14.2})}}
