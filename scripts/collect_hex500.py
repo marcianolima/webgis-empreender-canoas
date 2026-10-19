@@ -189,7 +189,7 @@ def extract():
                 heat.append({"type":"Feature","properties":{"cell":props["cell"],
                     "w":high,"cw":(matched_cell["matched"] if matched_cell else 0),
                     "source":"cnefe2022_hex_center",**{k:v for k,v in props.items() if k.startswith("hk")},
-                    **{("cw"+k[1:]):v for k,v in matched_cell.items() if k.startswith("s") and len(k)==2} if matched_cell else {}},
+                    **({("cw"+k[1:]):v for k,v in matched_cell.items() if k.startswith("s") and len(k)==2} if matched_cell else {})},
                     "geometry":{"type":"Point","coordinates":[lon,lat]}})
     actual_heat=sum(1 for row in heat if row["properties"]["w"]>=MIN)
     matched_heat=sum(1 for row in heat if row["properties"]["cw"]>=MIN)
