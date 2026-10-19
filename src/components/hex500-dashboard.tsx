@@ -381,7 +381,7 @@ export function Hex500Dashboard(){
      </div>
      <p className="text-xs leading-relaxed text-slate-600">Área oficial: {fmt(neighborhoodStats.areaKm2)} km². Interseções calculadas em EPSG:31982. <strong>Partes de divisa aparecem em bege</strong> sem receber as contagens de todo o hexágono. CNPJs publicados em células integralmente contidas: {fmt(neighborhoodStats.cnpjPublishedFullCells)}, em {num.format(neighborhoodStats.cnpjCellsPublished)} células publicáveis. Esse subtotal abrange somente o subconjunto geocodificado e não o universo empresarial do bairro.</p>
     </>:<p className="text-xs text-amber-900">O PMTiles ainda não inclui as interseções: permanece a seleção exploratória pelo ponto representativo das células.</p>}
-   </section>
+   </section>}
    {!!data.economicHotspots?.length&&<section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
      <div className="flex flex-wrap items-center justify-between gap-3">
       <div><h2 className="text-sm font-bold text-amber-900">Núcleos contíguos de concentração empresarial</h2>
