@@ -188,12 +188,12 @@ def extract():
             # Weighted center of the *aggregate hex cell* is not a position of a
             # company or of an IBGE address. Show only sufficiently numerous
             # original/adjusted CNEFE coordinates as smoothed heat intensity.
-            if high>=MIN or (matched_cell and matched_cell["matched"]>=MIN):
+            if total>=MIN or high>=MIN or (matched_cell and matched_cell["matched"]>=MIN):
                 mid=hexshape.representative_point()
                 if not boundary.covers(mid):mid=clip.representative_point()
                 lon,lat=inv.transform(mid.x,mid.y)
                 heat.append({"type":"Feature","properties":{"cell":props["cell"],
-                    "w":high,"nw":total,"cw":(matched_cell["matched"] if matched_cell else 0),
+                    "w":safe_public(high),"nw":safe_public(total),"cw":(matched_cell["matched"] if matched_cell else 0),
                     "source":"cnefe2022_hex_center",**{k:v for k,v in props.items() if k.startswith("hk")},
                     **({("cws"+k[1:]):v for k,v in matched_cell.items() if k.startswith("s") and len(k)==2} if matched_cell else {})},
                     "geometry":{"type":"Point","coordinates":[lon,lat]}})
