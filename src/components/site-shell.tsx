@@ -53,6 +53,15 @@ const titles:Record<string,string>={
  "/atualizacao":"Atualização dos dados"
 };
 
+type HeaderAction={href:string;label:string;icon:LucideIcon};
+const headerActions:Record<string,HeaderAction>={
+ "/cnpj":{href:"/bairros",label:"Mapa econômico",icon:MapPinned},
+ "/bairros":{href:"/hex500",label:"Hexágonos e calor",icon:Hexagon},
+ "/hex500":{href:"/bairros",label:"Mapa econômico",icon:MapPinned},
+ "/sebrae":{href:"/sebrae/series",label:"Séries históricas",icon:TrendingUp},
+ "/sebrae/series":{href:"/sebrae/consulta",label:"Consulta ao vivo",icon:SearchCheck},
+ "/sebrae/consulta":{href:"/sebrae/series",label:"Séries históricas",icon:TrendingUp}
+};
 const github="https://github.com/marcianolima/webgis-empreender-canoas";
 
 function currentGroup(pathname:string):string|undefined{
@@ -67,6 +76,7 @@ export function SiteShell({children}:{children:React.ReactNode}){
  const closeButton=useRef<HTMLButtonElement>(null);
  const locationPath=pathname||"/";
  const groupForPage=useMemo(()=>currentGroup(locationPath),[locationPath]);
+ const contextAction=headerActions[locationPath];
 
  useEffect(()=>{
   const sync=()=>setHash(window.location.hash);
@@ -154,10 +164,17 @@ export function SiteShell({children}:{children:React.ReactNode}){
       <p className="truncate text-sm font-extrabold tracking-tight text-ink sm:text-base">{titles[locationPath]||"Canoas Empreende"}</p>
      </div>
     </div>
-    <a href={github} target="_blank" rel="noopener noreferrer" aria-label="Código do projeto no GitHub"
-     className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-bold text-brand-700 hover:bg-brand-50 sm:px-3">
-     <span className="hidden sm:inline">GitHub</span><ExternalLink size={15} aria-hidden="true"/>
-    </a>
+    <div className="flex shrink-0 items-center gap-2">
+     {contextAction&&<Link href={contextAction.href} title={contextAction.label}
+       aria-label={contextAction.label}
+       className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-50 px-2.5 text-xs font-bold text-brand-700 hover:bg-brand-100 sm:px-3">
+       <contextAction.icon size={15} aria-hidden="true"/><span className="hidden md:inline">{contextAction.label}</span>
+      </Link>}
+     <a href={github} target="_blank" rel="noopener noreferrer" aria-label="Código do projeto no GitHub"
+      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 text-xs font-bold text-brand-700 hover:bg-brand-50 sm:px-3">
+      <span className="hidden sm:inline">GitHub</span><ExternalLink size={15} aria-hidden="true"/>
+     </a>
+    </div>
    </header>
    <div className="min-w-0">{children}</div>
   </div>

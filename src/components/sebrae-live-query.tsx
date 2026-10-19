@@ -181,7 +181,6 @@ export function SebraeLiveQuery(){
   finally{setBusy(false);}
  }
  return <main className="mx-auto max-w-[1450px] space-y-6 px-4 pb-16 pt-8 text-ink sm:px-6">
-  <Link href="/sebrae/series" className="text-sm font-semibold text-brand-700">← Séries municipais armazenadas</Link>
   <header className="max-w-4xl space-y-3">
    <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700"><ShieldCheck size={15}/> Consulta pública anônima · Municipal IBGE 4304606</span>
    <h1 className="text-2xl font-extrabold sm:text-4xl">Consultas multidimensionais avançadas</h1>

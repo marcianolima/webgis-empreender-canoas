@@ -46,7 +46,6 @@ export function SectorsDashboard() {
   const year=rows[0]?.year;
   const unit=rows[0]?.unit;
   return <main className="mx-auto max-w-[1450px] px-4 py-8 text-ink sm:px-6 sm:py-12">
-    <Link href="/" className="text-sm font-semibold text-brand-700">← Painel principal</Link>
     <div className="mt-7 flex flex-wrap items-end justify-between gap-4">
       <div>
         <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700"><Leaf size={15}/> IBGE · Indicadores setoriais municipais</span>

@@ -15,6 +15,7 @@ type Metric="active"|"density"|"per1000";
 type Choice={id:number;name:string;value:number|null;row:BairrosGeoRow};
 type State={snapshot:BairrosSnapshot;metric:Metric;sector:string;choices:Choice[]};
 const textMetric:Record<Metric,string>={active:"Estabelecimentos ativos",density:"Estabelecimentos por km²",per1000:"Estabelecimentos por mil habitantes"};
+const unitMetric:Record<Metric,string>={active:"estabelecimentos",density:"estab./km²",per1000:"estab./1.000 habitantes"};
 function displayed(r:BairrosGeoRow,metric:Metric,sector:string):number|null{
  const count=sector==="all"?r.active:r.sectorCounts[sector]??null;
  if(count===null||count===undefined)return null;
@@ -132,9 +133,10 @@ export function BairrosDashboard(){
    map=new maplibregl.Map({
     container:element.current!,center:[-51.19,-29.915],zoom:11,minZoom:9,maxZoom:16,
     style:{version:8,glyphs:"https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",sources:{
-     osm:{type:"raster",tiles:["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],tileSize:256,
-      attribution:"© OpenStreetMap contributors"},
-     bairros:{type:"vector",url:"pmtiles://"+url,attribution:"© GeoCanoas — Prefeitura de Canoas"}
+     osm:{type:"raster",tiles:["https://basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"],tileSize:256,
+      attribution:"© OpenStreetMap contributors · © CARTO"},
+     bairros:{type:"vector",url:"pmtiles://"+url,attribution:"© GeoCanoas — Prefeitura de Canoas"},
+      rotulos:{type:"geojson",data:base+"/data/bairros-rotulos.geojson"}
     },layers:[
      {id:"base-osm",type:"raster",source:"osm"},
      {id:"bairros-fill",type:"fill",source:"bairros","source-layer":"bairros",
@@ -143,7 +145,7 @@ export function BairrosDashboard(){
       paint:{"line-color":"#245449","line-width":1.35}},
      {id:"bairros-selected",type:"line",source:"bairros","source-layer":"bairros",
       filter:["==",["get","oid"],-1],paint:{"line-color":"#da741c","line-width":4}},
-     {id:"bairros-name",type:"symbol",source:"bairros","source-layer":"bairros",
+     {id:"bairros-name",type:"symbol",source:"rotulos",
       layout:{"text-field":["get","bairro"],"text-size":11,"text-max-width":12,
        "text-font":["Open Sans Regular","Arial Unicode MS Regular"]},
       paint:{"text-color":"#163d35","text-halo-color":"#ffffff","text-halo-width":1.2}}
@@ -196,8 +198,6 @@ export function BairrosDashboard(){
  },[basemap,ready]);
 
  return <main className="mx-auto max-w-[1500px] space-y-5 px-4 pb-16 pt-8 text-ink sm:px-6">
-  <Link href="/" className="text-sm font-semibold text-brand-700">← Observatório econômico</Link>
-  <Link href="/hex500" className="ml-4 inline-flex items-center rounded-xl border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-bold text-brand-900">Hexágonos 500 m e mapa de calor →</Link>
   <header className="flex flex-wrap items-end justify-between gap-4">
    <div className="max-w-4xl"><span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700"><MapPinned size={15}/> GeoCanoas · BAIRROSOFICIAL · PMTiles</span>
     <h1 className="mt-3 text-2xl font-extrabold sm:text-4xl">Geografia das empresas de Canoas</h1>
@@ -261,19 +261,19 @@ export function BairrosDashboard(){
     </div>
     <aside className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
      <h2 className="text-base font-extrabold">Ranking territorial</h2>
-     <p className="mt-1 text-xs leading-relaxed text-slate-500">Classificação dos 18 bairros pelo indicador e competência selecionados.</p>
+     <p className="mt-1 text-xs leading-relaxed text-slate-500">Classificação dos 18 bairros pelo indicador e competência selecionados. Unidade: {unitMetric[metric]}.</p>
      <label className="mt-3 flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2"><Search size={15}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar bairro" className="w-full text-sm outline-none" aria-label="Buscar bairro"/></label>
      <div className="mt-3 max-h-[490px] space-y-1.5 overflow-y-auto">
       {choices.filter(r=>r.name.toLocaleLowerCase("pt-BR").includes(search.toLocaleLowerCase("pt-BR"))).map((c,i)=><button key={c.id} onClick={()=>setSelected(c.id)}
        className={"flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-3 text-left transition-colors "+(selected===c.id?"border-brand-600 bg-brand-50":"border-slate-100 bg-slate-50 hover:border-brand-200")}>
-       <span className="min-w-0"><span className="block text-xs font-bold text-slate-700">{i+1}. {c.name}</span><span className="mt-1 block text-[11px] text-slate-500">{decimal.format(c.row.areaKm2)} km²</span></span>
+       <span className="min-w-0"><span className="block text-xs font-bold text-slate-700">{i+1}. {c.name}</span><span className="mt-1 block text-[11px] text-slate-500">{unitMetric[metric]}</span></span>
        <strong className="shrink-0 text-sm tabular-nums">{formatted(c.value,metric)}</strong>
       </button>)}
      </div>
      {selectedRow&&<div className="mt-4 rounded-xl border border-brand-100 bg-brand-50 p-3 text-xs leading-relaxed">
        <strong>{selectedRow.name}</strong><p className="mt-1">CNPJs ativos: {formatted(selectedRow.row.active,"active")}</p>
        <p>População 2022 (GeoCanoas): {selectedRow.row.population2022===null?"N/D":number.format(selectedRow.row.population2022)}</p>
-       <p>Indicador selecionado: {formatted(selectedRow.value,metric)}</p>
+       <p>{textMetric[metric]}: {formatted(selectedRow.value,metric)} {selectedRow.value!==null?unitMetric[metric]:""}</p>
       </div>}
     </aside>
    </section>

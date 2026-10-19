@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import {CnpjSpatialInsights} from "@/components/cnpj-spatial-insights";
 import {useEffect,useMemo,useRef,useState} from "react";
 import maplibregl,{LngLatBounds,type ExpressionSpecification,type FilterSpecification} from "maplibre-gl";
@@ -161,11 +160,12 @@ export function Hex500Dashboard(){
     center:[-51.19,-29.914],zoom:11.2,minZoom:9,maxZoom:16,
     style:{version:8,glyphs:"https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
      sources:{
-      osm:{type:"raster",tiles:["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-       tileSize:256,attribution:"© OpenStreetMap contributors"},
+      osm:{type:"raster",tiles:["https://basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"],
+       tileSize:256,attribution:"© OpenStreetMap contributors · © CARTO"},
       grid:{type:"vector",url:"pmtiles://"+url,
        attribution:"Endereços não domiciliares IBGE CNEFE 2022, polígonos GeoCanoas"},
       bairros:{type:"geojson",data:base+"/data/bairros-oficiais.geojson"},
+       rotulos:{type:"geojson",data:base+"/data/bairros-rotulos.geojson"},
      },layers:[
       {id:"osm",type:"raster",source:"osm"},
       {id:"hex-fill",type:"fill",source:"grid","source-layer":"hex500",
@@ -193,8 +193,8 @@ export function Hex500Dashboard(){
       {id:"bairro-focus",type:"line",source:"bairros",
        filter:["==",["get","BAIRRO"],"__nenhum__"],
        paint:{"line-color":"#d97706","line-width":3.5}},
-      {id:"official-label",type:"symbol",source:"bairros",
-       layout:{"text-field":["get","BAIRRO"],"text-size":11,"text-font":["Open Sans Regular","Arial Unicode MS Regular"],"text-max-width":10},
+      {id:"official-label",type:"symbol",source:"rotulos",
+       layout:{"text-field":["get","bairro"],"text-size":11,"text-font":["Open Sans Regular","Arial Unicode MS Regular"],"text-max-width":10},
        paint:{"text-color":"#173c35","text-halo-color":"#ffffff","text-halo-width":1.2}},
       {id:"selected-hex",type:"line",source:"grid","source-layer":"hex500",
        filter:["==",["get","cell"],"____"],
@@ -302,7 +302,6 @@ export function Hex500Dashboard(){
   }
  }
  return <main className="mx-auto max-w-[1540px] space-y-5 px-4 pb-16 pt-8 text-ink sm:px-6">
-  <Link href="/bairros" className="text-sm font-semibold text-brand-700">← Mapa econômico de bairros</Link>
   <header className="flex flex-wrap items-end justify-between gap-3">
    <div className="max-w-4xl">
     <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700"><Hexagon size={15}/> Hexágonos 500 m · IBGE CNEFE 2022 · PMTiles</span>

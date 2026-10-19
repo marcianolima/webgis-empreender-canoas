@@ -2,7 +2,6 @@ import Link from "next/link";
 export const metadata = { title: "Metodologia | Canoas Empreende" };
 export default function Sobre() {
   return <main className="mx-auto max-w-3xl px-5 py-12 text-ink">
-    <Link href="/" className="text-sm font-semibold text-brand-700">← Voltar ao observatório</Link>
     <h1 className="mt-8 text-3xl font-extrabold">Sobre, metodologia e limitações</h1>
     <p className="mt-4 leading-relaxed text-slate-600">Observatório WebGIS estático de Canoas, baseado exclusivamente em dados oficiais agregados. O site é gerado pelo GitHub Actions e servido pelo GitHub Pages. Nenhuma estatística ou coordenada fictícia é publicada.</p>
     <h2 className="mt-8 text-xl font-bold">Empresas — CEMPRE</h2>

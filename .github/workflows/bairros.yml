@@ -7,6 +7,7 @@ on:
       - scripts/collect_hex500.py
       - tests/test_cnpj_geocoding.py
       - tests/test_cartographic_integrity.py
+      - tests/test_bairros_labels.py
       - .github/workflows/bairros.yml
       - public/data/cnpj.json
       - public/data/cnpj-geo-hex500.json
@@ -51,7 +52,9 @@ jobs:
           fi
           tippecanoe --version
       - name: Testes de bairros, geometrias e hexágonos
-        run: python -m unittest discover -s tests -p 'test_bairros.py' -v
+        run: |
+          python -m unittest discover -s tests -p 'test_bairros.py' -v
+          python -m unittest discover -s tests -p 'test_bairros_labels.py' -v
       - name: Auditoria cartográfica de supressão e consistência dos dados atuais
         run: python -m unittest discover -s tests -p 'test_cartographic_integrity.py' -v
       - name: Testar cruzamento exato e limiares de privacidade CNPJ
@@ -61,7 +64,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/geocanoas-prior
-          cp public/data/bairros-economia.pmtiles public/data/bairros-oficiais.geojson public/data/bairros-economia.json public/data/bairros-economia-series.json /tmp/geocanoas-prior/
+          cp public/data/bairros-economia.pmtiles public/data/bairros-oficiais.geojson public/data/bairros-rotulos.geojson public/data/bairros-economia.json public/data/bairros-economia-series.json /tmp/geocanoas-prior/
           if timeout 150s python scripts/collect_bairros.py; then
             echo "GeoCanoas oficial atualizado e validado"
           else
@@ -130,7 +133,14 @@ jobs:
           assert x["schemaVersion"]==1 and x["status"]=="verified"
           assert x["territory"]=="4304606" and x["reference"]==cnpj["reference"]
           geo=json.loads((base/"bairros-oficiais.geojson").read_text())
+          labels=json.loads((base/"bairros-rotulos.geojson").read_text())
           assert len(geo["features"])==18
+          assert len(labels["features"])==18
+          assert len({f["properties"]["bairro"] for f in labels["features"]})==18
+          from shapely.geometry import shape
+          polygons={f["properties"]["BAIRRO"]:shape(f["geometry"]) for f in geo["features"]}
+          assert set(polygons)=={f["properties"]["bairro"] for f in labels["features"]}
+          assert all(polygons[f["properties"]["bairro"]].covers(shape(f["geometry"])) for f in labels["features"])
           assert {int(f["id"]) for f in geo["features"]}=={r["id"] for r in x["neighborhoods"]}
           assert len(x["neighborhoods"])==18
           assert len({r["id"] for r in x["neighborhoods"]})==18
@@ -157,6 +167,7 @@ jobs:
             public/data/cnefe-hex500.json
             public/data/bairros-economia.pmtiles
             public/data/bairros-oficiais.geojson
+            public/data/bairros-rotulos.geojson
             public/data/bairros-economia.json
             public/data/bairros-economia-series.json
           retention-days: 30
@@ -166,14 +177,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/canoas-geo-approved
-          cp public/data/cnefe-hex500.pmtiles public/data/cnefe-hex500.json public/data/bairros-economia.pmtiles public/data/bairros-economia.json public/data/bairros-economia-series.json public/data/bairros-oficiais.geojson /tmp/canoas-geo-approved/
+          cp public/data/cnefe-hex500.pmtiles public/data/cnefe-hex500.json public/data/bairros-economia.pmtiles public/data/bairros-economia.json public/data/bairros-economia-series.json public/data/bairros-oficiais.geojson public/data/bairros-rotulos.geojson /tmp/canoas-geo-approved/
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           for i in 1 2 3 4 5; do
             git fetch origin main
             git reset --hard origin/main
             cp /tmp/canoas-geo-approved/* public/data/
-            git add public/data/cnefe-hex500.pmtiles public/data/cnefe-hex500.json public/data/bairros-economia.pmtiles public/data/bairros-economia.json public/data/bairros-economia-series.json public/data/bairros-oficiais.geojson
+            git add public/data/cnefe-hex500.pmtiles public/data/cnefe-hex500.json public/data/bairros-economia.pmtiles public/data/bairros-economia.json public/data/bairros-economia-series.json public/data/bairros-oficiais.geojson public/data/bairros-rotulos.geojson
             if git diff --cached --quiet; then echo "Sem alterações"; exit 0; fi
             git commit -m "data(geo): malha BAIRROSOFICIAL e agregados CNPJ PMTiles $(python -c 'import json; print(json.load(open("public/data/cnpj.json"))["reference"])')"
             if git push origin HEAD:main; then echo "BAIRROS_PM_COMMITTED"; exit 0; fi
