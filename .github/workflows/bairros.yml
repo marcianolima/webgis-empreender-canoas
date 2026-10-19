@@ -10,15 +10,21 @@ on:
       - public/data/cnpj.json
       - public/data/cnpj-geo-hex500.json
   workflow_dispatch:
+  workflow_run:
+    workflows:
+      - "CNPJ Receita Federal | Carga integral e atualização"
+    types: [completed]
   schedule:
     - cron: "17 13 14 * *"
 permissions:
   contents: write
+  actions: write
 concurrency:
   group: canoas-bairros-pmtiles
   cancel-in-progress: false
 jobs:
   tiles:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -121,3 +127,7 @@ jobs:
             if git push origin HEAD:main; then echo "BAIRROS_PM_COMMITTED"; exit 0; fi
             if [ "$i" -eq 5 ]; then exit 1; fi
           done
+      - name: Publicar PMTiles de bairros e CNPJ no GitHub Pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --ref main
