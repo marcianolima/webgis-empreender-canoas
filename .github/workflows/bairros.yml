@@ -57,6 +57,7 @@ jobs:
       - name: Testar cruzamento exato e limiares de privacidade CNPJ
         run: python -m unittest discover -s tests -p 'test_cnpj_geocoding.py' -v
       - name: Coletar 18 bairros GeoCanoas, conciliar CNPJs e gerar PMTiles
+        if: github.event_name != 'pull_request'
         run: python scripts/collect_bairros.py
       - name: Gerar hexágonos 500m e calor de endereços não domiciliares CNEFE/IBGE
         run: python scripts/collect_hex500.py
