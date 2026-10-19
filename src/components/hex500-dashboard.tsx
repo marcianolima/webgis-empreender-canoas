@@ -73,9 +73,10 @@ function add(root:HTMLElement,label:string,value:string){
  line.append(b,document.createTextNode(value));root.append(line);
 }
 function csvExport(data:SourceData,cells:Cell[],metric:string,bairroPorCelula:Map<string,string>){
- const header=["territorio_ibge","fonte","referencia","id_hex","largura_faces_m","lon_centro_estatistico","lat_centro_estatistico","area_recortada_km2","bairro_contencao_integral","indicador","valor"];
+ const full=data.spatialTopology?.fullCellBairro;
+ const header=["territorio_ibge","fonte","referencia","id_hex","largura_faces_m","lon_centro_estatistico","lat_centro_estatistico","area_recortada_km2",full?"bairro_contencao_integral":"bairro_por_centro_representativo","indicador","valor"];
  const rows=cells.map(c=>["4304606","IBGE CNEFE 2022","2022",c.cell,"500",String(c.lon),String(c.lat),
-  String(c.a_km2),bairroPorCelula.get(c.cell)||"",metric,String(numberIn(c,metric)??"")]);
+  String(c.a_km2),full?(full[c.cell]||""):(bairroPorCelula.get(c.cell)||""),metric,String(numberIn(c,metric)??"")]);
  const quote=(s:string)=>'"'+(/^[=+\-@]/.test(s)&&!/^-?\d+(\.\d+)?$/.test(s)?"'"+s:s).replaceAll('"','""')+'"';
  const csv="\ufeff"+[header,...rows].map(row=>row.map(quote).join(";")).join("\r\n");
  const uri=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
