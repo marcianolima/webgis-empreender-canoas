@@ -150,6 +150,17 @@ def assemble(reference,path):
        "Endereços e coordenadas individuais não são publicados; agregações territoriais apenas em hexágonos >=5."]}
     dst=DATA/"cnpj-geo-hex500.json"
     dst.write_text(json.dumps(output,ensure_ascii=False,separators=(",",":"))+"\n",encoding="utf-8")
+    archive=DATA/"cnpj-geo-hex500-series.json"
+    history={"schemaVersion":1,"territory":"4304606","snapshots":[]}
+    if archive.exists():
+        history=json.loads(archive.read_text(encoding="utf-8"))
+        if history.get("territory")!="4304606":
+            raise RuntimeError("Historical geocoded CNPJ archive territory mismatch")
+    prior=[x for x in history["snapshots"] if x.get("reference")!=reference]
+    prior.append({"reference":reference,"generatedAt":output["generatedAt"],
+                  "coverage":output["coverage"],"cells":published})
+    history["snapshots"]=sorted(prior,key=lambda x:x["reference"])
+    archive.write_text(json.dumps(history,ensure_ascii=False,separators=(",",":"))+"\n",encoding="utf-8")
     print("CNPJ_CNEFE_GEOCODED",json.dumps(output["coverage"],ensure_ascii=False),flush=True)
 
 def main():
