@@ -17,12 +17,13 @@ type SourceData={schemaVersion:1;status:"verified"|"not_loaded";territory:string
  notInOfficialBairros:number;invalidCoordinates:number;gridCells:number;
  cellsWithNonResidential:number;heatCellsAtLeastFiveHighQualityAddresses:number;
  kindCounts:Record<string,number>;geocodingLevelCounts:Record<string,number>};
- kinds?:Record<string,string>;cells?:Cell[];notes?:string[];privacy?:{individualCoordinatesPublished:boolean}};
-type Metric="n"|"n_high"|"d_km2"|"k3"|"k4"|"k5"|"k6"|"k8";
+ kinds?:Record<string,string>;cells?:Cell[];notes?:string[];privacy?:{individualCoordinatesPublished:boolean};cnpjMatch?:{active:number;matched:number;matchedPercent:number;cellsPublished:number}|null;cnpjReference?:string|null};
+type Metric="n"|"n_high"|"d_km2"|"k3"|"k4"|"k5"|"k6"|"k8"|"cnpj";
 type Mode="hex"|"heat";
 const kinds:Record<string,string>={k3:"Agropecuário",k4:"Ensino",k5:"Saúde",k6:"Outras finalidades",k8:"Religioso"};
 const metrics:{id:Metric;label:string}[]=[
  {id:"n",label:"Endereços não domiciliares"}, {id:"n_high",label:"Coordenadas de maior qualidade (1–2)"},
+ {id:"cnpj",label:"CNPJs ativos — endereços coincidentes (parcial)"},
  {id:"d_km2",label:"Endereços por km²"},
  {id:"k3",label:"Estabelecimentos agropecuários"}, {id:"k4",label:"Estabelecimentos de ensino"},
  {id:"k5",label:"Estabelecimentos de saúde"}, {id:"k6",label:"Estabelecimentos de outras finalidades"},
@@ -173,7 +174,7 @@ export function Hex500Dashboard(){
   map.setLayoutProperty("heat","visibility",mode==="heat"?"visible":"none");
   map.setFilter("selected-hex",["==",["get","cell"],selected||"____"]);
   if(mode==="heat"){
-    const key=metric.startsWith("k")?"h"+metric:"w";
+    const key=metric==="cnpj"?"cw":metric.startsWith("k")?"h"+metric:"w";
     map.setFilter("heat",[">=",["coalesce",["get",key],0],5]);
     map.setPaintProperty("heat","heatmap-weight",["interpolate",["linear"],
       ["to-number",["get",key],0],5,.16,100,1] as ExpressionSpecification);
@@ -186,7 +187,7 @@ export function Hex500Dashboard(){
    <div className="max-w-4xl">
     <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700"><Hexagon size={15}/> Hexágonos 500 m · IBGE CNEFE 2022 · PMTiles</span>
     <h1 className="mt-3 text-2xl font-extrabold sm:text-4xl">Concentração territorial de estabelecimentos</h1>
-    <p className="mt-3 text-sm leading-relaxed text-slate-600">Grade hexagonal de 500 m e calor estatístico calculados a partir de endereços não domiciliares georreferenciados do IBGE. Não é um mapa de pontos dos CNPJs de 2026.</p>
+    <p className="mt-3 text-sm leading-relaxed text-slate-600">Grade hexagonal de 500 m e calor estatístico calculados a partir de endereços não domiciliares georreferenciados do IBGE. CNPJs com endereço exatamente conciliado só aparecem como agregado, quando a base correspondente estiver disponível.</p>
    </div>
    {data?.status==="verified"&&<button onClick={()=>csvExport(data,cells,metric)} className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white"><Download size={16}/> Exportar CSV</button>}
   </header>
@@ -205,6 +206,7 @@ export function Hex500Dashboard(){
      <p className="mt-2 text-2xl font-extrabold tabular-nums sm:text-3xl">{val}</p><p className="mt-1 text-xs leading-relaxed text-slate-500">{note}</p>
     </div>)}
    </section>
+   {data.cnpjMatch&&<div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-xs leading-relaxed text-brand-900"><strong>Cruzamento CNPJ × CNEFE:</strong> {num.format(data.cnpjMatch.matched)} estabelecimentos ativos da Receita Federal, referência {data.cnpjReference}, associados por CEP, logradouro e número a endereço não domiciliar CNEFE de qualidade 1–2 ({n2.format(data.cnpjMatch.matchedPercent)}% de {num.format(data.cnpjMatch.active)} ativos). As demais empresas continuam sem geocodificação verificada; a cobertura é parcial e não deve representar todo o mercado.</div>}
    <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-3">
     <div className="text-xs font-bold text-slate-600">Visualização
      <div className="mt-2 flex gap-2">
@@ -214,7 +216,7 @@ export function Hex500Dashboard(){
     </div>
     <label className="text-xs font-bold text-slate-600">Variável
      <select value={metric} onChange={e=>{setMetric(e.target.value as Metric);setSelected("")}} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-normal">
-      {metrics.map(m=><option key={m.id} value={m.id}>{m.label}</option>)}
+      {metrics.filter(m=>m.id!=="cnpj"||data.cnpjMatch).map(m=><option key={m.id} value={m.id}>{m.label}</option>)}
      </select>
     </label>
     <label className="text-xs font-bold text-slate-600">Base cartográfica
@@ -235,6 +237,7 @@ export function Hex500Dashboard(){
       <span className="inline-flex items-center gap-1"><span className="h-3 w-4 rounded bg-slate-200"/> N/D, contagem 1–4 suprimida</span>
       {C.map((c,i)=><span key={i} className="inline-flex items-center gap-1"><span className="h-3 w-4 rounded" style={{backgroundColor:c}}/>{i===0?"Menor":i===4?"Maior":""}</span>)}
      </div>:<p className="mt-3 text-xs leading-relaxed text-amber-900">O calor usa os <strong>centros dos hexágonos ponderados</strong> pelas contagens com coordenadas de maior qualidade; esses centros não são localizações individuais de empresas ou endereços. É uma superfície suavizada de intensidade espacial.</p>}
+     {metric==="cnpj"&&<p className="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-900">Esta camada corresponde apenas a CNPJs cujo endereço cadastral foi conciliado exatamente a endereço não domiciliar do CNEFE 2022. O calor pondera centros de hexágonos, não divulga pontos nem substitui o total municipal de CNPJs.</p>}
      {metric.startsWith("k")&&<p className="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-900">Categorias do CNEFE representam espécies de endereço, não setores CNAE. O mapa de calor considera somente observações de melhor qualidade geográfica para esta espécie.</p>}
     </div>
     <aside className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
