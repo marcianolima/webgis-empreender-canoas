@@ -1,0 +1,38 @@
+name: Probe IBGE CNEFE Canoas source columns
+on:
+  push:
+    paths: [.github/workflows/probe-cnefe.yml]
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Conferir URL municipal CNEFE, colunas, conteúdo e classes
+        run: |
+          python - <<'PY'
+          import urllib.request,zipfile,csv,collections,io,os
+          url="https://ftp.ibge.gov.br/Cadastro_Nacional_de_Enderecos_para_Fins_Estatisticos/Censo_Demografico_2022/Arquivos_CNEFE/CSV/Municipio/43_RS/4304606_CANOAS.zip"
+          req=urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0"})
+          with urllib.request.urlopen(req,timeout=75) as response:
+            print("HTTP_CNEFE",response.status,response.headers.get("Content-Length"),flush=True)
+            data=response.read(13_000_000)
+          print("BYTES",len(data),flush=True)
+          with zipfile.ZipFile(io.BytesIO(data)) as z:
+            print("FILES",[(f.filename,f.file_size) for f in z.infolist()[:7]],flush=True)
+            with z.open(z.namelist()[0]) as stream:
+              for enc in ("utf-8-sig","latin1"):
+                try:
+                  sample=stream.read(16000).decode(enc)
+                  print("ENC",enc,"FIRST",repr(sample[:400]),flush=True)
+                  break
+                except UnicodeDecodeError: stream.seek(0)
+            with z.open(z.namelist()[0]) as stream:
+              text=io.TextIOWrapper(stream,encoding=enc,newline="")
+              reader=csv.reader(text,delimiter=";")
+              headers=next(reader)
+              print("HEADERS",headers,flush=True)
+              print("SAMPLES",list(next(reader) for _ in range(5)),flush=True)
+          PY
