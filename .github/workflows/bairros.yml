@@ -38,6 +38,8 @@ jobs:
           tippecanoe --version
       - name: Testes de bairros, geometrias e hexágonos
         run: python -m unittest discover -s tests -p 'test_bairros.py' -v
+      - name: Testar cruzamento exato e limiares de privacidade CNPJ
+        run: python -m unittest discover -s tests -p 'test_cnpj_geocoding.py' -v
       - name: Coletar 18 bairros GeoCanoas, conciliar CNPJs e gerar PMTiles
         run: python scripts/collect_bairros.py
       - name: Gerar hexágonos 500m e calor de endereços não domiciliares CNEFE/IBGE
@@ -58,6 +60,7 @@ jobs:
           assert hexdata["coverage"]["gridCells"]>=300
           assert hexdata["coverage"]["nonResidentialWithCoordinatesInOfficialBairros"]>=2000
           assert hexdata["privacy"]["individualCoordinatesPublished"] is False
+          assert hexdata["coverage"]["heatCellsAtLeastFiveHighQualityAddresses"]>=250
           if hexdata.get("cnpjMatch"):
             geocoded=json.loads((base/"cnpj-geo-hex500.json").read_text())
             assert geocoded["reference"]==cnpj["reference"]

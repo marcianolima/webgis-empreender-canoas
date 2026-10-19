@@ -105,3 +105,12 @@
 - [x] PMTiles hex500 + heat500, sem divulgação de endereço individual, histórico/fonte e metadados.
 - [x] Interface móvel de hexágonos, seleção de espécie, nível de precisão, mapa de calor e exportação.
 - [ ] Geocodificar o CNPJ 2026 sobre endereços CNEFE via correspondência exata com CEP, logradouro e número, com validação e preservação de privacidade; não confundir com CNEFE.
+
+### Etapa 11 — CNPJ geocodificado e integridade
+- [x] Extrator de endereços exatos por CNPJ ativo, filtrado estritamente para Canoas em cada fragmento.
+- [x] Cruzamento com CNEFE 2022 de melhores níveis de coordenada e descarte de homônimos/posições divergentes.
+- [x] Contagens por hexágono com seção CNAE, supressão de células pequenas, rastreabilidade e histórico.
+- [x] Filtros CNAE aplicados ao calor e à grade quando o subconjunto CNPJ validado estiver disponível.
+- [x] Diagnósticos separados de endereço incompleto, não encontrado e ambíguo; reconciliação obrigatória com todos os ativos.
+- [x] Testes de privacidade e regressão da ordem das datas da Receita; gráficos temporais ocultos até verificação de snapshot corrigido.
+- [ ] Homologar resultado final de 10/10 fragmentos da nova carga RFB e a cobertura obtida, sem inferir a partir de amostras.

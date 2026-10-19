@@ -17,7 +17,7 @@ type SourceData={schemaVersion:1;status:"verified"|"not_loaded";territory:string
  notInOfficialBairros:number;invalidCoordinates:number;gridCells:number;
  cellsWithNonResidential:number;heatCellsAtLeastFiveHighQualityAddresses:number;
  kindCounts:Record<string,number>;geocodingLevelCounts:Record<string,number>};
- kinds?:Record<string,string>;cells?:Cell[];notes?:string[];privacy?:{individualCoordinatesPublished:boolean};cnpjMatch?:{active:number;matched:number;matchedPercent:number;cellsPublished:number}|null;cnpjReference?:string|null};
+ kinds?:Record<string,string>;cells?:Cell[];notes?:string[];privacy?:{individualCoordinatesPublished:boolean};cnpjMatch?:{active:number;hasUsableAddress:number;matched:number;matchedPercent:number;cellsPublished:number;matchedInPublishedCells:number;unpublishedBelowPrivacyThreshold?:number;diagnostics?:Record<string,number>}|null;cnpjReference?:string|null};
 type Metric="n"|"n_high"|"d_km2"|"k3"|"k4"|"k5"|"k6"|"k8"|"cnpj";
 type Mode="hex"|"heat";
 const kinds:Record<string,string>={k3:"Agropecuário",k4:"Ensino",k5:"Saúde",k6:"Outras finalidades",k8:"Religioso"};
@@ -211,6 +211,18 @@ export function Hex500Dashboard(){
     </div>)}
    </section>
    {data.cnpjMatch&&<div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-xs leading-relaxed text-brand-900"><strong>Cruzamento CNPJ × CNEFE:</strong> {num.format(data.cnpjMatch.matched)} estabelecimentos ativos da Receita Federal, referência {data.cnpjReference}, associados por CEP, logradouro e número a endereço não domiciliar CNEFE de qualidade 1–2 ({n2.format(data.cnpjMatch.matchedPercent)}% de {num.format(data.cnpjMatch.active)} ativos). As demais empresas continuam sem geocodificação verificada; a cobertura é parcial e não deve representar todo o mercado.</div>}
+   {data.cnpjMatch?.diagnostics&&<section className="rounded-2xl border border-slate-200 bg-white p-4">
+     <h2 className="text-sm font-bold">Diagnóstico de cobertura da geocodificação CNPJ</h2>
+     <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {[
+       ["Conciliados",data.cnpjMatch.matched],
+       ["Endereço RFB incompleto",data.cnpjMatch.diagnostics.missing_address_components||0],
+       ["Sem correspondência CNEFE 2022",data.cnpjMatch.diagnostics.not_found_in_2022_cnefe||0],
+       ["Correspondência ambígua",data.cnpjMatch.diagnostics.ambiguous_cnefe_geocodes||0]
+      ].map(([label,value])=><div key={label} className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-600">{label}</p><p className="mt-2 text-xl font-bold tabular-nums">{num.format(Number(value))}</p></div>)}
+     </div>
+     <p className="mt-3 text-xs leading-relaxed text-slate-600">Com endereço cadastral compatível: {num.format(data.cnpjMatch.hasUsableAddress)}. Observações conciliadas abaixo do limiar de publicação de cinco ocorrências por hexágono: {num.format(data.cnpjMatch.unpublishedBelowPrivacyThreshold||0)}. Os registros não localizados não são distribuídos geograficamente por aproximação.</p>
+    </section>}
    <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-3">
     <div className="text-xs font-bold text-slate-600">Visualização
      <div className="mt-2 flex gap-2">

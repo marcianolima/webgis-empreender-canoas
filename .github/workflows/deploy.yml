@@ -21,8 +21,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Testar coletores Python
-        run: python -m unittest discover -s tests -v
+      - name: Testar coletores Python e validar sintaxe geoespacial
+        run: |
+          python -m compileall -q scripts/cnpj_pipeline.py scripts/cnpj_geo.py scripts/collect_hex500.py scripts/collect_bairros.py
+          python -m unittest discover -s tests -v
       - name: Atualizar dados oficiais; preservar snapshot anterior se falhar
         timeout-minutes: 6
         run: |
@@ -115,6 +117,11 @@ jobs:
           hexinfo=json.loads((p/"data/cnefe-hex500.json").read_text())
           assert hexinfo["territory"]=="4304606"
           assert hexinfo["status"] in ("verified","not_loaded")
+          if hexinfo.get("cnpjMatch"):
+              assert hexinfo["cnpjReference"]==cnpj["reference"]
+              assert hexinfo["cnpjMatch"]["matched"]<=hexinfo["cnpjMatch"]["active"]
+              assert hexinfo["cnpjMatch"]["active"]==cnpj["kpis"]["active"]
+              assert hexinfo["privacy"]["individualCoordinatesPublished"] is False
           if hexinfo["status"]=="verified":
               hextiles=p/"data/cnefe-hex500.pmtiles"
               assert hextiles.exists() and hextiles.read_bytes()[:8]==bytes((80,77,84,105,108,101,115,3))
