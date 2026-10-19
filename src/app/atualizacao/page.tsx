@@ -1,8 +1,6 @@
-import Link from "next/link";
 export const metadata = { title: "Atualização dos dados | Canoas Empreende" };
 export default function Atualizacao() {
   return <main className="mx-auto max-w-3xl px-5 py-12 text-ink">
-    <Link href="/" className="text-sm font-semibold text-brand-700">← Voltar ao observatório</Link>
     <h1 className="mt-8 text-3xl font-extrabold">Coleta de dados oficiais</h1>
     <p className="mt-4 leading-relaxed text-slate-600">O processo é executado inteiramente pelo GitHub Actions na publicação e em rotinas programadas. O script Python utiliza APIs do IBGE e do Dados RS/JUCISRS e produz JSON e GeoJSON estáticos para o GitHub Pages.</p>
     <ol className="mt-6 list-decimal space-y-3 pl-6 leading-relaxed text-slate-700">
