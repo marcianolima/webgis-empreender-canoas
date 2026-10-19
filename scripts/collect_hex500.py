@@ -66,7 +66,10 @@ def extract():
     if len(feats)!=18:raise RuntimeError("Incomplete official neighborhood geometry")
     project=Transformer.from_crs("EPSG:4326","EPSG:31982",always_xy=True)
     inv=Transformer.from_crs("EPSG:31982","EPSG:4326",always_xy=True)
-    boundary=unary_union([transform(project.transform,shape(f["geometry"])) for f in feats])
+    regions=[(f["properties"]["BAIRRO"],transform(project.transform,shape(f["geometry"]))) for f in feats]
+    if len({name for name,_ in regions})!=18:raise RuntimeError("Duplicated official neighborhood names")
+    region_prepared=[(name,prep(geom)) for name,geom in regions]
+    boundary=unary_union([geom for _,geom in regions])
     if boundary.is_empty or not boundary.is_valid:raise RuntimeError("Official geometry is invalid")
     prepared=prep(boundary)
     bounds=boundary.bounds
@@ -78,9 +81,10 @@ def extract():
     if len(zbytes)>15_000_000:raise RuntimeError("CNEFE municipal input too large")
     sha=hashlib.sha256(zbytes).hexdigest()
     bycell=defaultdict(Counter)
+    byregion=defaultdict(Counter)
     byquality=Counter()
     kinds=Counter()
-    processed=selected=outside=bad=0
+    processed=selected=outside=bad=region_ambiguous=region_unassigned=0
     with zipfile.ZipFile(io.BytesIO(zbytes)) as archive:
         members=[f for f in archive.infolist() if not f.is_dir()]
         if len(members)!=1 or members[0].file_size>80_000_000:
@@ -110,6 +114,17 @@ def extract():
                 except (ValueError,TypeError,OverflowError):
                     bad+=1;continue
                 selected+=1
+                pt=Point(x,y)
+                # Classify at the ORIGINAL observed CNEFE coordinate: no
+                # hex centroid, interpolated population, or artificial CNPJ.
+                matching=[name for name,pgeom in region_prepared if pgeom.covers(pt)]
+                if len(matching)==1:
+                    reg=byregion[matching[0]]
+                    reg["all"]+=1
+                    if level in ("1","2"):reg["high"]+=1
+                    reg["kind_"+kind]+=1
+                elif len(matching)>1:region_ambiguous+=1
+                else:region_unassigned+=1
                 key=index_of(x,y)
                 bucket=bycell[key]
                 bucket["total"]+=1
@@ -139,10 +154,17 @@ def extract():
     x0,y0,x1,y1=bounds
     imin=int(math.floor(x0/SCALE))-2;imax=int(math.ceil(x1/SCALE))+2
     jmin=int(math.floor(y0/DY))-2;jmax=int(math.ceil(y1/DY))+2
-    hexes=[];heat=[];cells=[];totalcells=0
+    hexes=[];heat=[];cells=[];fragments=[];totalcells=0
+    fully_contained={}
+    border_cells=0
+    spatial_rows={name:{"bairro":name,"areaKm2":round(geom.area/1_000_000,5),
+        "fullCells":0,"borderFragments":0,"fullCellAreaKm2":0.,
+        "partialAreaKm2":0.,"cnpjPublishedFullCells":0,"cnpjCellsPublished":0}
+        for name,geom in regions}
     hexjson=WORK/"hex500.geojson"
     heatjson=WORK/"heat500.geojson"
     hotspotsjson=WORK/"hotspots500.geojson"
+    fragmentsjson=WORK/"hex_bairros.geojson"
     for j in range(jmin,jmax+1):
         for i in range(imin,imax+1):
             hexshape=hexagon(i,j)
@@ -185,6 +207,45 @@ def extract():
             centroid=clip.representative_point()
             lonc,latc=inv.transform(centroid.x,centroid.y)
             cells.append({**props,"lon":round(lonc,6),"lat":round(latc,6)})
+            # True UTM polygon intersection. No proportionally allocated
+            # establishment totals: the underlying CNPJ is known per HEX,
+            # not per fragment, and edge cells must remain unassigned.
+            pieces=[]
+            for region,polygon in regions:
+                if not clip.intersects(polygon):continue
+                part=clip.intersection(polygon)
+                if part.is_empty:continue
+                if part.geom_type=="GeometryCollection":
+                    part=unary_union([p for p in part.geoms
+                        if p.geom_type in ("Polygon","MultiPolygon")])
+                if part.is_empty or part.geom_type not in ("Polygon","MultiPolygon") or part.area<=.01:continue
+                pieces.append((region,part))
+            if not pieces or abs(sum(part.area for _,part in pieces)-clip.area)>max(.1,clip.area*.002):
+                raise RuntimeError(f"Official bairro intersection fails area conservation for {props['cell']}")
+            belongs=len(pieces)==1 and abs(pieces[0][1].area-clip.area)<=max(.1,clip.area*.00001)
+            if belongs:fully_contained[props["cell"]]=pieces[0][0]
+            else:border_cells+=1
+            for name,part in pieces:
+                is_full=belongs and name==pieces[0][0]
+                summary=spatial_rows[name]
+                area=part.area/1_000_000
+                if is_full:
+                    summary["fullCells"]+=1
+                    summary["fullCellAreaKm2"]+=area
+                    if isinstance(props.get("cnpj"),int):
+                        summary["cnpjPublishedFullCells"]+=props["cnpj"]
+                        summary["cnpjCellsPublished"]+=1
+                else:
+                    summary["borderFragments"]+=1
+                    summary["partialAreaKm2"]+=area
+                # Counts on cross-boundary fragments are omitted, not
+                # copied or prorated. MapLibre paints those in amber.
+                props_piece={"cell":props["cell"],"bairro":name,
+                    "full":int(is_full),"area_km2":round(area,6),
+                    "share_pct":round(100*part.area/clip.area,3)}
+                if is_full:props_piece.update(props)
+                fragments.append({"type":"Feature","properties":props_piece,
+                                  "geometry":mapping(transform(inv.transform,part))})
             # Weighted center of the *aggregate hex cell* is not a position of a
             # company or of an IBGE address. Show only sufficiently numerous
             # original/adjusted CNEFE coordinates as smoothed heat intensity.
@@ -243,12 +304,25 @@ def extract():
                 hotspot_summary.append({"id":region,"rank":rank,
                   "matched":sum_cnpj,"hexagons":len(group),
                   "lon":round(point.x,6),"lat":round(point.y,6)})
+    if len(fully_contained)+border_cells!=totalcells:
+        raise RuntimeError("Missing hexagon topology")
+    if sum(r["all"] for r in byregion.values())+region_ambiguous+region_unassigned!=selected:
+        raise RuntimeError("Point-in-bairro accounting mismatch")
+    for name,summary in spatial_rows.items():
+        cnt=byregion[name]
+        summary["observedAddresses"]=safe_public(cnt["all"])
+        summary["highQualityAddresses"]=safe_public(cnt["high"])
+        summary["observedPerKm2"]=round(cnt["all"]/summary["areaKm2"],2) if cnt["all"]>=MIN and summary["areaKm2"]>0 else None
+        summary["cnpjPublishedFullCells"]=safe_public(summary["cnpjPublishedFullCells"])
+        summary["fullCellAreaKm2"]=round(summary["fullCellAreaKm2"],5)
+        summary["partialAreaKm2"]=round(summary["partialAreaKm2"],5)
+        summary["kinds"]={k:safe_public(cnt["kind_"+k]) for k in KINDS}
     actual_heat=sum(1 for row in heat if (row["properties"]["w"] or 0)>=MIN)
     matched_heat=sum(1 for row in heat if row["properties"]["cw"]>=MIN)
     if totalcells<300 or actual_heat<80:
         raise RuntimeError(f"Unexpected grid coverage {totalcells}, heat cells {len(heat)}")
     WORK.mkdir(parents=True,exist_ok=True)
-    for filename,features in ((hexjson,hexes),(heatjson,heat),(hotspotsjson,hotspot_features)):
+    for filename,features in ((hexjson,hexes),(heatjson,heat),(hotspotsjson,hotspot_features),(fragmentsjson,fragments)):
         filename.write_text(json.dumps({"type":"FeatureCollection","features":features},
                            ensure_ascii=False,separators=(",",":")),encoding="utf-8")
     pm=DATA/"cnefe-hex500.pmtiles"
@@ -256,6 +330,7 @@ def extract():
        "--no-feature-limit","--no-tile-size-limit",
        "-L",f"hex500:{hexjson}","-L",f"heat500:{heatjson}",
        "-L",f"hotspots500:{hotspotsjson}",
+       "-L",f"hex_bairros:{fragmentsjson}",
        "-o",str(pm)],check=True,timeout=120)
     if pm.open("rb").read(8)!=b"PMTiles\x03":
         raise RuntimeError("Generated PMTiles v3 is corrupt")
@@ -265,8 +340,8 @@ def extract():
           "source":SOURCE,"sourceSha256":sha,
           "bairrosSource":"https://geo.canoas.rs.gov.br/server/rest/services/BAIRROSOFICIAL/FeatureServer/0",
           "dataMeaning":"Endereços de estabelecimentos observados no CNEFE 2022; NÃO são CNPJs da Receita",
-          "cellWidthMeters":500,"heatMetricsVersion":2,"cellDefinition":"Hexágonos regulares com distância entre faces paralelas de 500 metros, EPSG:31982",
-          "pmtiles":{"path":"/data/cnefe-hex500.pmtiles","layers":["hex500","heat500","hotspots500"],
+          "cellWidthMeters":500,"heatMetricsVersion":2,"spatialOverlayVersion":1,"cellDefinition":"Hexágonos regulares com distância entre faces paralelas de 500 metros, EPSG:31982",
+          "pmtiles":{"path":"/data/cnefe-hex500.pmtiles","layers":["hex500","heat500","hotspots500","hex_bairros"],
                      "bytes":pm.stat().st_size,"sha256":hashlib.sha256(pm.read_bytes()).hexdigest()},
           "coverage":{"allCnefeRecords":processed,"nonResidentialWithCoordinatesInOfficialBairros":selected,
              "notInOfficialBairros":outside,"invalidCoordinates":bad,
@@ -275,6 +350,13 @@ def extract():
              "heatCellsWithVerifiedCnpjSubset":matched_heat,
              "kindCounts":{k:kinds[k] for k in KINDS},
              "geocodingLevelCounts":{k:byquality[k] for k in QUALITY}},
+          "spatialTopology":{"method":"EPSG:31982 polygon intersection between official bairros and hexagon clipped to municipal boundary",
+             "fragments":len(fragments),"fullyContainedHexagons":len(fully_contained),
+             "crossBorderHexagons":border_cells,
+             "unassignedCnefePointBoundary":region_unassigned,
+             "ambiguousCnefePointBoundary":region_ambiguous,
+             "fullCellBairro":fully_contained,
+             "neighborhoods":sorted(spatial_rows.values(),key=lambda row:row["bairro"])},
           "kinds":{k:v for k,v in KINDS.items()},
           "quality":QUALITY,
           "cnpjMatch":(json.loads(geo_path.read_text(encoding="utf-8"))["coverage"] if geo_cnpj else None),
@@ -296,7 +378,10 @@ def extract():
              "Células com contagem 1 a 4 são suprimidas nos atributos; valor ausente nunca equivale a zero.",
              "A densidade territorial em hexágonos muito recortados (menos de 25% da área cheia) é ocultada.",
              "Não foram publicados pontos individuais nem dados cadastrais privados.",
-             "Os núcleos contíguos são derivados apenas de hexágonos empresariais publicáveis do subconjunto RFB/CNEFE."
+             "Os núcleos contíguos são derivados apenas de hexágonos empresariais publicáveis do subconjunto RFB/CNEFE.",
+             "Divisas: interseção geométrica exata em EPSG:31982; contagens CNPJ ou CNEFE por hexágono não são rateadas aos fragmentos.",
+             "Totais CNEFE por bairro são contados nas coordenadas observadas originais, diretamente dentro dos polígonos oficiais.",
+             "CNPJs no bairro em células totalmente contidas representam apenas o mínimo publicável do subconjunto geocodificado, não o total do bairro."
           ]}
     tmp=DATA/"cnefe-hex500.json.tmp"
     tmp.write_text(json.dumps(meta,ensure_ascii=False,separators=(",",":"))+"\n",encoding="utf-8")
