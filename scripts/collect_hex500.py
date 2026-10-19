@@ -118,6 +118,19 @@ def extract():
                 kinds[kind]+=1
     if processed<20_000 or selected<2000 or len(bycell)<70:
         raise RuntimeError(f"CNEFE suspiciously incomplete: {processed=}, {selected=}, {len(bycell)=}")
+    # Optional independently validated RFB CNPJ 500m exact-address matches.
+    # Never infer this layer from IBGE establishment counts.
+    geo_cnpj=None
+    geo_path=DATA/"cnpj-geo-hex500.json"
+    if geo_path.exists():
+        candidate=json.loads(geo_path.read_text(encoding="utf-8"))
+        cnpj_src=json.loads((DATA/"cnpj.json").read_text(encoding="utf-8"))
+        if (candidate.get("status")=="verified" and candidate.get("territory")=="4304606"
+                and candidate.get("reference")==cnpj_src.get("reference")
+                and candidate.get("coverage",{}).get("matched",0)>0):
+            geo_cnpj={row["cell"]:row for row in candidate.get("cells",[])}
+            print("CNPJ_CNEFE_LAYER_INCLUDED",candidate["reference"],len(geo_cnpj),flush=True)
+        else:print("CNPJ_CNEFE_LAYER_STALE: separate source skipped",flush=True)
     x0,y0,x1,y1=bounds
     imin=int(math.floor(x0/SCALE))-2;imax=int(math.ceil(x1/SCALE))+2
     jmin=int(math.floor(y0/DY))-2;jmax=int(math.ceil(y1/DY))+2
@@ -143,6 +156,12 @@ def extract():
                    "n_high":safe_public(high),
                    "a_km2":round(clip.area/1_000_000,5),
                    "q":"CNEFE2022"}
+            matched_cell=geo_cnpj.get(props["cell"]) if geo_cnpj else None
+            if matched_cell:
+                props["cnpj"]=matched_cell["matched"]
+                for key,value in matched_cell.items():
+                    if key.startswith("s") and len(key)==2 and type(value)==int:
+                        props["cs"+key[1]]=value
             if props["n"] is not None and props["a_km2"]>0:
                 props["d_km2"]=round(total/(clip.area/1_000_000),1)
             # Clip area is used only for the municipality edge. Small slivers
@@ -163,12 +182,13 @@ def extract():
             # Weighted center of the *aggregate hex cell* is not a position of a
             # company or of an IBGE address. Show only sufficiently numerous
             # original/adjusted CNEFE coordinates as smoothed heat intensity.
-            if high>=MIN:
+            if high>=MIN or (matched_cell and matched_cell["matched"]>=MIN):
                 mid=hexshape.representative_point()
                 if not boundary.covers(mid):mid=clip.representative_point()
                 lon,lat=inv.transform(mid.x,mid.y)
                 heat.append({"type":"Feature","properties":{"cell":props["cell"],
-                    "w":high,"source":"cnefe2022_hex_center",**{k:v for k,v in props.items() if k.startswith("hk")}},
+                    "w":high,"cw":(matched_cell["matched"] if matched_cell else 0),
+                    "source":"cnefe2022_hex_center",**{k:v for k,v in props.items() if k.startswith("hk")}},
                     "geometry":{"type":"Point","coordinates":[lon,lat]}})
     if totalcells<300 or len(heat)<80:
         raise RuntimeError(f"Unexpected grid coverage {totalcells}, heat cells {len(heat)}")
@@ -200,6 +220,8 @@ def extract():
              "geocodingLevelCounts":{k:byquality[k] for k in QUALITY}},
           "kinds":{k:v for k,v in KINDS.items()},
           "quality":QUALITY,
+          "cnpjMatch":(json.loads(geo_path.read_text(encoding="utf-8"))["coverage"] if geo_cnpj else None),
+          "cnpjReference":(json.loads(geo_path.read_text(encoding="utf-8"))["reference"] if geo_cnpj else None),
           "cells":cells,
           "privacy":{"minPublishedCellCount":MIN,
                      "individualCoordinatesPublished":False,
