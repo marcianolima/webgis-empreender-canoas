@@ -4,7 +4,8 @@ import {CnpjSpatialInsights} from "@/components/cnpj-spatial-insights";
 import {useEffect,useMemo,useRef,useState} from "react";
 import maplibregl,{LngLatBounds,type ExpressionSpecification} from "maplibre-gl";
 import {PMTiles,Protocol,type Source} from "pmtiles";
-import {Download,Layers3,Flame,Hexagon,MapPin,ShieldCheck,Info,ExternalLink,Search} from "lucide-react";
+import {Download,Layers3,Flame,Hexagon,MapPin,ShieldCheck,Info,ExternalLink,Search,LocateFixed} from "lucide-react";
+import {assignBairros,type BairrosGeometry} from "@/lib/hex-geography";
 
 const base=process.env.NEXT_PUBLIC_BASE_PATH||"";
 const num=new Intl.NumberFormat("pt-BR");
@@ -13,7 +14,7 @@ const C=["#e4f1eb","#bbdfcf","#80c5a8","#409d7c","#136747"];
 type Cell={cell:string;n:number|null;n_high:number|null;a_km2:number;d_km2?:number;
  lon:number;lat:number;[key:string]:string|number|null|undefined};
 type SourceData={schemaVersion:1;status:"verified"|"not_loaded";territory:string;reference:string;cellWidthMeters:number;
- generatedAt:string;pmtiles:null|{path:string;layers:string[];bytes:number;sha256:string};
+ generatedAt:string;heatMetricsVersion?:number;pmtiles:null|{path:string;layers:string[];bytes:number;sha256:string};
  coverage:null|{allCnefeRecords:number;nonResidentialWithCoordinatesInOfficialBairros:number;
  notInOfficialBairros:number;invalidCoordinates:number;gridCells:number;
  cellsWithNonResidential:number;heatCellsAtLeastFiveHighQualityAddresses:number;
@@ -41,18 +42,35 @@ function scale(cells:Cell[],metric:string){
  return Array.from(new Set([0.2,0.4,0.6,0.8].map(q=>a[Math.floor((a.length-1)*q)]))).filter(n=>n>low);
 }
 function expression(metric:string,steps:number[]):ExpressionSpecification{
- const vals:Array<string|number>=[];steps.forEach((step,i)=>{vals.push(step,C[Math.min(i+1,C.length-1)]);});
- return ["case",["has",metric],["step",["to-number",["get",metric]],C[0],...vals],"#e1e5e9"] as unknown as ExpressionSpecification;
+ const vals:Array<string|number>=[];
+ steps.forEach((step,i)=>{vals.push(step,C[Math.min(i+1,C.length-1)]);});
+ // "has" is true for null; suppressed observations must remain gray.
+ const v=["number",["get",metric],-1];
+ return ["case",[">=",v,0],["step",v,C[0],...vals],"#e1e5e9"] as unknown as ExpressionSpecification;
+}
+function heatKey(metric:Metric,sector:string,version?:number):string|null{
+ if(metric==="d_km2")return null;
+ if(metric==="cnpj")return sector==="all"?"cw":"cws"+sector;
+ if(metric==="n_high")return "w";
+ if(metric==="n")return (version??1)>=2?"nw":"w";
+ if(metric.startsWith("k"))return "h"+metric;
+ return null;
+}
+function legendBands(steps:number[]):{color:string;label:string}[]{
+ if(!steps.length)return [{color:C[0],label:"Valor uniforme"}];
+ return [{color:C[0],label:"< "+fmt(steps[0])},
+  ...steps.map((x,i)=>({color:C[Math.min(i+1,C.length-1)],
+   label:i===steps.length-1?"≥ "+fmt(x):fmt(x)+" a < "+fmt(steps[i+1])}))];
 }
 function add(root:HTMLElement,label:string,value:string){
  const line=document.createElement("p");line.className="py-1";
  const b=document.createElement("strong");b.textContent=label+": ";
  line.append(b,document.createTextNode(value));root.append(line);
 }
-function csvExport(data:SourceData,cells:Cell[],metric:string){
- const header=["territorio_ibge","fonte","referencia","id_hex","largura_faces_m","lon_centro_estatistico","lat_centro_estatistico","area_recortada_km2","indicador","valor"];
+function csvExport(data:SourceData,cells:Cell[],metric:string,bairroPorCelula:Map<string,string>){
+ const header=["territorio_ibge","fonte","referencia","id_hex","largura_faces_m","lon_centro_estatistico","lat_centro_estatistico","area_recortada_km2","bairro_por_centro_representativo","indicador","valor"];
  const rows=cells.map(c=>["4304606","IBGE CNEFE 2022","2022",c.cell,"500",String(c.lon),String(c.lat),
-  String(c.a_km2),metric,String(numberIn(c,metric)??"")]);
+  String(c.a_km2),bairroPorCelula.get(c.cell)||"",metric,String(numberIn(c,metric)??"")]);
  const quote=(s:string)=>'"'+(/^[=+\-@]/.test(s)&&!/^-?\d+(\.\d+)?$/.test(s)?"'"+s:s).replaceAll('"','""')+'"';
  const csv="\ufeff"+[header,...rows].map(row=>row.map(quote).join(";")).join("\r\n");
  const uri=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
@@ -61,8 +79,10 @@ function csvExport(data:SourceData,cells:Cell[],metric:string){
 export function Hex500Dashboard(){
  const canvas=useRef<HTMLDivElement|null>(null);
  const mapRef=useRef<maplibregl.Map|null>(null);
- const current=useRef<{data:SourceData;metric:Metric;cells:Cell[]}|null>(null);
+ const current=useRef<{data:SourceData;metric:string;cells:Cell[]}|null>(null);
  const [data,setData]=useState<SourceData|null>(null);
+ const [bairros,setBairros]=useState<BairrosGeometry|null>(null);
+ const [bairro,setBairro]=useState("all");
  const [error,setError]=useState("");
  const [mapError,setMapError]=useState("");
  const [mapReady,setMapReady]=useState(false);
@@ -74,11 +94,17 @@ export function Hex500Dashboard(){
  const [search,setSearch]=useState("");
  const [osm,setOsm]=useState(true);
  const cells=useMemo(()=>data?.cells||[],[data]);
+ const bairroPorCelula=useMemo(()=>assignBairros(cells,bairros),[cells,bairros]);
+ const bairroNames=useMemo(()=>[...new Set((bairros?.features||[]).map(f=>f.properties.BAIRRO))].sort((a,b)=>a.localeCompare(b,"pt-BR")),[bairros]);
+ const visibleCells=useMemo(()=>bairro==="all"?cells:cells.filter(c=>bairroPorCelula.get(c.cell)===bairro),[cells,bairroPorCelula,bairro]);
  const sectorsCnpj=useMemo(()=>Array.from(new Set(cells.flatMap(c=>Object.keys(c).filter(k=>/^cs[A-U]$/.test(k)).map(k=>k.slice(-1))))).sort(),[cells]);
  const selectedMetric=metric==="cnpj"&&cnpjSector!=="all"?"cs"+cnpjSector:metric;
- const ranking=useMemo(()=>cells.filter(c=>numberIn(c,selectedMetric)!==null).sort((a,b)=>(numberIn(b,selectedMetric)||0)-(numberIn(a,selectedMetric)||0)),[cells,selectedMetric]);
- const thresholds=useMemo(()=>scale(cells,selectedMetric),[cells,selectedMetric]);
- current.current=data?{data,metric,cells}:null;
+ const ranking=useMemo(()=>visibleCells.filter(c=>numberIn(c,selectedMetric)!==null).sort((a,b)=>(numberIn(b,selectedMetric)||0)-(numberIn(a,selectedMetric)||0)),[visibleCells,selectedMetric]);
+ const thresholds=useMemo(()=>scale(visibleCells,selectedMetric),[visibleCells,selectedMetric]);
+ const bands=useMemo(()=>legendBands(thresholds),[thresholds]);
+ const visibleIds=useMemo(()=>visibleCells.map(c=>c.cell),[visibleCells]);
+ const activeHeatKey=heatKey(metric,cnpjSector,data?.heatMetricsVersion);
+ current.current=data?{data,metric:selectedMetric,cells}:null;
  const metricLabel=(metrics.find(m=>m.id===metric)?.label||metric)+(metric==="cnpj"&&cnpjSector!=="all"?" · CNAE seção "+cnpjSector:"");
  const matchCoverage=data?.cnpjMatch??null;
  const diagnostics=matchCoverage?.diagnostics??{};
@@ -89,6 +115,16 @@ export function Hex500Dashboard(){
    .then(r=>{if(!r.ok)throw Error("CNEFE HTTP "+r.status);return r.json()})
    .then((d:SourceData)=>{if(d.schemaVersion!==1||d.territory!=="4304606")throw Error("Conjunto não é Canoas");setData(d)})
    .catch(e=>{if(e.name!=="AbortError")setError(String(e))});
+  return ()=>ctl.abort();
+ },[]);
+ useEffect(()=>{
+  const ctl=new AbortController();
+  fetch(base+"/data/bairros-oficiais.geojson",{signal:ctl.signal})
+   .then(r=>{if(!r.ok)throw Error("GeoJSON HTTP "+r.status);return r.json()})
+   .then((g:BairrosGeometry)=>{
+    if(g.type!=="FeatureCollection"||g.features.length!==18)throw Error("Malha de bairros incompleta");
+    setBairros(g);
+   }).catch(e=>{if(e.name!=="AbortError")setMapError(String(e))});
   return ()=>ctl.abort();
  },[]);
  useEffect(()=>{
@@ -138,6 +174,9 @@ export function Hex500Dashboard(){
        paint:{"line-color":"#dc6f24","line-width":3,"line-opacity":.9}},
       {id:"official-border",type:"line",source:"bairros",
        paint:{"line-color":"#122f33","line-width":2}},
+      {id:"bairro-focus",type:"line",source:"bairros",
+       filter:["==",["get","BAIRRO"],"__nenhum__"],
+       paint:{"line-color":"#d97706","line-width":3.5}},
       {id:"official-label",type:"symbol",source:"bairros",
        layout:{"text-field":["get","BAIRRO"],"text-size":11,"text-font":["Open Sans Regular","Arial Unicode MS Regular"],"text-max-width":10},
        paint:{"text-color":"#173c35","text-halo-color":"#ffffff","text-halo-width":1.2}},
@@ -180,20 +219,24 @@ export function Hex500Dashboard(){
   const map=mapRef.current;
   if(!map||!mapReady)return;
   map.setLayoutProperty("hex-fill","visibility","visible");
+  const spatialFilter=bairro==="all"?null:["in",["get","cell"],["literal",visibleIds]];
+  map.setFilter("hex-fill",spatialFilter);
+  map.setFilter("hex-line",spatialFilter);
+  map.setFilter("bairro-focus",["==",["get","BAIRRO"],bairro==="all"?"__nenhum__":bairro]);
   map.setPaintProperty("hex-fill","fill-color",expression(selectedMetric,thresholds));
   map.setPaintProperty("hex-fill","fill-opacity",mode==="hex"?.78:.015);
   map.setLayoutProperty("hex-line","visibility",mode==="hex"?"visible":"none");
-  map.setLayoutProperty("heat","visibility",mode==="heat"?"visible":"none");
-  map.setLayoutProperty("hotspots-fill","visibility",showHotspots?"visible":"none");
-  map.setLayoutProperty("hotspots-border","visibility",showHotspots?"visible":"none");
+  map.setLayoutProperty("heat","visibility",mode==="heat"&&!!activeHeatKey?"visible":"none");
+  map.setLayoutProperty("hotspots-fill","visibility",showHotspots&&bairro==="all"?"visible":"none");
+  map.setLayoutProperty("hotspots-border","visibility",showHotspots&&bairro==="all"?"visible":"none");
   map.setFilter("selected-hex",["==",["get","cell"],selected||"____"]);
-  if(mode==="heat"){
-    const key=metric==="cnpj"?(cnpjSector==="all"?"cw":"cws"+cnpjSector):metric.startsWith("k")?"h"+metric:"w";
-    map.setFilter("heat",[">=",["coalesce",["get",key],0],5]);
+  if(mode==="heat"&&activeHeatKey){
+    const heatMin=[">=",["coalesce",["get",activeHeatKey],0],5];
+    map.setFilter("heat",spatialFilter?["all",heatMin,spatialFilter]:heatMin);
     map.setPaintProperty("heat","heatmap-weight",["interpolate",["linear"],
-      ["to-number",["get",key],0],5,.16,100,1] as ExpressionSpecification);
+      ["to-number",["get",activeHeatKey],0],5,.16,100,1] as ExpressionSpecification);
   }
- },[mode,metric,cnpjSector,selectedMetric,thresholds,mapReady,selected,showHotspots]);
+ },[mode,selectedMetric,thresholds,mapReady,selected,showHotspots,bairro,visibleIds,activeHeatKey]);
  useEffect(()=>{const map=mapRef.current;if(map&&mapReady)map.setLayoutProperty("osm","visibility",osm?"visible":"none")},[osm,mapReady]);
  return <main className="mx-auto max-w-[1540px] space-y-5 px-4 pb-16 pt-8 text-ink sm:px-6">
   <Link href="/bairros" className="text-sm font-semibold text-brand-700">← Mapa econômico de bairros</Link>
