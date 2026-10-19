@@ -205,6 +205,23 @@ def main():
     }
     official_file=DATA/"bairros-oficiais.geojson"
     official_file.write_text(json.dumps(reference_polygons,ensure_ascii=False,separators=(",",":"))+"\n",encoding="utf-8")
+    # One interior anchor per official polygon; never create duplicate labels
+    # for tile fragments. No establishment coordinates are present here.
+    label_features=[]
+    for row,feature in zip(rows,work):
+        anchor=shape(feature["geometry"]).representative_point()
+        label_features.append({"type":"Feature",
+            "properties":{"bairro":row["name"],"oid":row["id"]},
+            "geometry":{"type":"Point","coordinates":[round(anchor.x,7),round(anchor.y,7)]}})
+    if len(label_features)!=18 or len({f["properties"]["bairro"] for f in label_features})!=18:
+        raise RuntimeError("Not exactly one name anchor per official bairro")
+    label_file=DATA/"bairros-rotulos.geojson"
+    label_file.write_text(json.dumps({
+        "type":"FeatureCollection",
+        "metadata":{"source":"GeoCanoas BAIRROSOFICIAL","featureCount":18,
+                    "geometryType":"Point","notes":"Âncoras cartográficas sem dados de endereço/empresa"},
+        "features":label_features
+    },ensure_ascii=False,separators=(",",":"))+"\n",encoding="utf-8")
     sha=hashlib.sha256(tiles.read_bytes()).hexdigest()
     output={"schemaVersion":1,"status":"verified","reference":reference,"generatedAt":now,
        "territory":"4304606","sourceUrl":BASE,"sourceCnpj":"Receita Federal — CNPJ "+reference,
