@@ -37,6 +37,47 @@ jobs:
             async with async_playwright() as p:
               browser=await p.chromium.launch(headless=True)
               for label,w,h in [("desktop",1366,900),("mobile",390,844)]:
+                home=await browser.new_page(viewport={"width":w,"height":h},device_scale_factor=1)
+                home_errors=[]
+                home.on("pageerror",lambda err:home_errors.append(str(err)))
+                home_response=await home.goto(ROOT,wait_until="domcontentloaded",timeout=60000)
+                assert home_response and home_response.status==200
+                header=home.get_by_label("Cabeçalho do observatório")
+                await header.wait_for()
+                height=await header.evaluate("(el)=>el.getBoundingClientRect().height")
+                assert 50<=height<=64,("HEADER_HEIGHT",height)
+                await home.get_by_text("18 bairros oficiais · GeoCanoas / PMTiles").wait_for(timeout=50000)
+                assert await home.get_by_text("Limite municipal oficial · IBGE").count()==0
+                if label=="desktop":
+                  sidebar=home.get_by_label("Barra lateral")
+                  assert await sidebar.is_visible()
+                  group=sidebar.get_by_role("button",name="Território e mapas")
+                  assert await group.get_attribute("aria-expanded")=="true"
+                  await group.click()
+                  assert await group.get_attribute("aria-expanded")=="false"
+                  await group.click()
+                  assert await sidebar.get_by_role("link",name="Mapa econômico").count()==1
+                else:
+                  assert not await home.get_by_label("Barra lateral").is_visible()
+                  await home.get_by_role("button",name="Abrir menu principal").click()
+                  drawer=home.get_by_role("dialog",name="Navegação do observatório")
+                  assert await drawer.is_visible()
+                  group=drawer.get_by_role("button",name="Território e mapas")
+                  assert await group.get_attribute("aria-expanded")=="true"
+                  await group.click()
+                  assert await group.get_attribute("aria-expanded")=="false"
+                  await group.click()
+                  assert await group.get_attribute("aria-expanded")=="true"
+                  await drawer.get_by_role("button",name="Fechar menu principal").click()
+                  await drawer.wait_for(state="detached",timeout=4000)
+                await home.evaluate("window.scrollTo(0,document.documentElement.scrollHeight)")
+                await home.wait_for_timeout(300)
+                top=await header.evaluate("(el)=>el.getBoundingClientRect().top")
+                assert abs(top)<=2,("STICKY_HEADER_SCROLL",top)
+                assert not home_errors,home_errors
+                print("GLOBAL_NAV_AND_GEOCANOAS_HOME_OK",label,flush=True)
+                await home.screenshot(path=f"header-{label}.png",full_page=False)
+                await home.close()
                 page=await browser.new_page(viewport={"width":w,"height":h},device_scale_factor=1)
                 errors=[]
                 page.on("pageerror",lambda err:errors.append(str(err)))
@@ -137,5 +178,7 @@ jobs:
             geo-mobile.png
             hex500-desktop.png
             hex500-mobile.png
+            header-desktop.png
+            header-mobile.png
           if-no-files-found: ignore
           retention-days: 7

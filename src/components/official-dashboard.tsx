@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Building2, CheckCircle2, Database, Download, ExternalLink, Globe2, Landmark, MapPinned, TrendingUp, Users } from "lucide-react";
+import { Building2, CheckCircle2, Database, Download, ExternalLink, Globe2, Landmark, TrendingUp, Users } from "lucide-react";
 import { ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, LineChart, Line, BarChart, Bar } from "recharts";
 import type { OfficialEconomy } from "@/types/official";
 
@@ -42,7 +42,6 @@ export function OfficialDashboard() {
   const [section, setSection] = useState("all");
   const [year, setYear] = useState("");
   const [kind, setKind] = useState("constituidas");
-  const [tab, setTab] = useState("canoas");
   useEffect(() => {
     const controller = new AbortController();
     fetch(prefix + "/data/official.json", { signal: controller.signal, cache: "no-store" })
@@ -82,32 +81,8 @@ export function OfficialDashboard() {
     const a = document.createElement("a"); a.href = url; a.download = "indicadores-oficiais-canoas-empreende.csv"; a.click();
     URL.revokeObjectURL(url);
   };
-  const goTo = (id: string) => { setTab(id); document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }); };
 
   return <>
-    <a href="#conteudo" className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:bg-white focus:p-3">Ir para o conteúdo</a>
-    <header className="border-b border-slate-200 bg-white">
-      <div className="mx-auto flex max-w-[1500px] flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between sm:px-6">
-        <Link href="/" className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-600 text-white"><MapPinned size={23}/></span>
-          <span><span className="block text-xl font-extrabold tracking-tight text-ink">Canoas <span className="text-brand-600">Empreende</span></span><span className="block text-xs text-slate-500">Observatório econômico · Dados oficiais</span></span>
-        </Link>
-        <nav aria-label="Menu principal" className="flex flex-wrap items-center justify-start gap-1 text-sm">
-          {[["canoas", "Canoas"], ["rs", "Contexto RS"], ["mapa", "Mapa"]].map(([id, label]) =>
-            <button key={id} onClick={() => goTo(id)} className={"rounded-lg px-3 py-2 font-semibold " + (tab === id ? "bg-brand-50 text-brand-700" : "text-slate-600 hover:bg-slate-100")}>{label}</button>)}
-          <Link href="/cnpj" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">Empresas CNPJ</Link>
-          <Link href="/bairros" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">Mapa econômico</Link>
-          <Link href="/hex500" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">Hexágonos e calor</Link>
-          <Link href="/sebrae" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">Panorama Sebrae</Link>
-          <Link href="/sebrae/series" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">Séries e comparativos</Link>
-          <Link href="/setores" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">Setores</Link>
-          <Link href="/trabalho" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">Emprego e exportações</Link>
-          <Link href="/redesim" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">REDESIM</Link>
-          <Link href="/fontes" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">Fontes</Link>
-          <Link href="/sobre" className="rounded-lg px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100">Sobre</Link>
-        </nav>
-      </div>
-    </header>
     <main id="conteudo" className="mx-auto max-w-[1500px] space-y-6 px-4 pb-16 pt-8 sm:px-6">
       <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
@@ -198,7 +173,7 @@ export function OfficialDashboard() {
           </> : <Empty label="Não há registros publicados para esta seleção."/>}
         </Panel>
       </section>
-      <Panel id="mapa" title="Território de Canoas" note="Mapa de base OpenStreetMap e limite municipal oficial do IBGE. Sem pontos empresariais simulados."><OfficialMap/></Panel>
+      <Panel id="mapa" title="Território de Canoas" note="Mapa-base OpenStreetMap e limites dos 18 bairros oficiais GeoCanoas em PMTiles. Sem pontos empresariais simulados."><OfficialMap/></Panel>
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-2xl bg-brand-50 p-5"><p className="flex items-center gap-2 font-bold text-brand-900"><Landmark size={18}/> Fontes e universos</p><p className="mt-2 text-sm leading-relaxed text-brand-900">CEMPRE, PIB, Censo e JUCISRS não representam o mesmo universo ou período. Não calculamos saldo municipal a partir de totais estaduais.</p><Link href="/sobre" className="mt-3 inline-block text-sm font-semibold text-brand-700 underline">Consultar metodologia →</Link></div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5"><p className="flex items-center gap-2 font-bold text-ink"><Database size={18} className="text-brand-700"/> Atualização pelo GitHub</p><p className="mt-2 text-sm leading-relaxed text-slate-600">Indicadores coletados pelo GitHub Actions. Origem, referência e eventuais falhas são registrados no JSON publicado.</p><Link href="/atualizacao" className="mt-3 inline-block text-sm font-semibold text-brand-700 underline">Como atualizar →</Link></div>
