@@ -132,9 +132,10 @@ export function BairrosDashboard(){
    map=new maplibregl.Map({
     container:element.current!,center:[-51.19,-29.915],zoom:11,minZoom:9,maxZoom:16,
     style:{version:8,glyphs:"https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",sources:{
-     osm:{type:"raster",tiles:["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],tileSize:256,
-      attribution:"© OpenStreetMap contributors"},
-     bairros:{type:"vector",url:"pmtiles://"+url,attribution:"© GeoCanoas — Prefeitura de Canoas"}
+     osm:{type:"raster",tiles:["https://basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"],tileSize:256,
+      attribution:"© OpenStreetMap contributors · © CARTO"},
+     bairros:{type:"vector",url:"pmtiles://"+url,attribution:"© GeoCanoas — Prefeitura de Canoas"},
+      rotulos:{type:"geojson",data:base+"/data/bairros-rotulos.geojson"}
     },layers:[
      {id:"base-osm",type:"raster",source:"osm"},
      {id:"bairros-fill",type:"fill",source:"bairros","source-layer":"bairros",
@@ -143,7 +144,7 @@ export function BairrosDashboard(){
       paint:{"line-color":"#245449","line-width":1.35}},
      {id:"bairros-selected",type:"line",source:"bairros","source-layer":"bairros",
       filter:["==",["get","oid"],-1],paint:{"line-color":"#da741c","line-width":4}},
-     {id:"bairros-name",type:"symbol",source:"bairros","source-layer":"bairros",
+     {id:"bairros-name",type:"symbol",source:"rotulos",
       layout:{"text-field":["get","bairro"],"text-size":11,"text-max-width":12,
        "text-font":["Open Sans Regular","Arial Unicode MS Regular"]},
       paint:{"text-color":"#163d35","text-halo-color":"#ffffff","text-halo-width":1.2}}
