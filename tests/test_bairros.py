@@ -26,7 +26,11 @@ class TestGeocanoasBairros(unittest.TestCase):
         self.assertEqual(module.safe_number(0),0.0)
 
     def test_hex_grid_utm_width_and_stable_assignment(self):
-        from collect_hex500 import RADIUS,SCALE,hexagon,index_of,center,safe_public
+        import importlib.util
+        s=importlib.util.spec_from_file_location("collect_hex500",pathlib.Path(__file__).resolve().parents[1]/"scripts/collect_hex500.py")
+        hexmodule=importlib.util.module_from_spec(s)
+        s.loader.exec_module(hexmodule)
+        RADIUS,SCALE,hexagon,index_of,center,safe_public=(hexmodule.RADIUS,hexmodule.SCALE,hexmodule.hexagon,hexmodule.index_of,hexmodule.center,hexmodule.safe_public)
         self.assertAlmostEqual(SCALE,500.0,places=5)
         self.assertAlmostEqual(RADIUS*3**.5,500.0,places=5)
         for i,j in ((950,15440),(970,15460),(960,15455)):

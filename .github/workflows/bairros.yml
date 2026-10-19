@@ -24,8 +24,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Testes de bairros e normalização
-        run: python -m unittest discover -s tests -p 'test_bairros.py' -v
       - name: Instalar ferramentas de transformação cartográfica
         run: |
           python -m pip install --quiet "shapely>=2,<3" "pyproj>=3.6,<4"
@@ -37,6 +35,8 @@ jobs:
             sudo make -C /tmp/canoas-tippecanoe install >/dev/null
           fi
           tippecanoe --version
+      - name: Testes de bairros, geometrias e hexágonos
+        run: python -m unittest discover -s tests -p 'test_bairros.py' -v
       - name: Coletar 18 bairros GeoCanoas, conciliar CNPJs e gerar PMTiles
         run: python scripts/collect_bairros.py
       - name: Gerar hexágonos 500m e calor de endereços não domiciliares CNEFE/IBGE

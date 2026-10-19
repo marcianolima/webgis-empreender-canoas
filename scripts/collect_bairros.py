@@ -204,7 +204,7 @@ def main():
       ]
     }
     official_file=DATA/"bairros-oficiais.geojson"
-    official_file.write_text(json.dumps(reference_polygons,ensure_ascii=False,separators=(",",":"))+"\\n",encoding="utf-8")
+    official_file.write_text(json.dumps(reference_polygons,ensure_ascii=False,separators=(",",":"))+"\n",encoding="utf-8")
     sha=hashlib.sha256(tiles.read_bytes()).hexdigest()
     output={"schemaVersion":1,"status":"verified","reference":reference,"generatedAt":now,
        "territory":"4304606","sourceUrl":BASE,"sourceCnpj":"Receita Federal — CNPJ "+reference,
