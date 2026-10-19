@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Building2, ChartBar, Download, FileClock, Filter, Layers, MapPin, ShieldCheck } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend, LineChart, Line } from "recharts";
@@ -56,8 +55,6 @@ export function CnpjDashboard() {
   }
 
   return <main className="mx-auto max-w-[1480px] px-4 py-8 text-ink sm:px-6 sm:py-12">
-    <Link href="/" className="text-sm font-semibold text-brand-700">← Painel principal</Link>
-    <Link href="/bairros" className="ml-4 inline-flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-bold text-brand-800">Explorar bairros e densidade →</Link>
     <div className="mt-7 flex flex-wrap items-end justify-between gap-4">
       <div>
         <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700"><ShieldCheck size={14}/> Receita Federal · Base oficial CNPJ</span>
