@@ -100,7 +100,7 @@ jobs:
                   print("MOBILE_OVERFLOW",horizontal,flush=True)
                   assert horizontal["scroll"]<=horizontal["window"]+12
                 await page.get_by_label("Seção CNAE").select_option("G")
-                await page.get_by_label("Indicador").select_option("density")
+                await page.locator('label:has-text("Indicador") select').first.select_option("density")
                 await page.wait_for_timeout(1000)
                 body=await page.locator("body").inner_text()
                 assert "Estabelecimentos por km²" in body
