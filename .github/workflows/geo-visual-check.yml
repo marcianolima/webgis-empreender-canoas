@@ -1,13 +1,14 @@
 name: GEO Canoas | Homologação browser e mobile
 on:
-  push:
-    paths:
-      - .github/workflows/geo-visual-check.yml
+  workflow_run:
+    workflows: ["Canoas Empreende | Dados oficiais e GitHub Pages"]
+    types: [completed]
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   browser:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
