@@ -37,6 +37,24 @@ jobs:
             cp /tmp/official-verified.json public/data/official.json
             cp /tmp/canoas-verified.geojson public/data/canoas.geojson
           fi
+      - name: Atualizar série municipal Firjan IFDM e IFGF (com snapshots verificados)
+        timeout-minutes: 3
+        run: |
+          cp public/data/ifdm-firjan.json /tmp/ifdm-firjan-verified.json
+          cp public/data/ifgf-firjan.json /tmp/ifgf-firjan-verified.json
+          if timeout 70s python scripts/collect_firjan.py; then
+            echo "IFDM municipal revisado 2013–2023 validado"
+          else
+            echo "::warning::Firjan IFDM indisponível: preservado último histórico oficial verificado"
+            cp /tmp/ifdm-firjan-verified.json public/data/ifdm-firjan.json
+          fi
+          if timeout 70s python scripts/collect_ifgf.py; then
+            echo "IFGF municipal 2013–2024 validado"
+          else
+            echo "::warning::Firjan IFGF indisponível: preservado último histórico oficial verificado"
+            cp /tmp/ifgf-firjan-verified.json public/data/ifgf-firjan.json
+          fi
+          python -m unittest discover -s tests -p 'test_firjan.py' -v
       - name: Coletar indicadores setoriais IBGE (PAM, PPM, PEVS, VAB)
         timeout-minutes: 3
         run: |
@@ -87,6 +105,15 @@ jobs:
           cnpj=json.loads((p/"data/cnpj.json").read_text())
           assert cnpj["municipalityIbgeCode"]=="4304606"
           assert cnpj["status"] in ("not_loaded","official")
+          ifdm=json.loads((p/"data/ifdm-firjan.json").read_text())
+          ifgf=json.loads((p/"data/ifgf-firjan.json").read_text())
+          assert ifdm["territory"]==ifgf["territory"]=="4304606"
+          assert ifdm["status"]==ifgf["status"]=="verified"
+          assert [x["year"] for x in ifdm["series"]]==list(range(2013,2024))
+          assert [x["year"] for x in ifgf["series"]]==list(range(2013,2025))
+          assert ifdm["referenceYear"]==2023 and ifgf["referenceYear"]==2024
+          assert "0.7239" in str(ifdm["series"][-1]["values"]["general"])
+          assert "0.6639" in str(ifgf["series"][-1]["values"]["general"])
           sectors=json.loads((p/"data/sectors.json").read_text())
           assert sectors["territory"]=="4304606"
           assert all(r["territory"]=="4304606" for r in sectors["observations"])
@@ -174,6 +201,11 @@ jobs:
                   assert "Canoas Empreende" in page
                   d=json.loads(get("data/official.json"))
                   assert d["municipality"]["code"]=="4304606"
+                  a=json.loads(get("data/ifdm-firjan.json"))
+                  b=json.loads(get("data/ifgf-firjan.json"))
+                  assert a["territory"]==b["territory"]=="4304606"
+                  assert len(a["series"])==11 and len(b["series"])==12
+                  assert a["referenceYear"]==2023 and b["referenceYear"]==2024
                   get("data/canoas.geojson")
                   get("sobre/")
                   get("sebrae/series/")
