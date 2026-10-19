@@ -1,0 +1,102 @@
+name: CNPJ | Auditar e corrigir serie historica das datas
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/cnpj-date-reconcile.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: canoas-cnpj-date-verified
+  cancel-in-progress: false
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Recuperar dez fragmentos municipais originais da Receita
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cnpj-part-*
+          path: work/approved-old-shards
+          merge-multiple: true
+          run-id: "39181895756"
+          github-token: ${{ github.token }}
+      - name: Verificar metadados de dez fragmentos na mesma competencia
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          folder=Path("work/approved-old-shards")
+          cnpj=json.loads(Path("public/data/cnpj.json").read_text())
+          assert cnpj["status"]=="official" and cnpj["reference"]=="2026-10"
+          assert cnpj["coverage"].get("dateFieldOrderVerified") is not True
+          for i in range(10):
+            source=folder/f"shard-{i}.csv.gz"
+            manifest=folder/f"shard-{i}.json"
+            assert source.is_file() and source.stat().st_size>1000,source
+            assert manifest.is_file(),manifest
+            d=json.loads(manifest.read_text())
+            assert d["index"]==i and d["reference"]=="2026-10"
+            assert d["municipioReceita"]=="8589"
+          print("RFB_SHARD_PROVENANCE_VERIFIED",flush=True)
+          PY
+      - name: Reproduzir todas as datas antigas e corrigir somente se coincidirem
+        run: |
+          python -m compileall -q scripts/reconcile_cnpj_dates.py
+          python scripts/reconcile_cnpj_dates.py --source-dir work/approved-old-shards --run-id 39181895756
+      - name: Auditar nova fotografia temporal sem alterar estatisticas economicas
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("public/data/cnpj.json")
+          x=json.loads(p.read_text())
+          assert x["coverage"]["dateFieldOrderVerified"] is True
+          assert x["coverage"]["dateReconciliation"]["sourceWorkflowRunId"]=="39181895756"
+          assert x["coverage"]["recordsMunicipality"]==x["kpis"]["total"]==171639
+          assert x["kpis"]["active"]==60243
+          assert len(x["monthly"])>=36
+          y=x["reference"][:4]
+          assert x["kpis"]["openYear"]==sum(k["openings"] for k in x["monthly"] if k["month"].startswith(y))
+          assert x["kpis"]["closedYearLatestSituation"]==sum(k["closingsLatestSituation"] for k in x["monthly"] if k["month"].startswith(y))
+          assert all(r["month"]<="2026-10" for r in x["monthly"])
+          assert len(x["byDistrictDeclared"])==50
+          assert not any(k in x for k in ("cnpj","logradouro","cpf","email"))
+          print("VERIFIED_CORRECTED_CNPJ_DATES",x["reference"],x["kpis"],flush=True)
+          PY
+      - name: Guardar saida auditada
+        uses: actions/upload-artifact@v4
+        with:
+          name: canoas-cnpj-series-dates-reconciled-2026-10
+          path: public/data/cnpj.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Publicar apenas agregados historicos de datas corrigidos
+        run: |
+          set -euo pipefail
+          cp public/data/cnpj.json /tmp/cnpj-date-reconciled-approved.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for i in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            if python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path("public/data/cnpj.json").read_text())
+          assert x["coverage"].get("dateFieldOrderVerified") is True
+          PY
+            then echo "Snapshot principal já tem datas certificadas"; exit 0; fi
+            cp /tmp/cnpj-date-reconciled-approved.json public/data/cnpj.json
+            git add public/data/cnpj.json
+            git commit -m "fix(data): auditar datas de abertura e situacao RFB em 10 shards originais"
+            if git push origin HEAD:main; then echo "RFB_CNPJ_DATES_PUBLISHED"; exit 0; fi
+            if [ "$i" -eq 5 ]; then exit 1; fi
+          done
