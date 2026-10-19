@@ -209,7 +209,7 @@ def shard(reference, index):
                 continue
             writer.writerow([
                 basic + order + suffix, basic, row[3].strip(), row[5].strip(),
-                iso(row[6]), iso(row[10]), row[11].strip(),
+                iso(row[10]), iso(row[6]), row[11].strip(),
                 normalize(row[17])[:60], row[18].strip(),
             ])
             accepted += 1
