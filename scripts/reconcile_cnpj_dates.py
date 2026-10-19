@@ -28,7 +28,7 @@ def series_from_shards(source_dir:Path):
                 wrong_open=row[4].strip()    # Old shard column 4 <- RFB row[6] DATA_SITUACAO
                 wrong_close=row[5].strip()   # Old shard column 5 <- RFB row[10] DATA_INICIO
                 for item in (wrong_open,wrong_close):
-                    if item and not re.fullmatch(r"20\d{2}-\d{2}-\d{2}",item):
+                    if item and not re.fullmatch(r"(?:19|20)\d{2}-\d{2}-\d{2}",item):
                         raise RuntimeError(f"Invalid shard date {item!r}")
                 if wrong_open:old_open[wrong_open[:7]]+=1
                 else:old_missing+=1
