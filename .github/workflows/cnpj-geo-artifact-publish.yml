@@ -1,0 +1,113 @@
+name: CNPJ espacial | Publicar dados geocodificados dos dez fragmentos
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/cnpj-geo-artifact-publish.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: canoas-publicar-cnpj-geocodificado-hex
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Recuperar artefatos oficiais de dez fragmentos CNPJ concluídos
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cnpj-part-*
+          merge-multiple: true
+          path: work/geoshards
+          repository: ${{ github.repository }}
+          run-id: "39181895756"
+          github-token: ${{ github.token }}
+      - name: Validar o universo antes da consolidação
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          base=Path("work/geoshards")
+          source=json.loads(Path("public/data/cnpj.json").read_text())
+          assert source["status"]=="official" and source["reference"]=="2026-10"
+          active=matched=0
+          for i in range(10):
+            p=base/f"geo-part-{i}.json"
+            assert p.exists(),f"Missing geo-part-{i}.json"
+            item=json.loads(p.read_text())
+            assert item["reference"]==source["reference"] and item["shard"]==i
+            assert item["source"]=="RFB+IBGE_CNEFE2022"
+            assert item["matched"]==sum(item["cells"].values())
+            assert 0<item["matched"]<=item["hasUsableAddress"]<=item["active"]
+            active+=item["active"];matched+=item["matched"]
+          assert active==source["kpis"]["active"]==60243
+          assert 5000<matched<active
+          print("TEN_SHARDS_VERIFIED",active,"active",matched,"exact-address matches",flush=True)
+          PY
+      - name: Apagar arquivos intermediários individualizados recuperados
+        run: |
+          find work/geoshards -maxdepth 1 -type f -name 'shard-*.csv.gz' -delete
+          find work/geoshards -maxdepth 1 -type f -name 'shard-*.json' -delete
+          test "$(find work/geoshards -name 'geo-part-*.json' | wc -l)" -eq 10
+      - name: Preparar motor e testes de geometria
+        run: |
+          python -m pip install --quiet "shapely>=2,<3" "pyproj>=3.6,<4"
+          python -m unittest discover -s tests -p 'test_cnpj_geocoding.py' -v
+      - name: Produzir somente hexágonos agregados e histórico por competência
+        run: python scripts/cnpj_geo.py assemble --reference 2026-10 --source-dir work/geoshards
+      - name: Auditar confidencialidade, cobertura e integridade do produto
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("public/data")
+          source=json.loads((p/"cnpj.json").read_text())
+          geo=json.loads((p/"cnpj-geo-hex500.json").read_text())
+          history=json.loads((p/"cnpj-geo-hex500-series.json").read_text())
+          assert geo["status"]=="verified" and geo["territory"]=="4304606"
+          assert geo["reference"]==source["reference"]=="2026-10"
+          assert geo["coverage"]["active"]==source["kpis"]["active"]==60243
+          assert 5000<geo["coverage"]["matched"]<=geo["coverage"]["active"]
+          assert sum(c["matched"] for c in geo["cells"])==geo["coverage"]["matchedInPublishedCells"]
+          assert all(c["matched"]>=5 for c in geo["cells"])
+          assert not geo["privacy"]["individualCoordinatesPublished"]
+          assert not geo["privacy"]["individualAddressesPublished"]
+          assert history["territory"]=="4304606"
+          assert len(history["snapshots"])>=1
+          assert set(geo["cells"][0]).issubset({"cell","matched",*["s"+c for c in "ABCDEFGHIJKLMNOPQRSTU"]})
+          print("GEOCODED_CNPJ_AGGREGATES_VERIFIED",geo["coverage"],flush=True)
+          PY
+      - name: Guardar apenas os dados espaciais agregados homologados
+        uses: actions/upload-artifact@v4
+        with:
+          name: canoas-cnpj-geocoded-aggregates-2026-10
+          path: |
+            public/data/cnpj-geo-hex500.json
+            public/data/cnpj-geo-hex500-series.json
+          retention-days: 30
+          if-no-files-found: error
+      - name: Publicar no GitHub sem sobrescrever outros dados do projeto
+        run: |
+          set -euo pipefail
+          cp public/data/cnpj-geo-hex500.json /tmp/verified-cnpj-geo.json
+          cp public/data/cnpj-geo-hex500-series.json /tmp/verified-cnpj-geo-history.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            cp /tmp/verified-cnpj-geo.json public/data/cnpj-geo-hex500.json
+            cp /tmp/verified-cnpj-geo-history.json public/data/cnpj-geo-hex500-series.json
+            git add public/data/cnpj-geo-hex500.json public/data/cnpj-geo-hex500-series.json
+            if git diff --cached --quiet; then echo "Geocodificação já publicada"; exit 0; fi
+            git commit -m "data(geo): matches RFB CNEFE 2026-10 por hexagonos 500m"
+            if git push origin HEAD:main; then echo "CNPJ_GEO_PUBLISHED_TO_MAIN"; exit 0; fi
+            if [ "$attempt" -eq 5 ]; then exit 1; fi
+          done
