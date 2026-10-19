@@ -56,9 +56,30 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_cartographic_integrity.py' -v
       - name: Testar cruzamento exato e limiares de privacidade CNPJ
         run: python -m unittest discover -s tests -p 'test_cnpj_geocoding.py' -v
-      - name: Coletar 18 bairros GeoCanoas, conciliar CNPJs e gerar PMTiles
+      - name: Coletar bairros oficiais com fallback no último snapshot validado
         if: github.event_name != 'pull_request'
-        run: python scripts/collect_bairros.py
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/geocanoas-prior
+          cp public/data/bairros-economia.pmtiles public/data/bairros-oficiais.geojson public/data/bairros-economia.json public/data/bairros-economia-series.json /tmp/geocanoas-prior/
+          if timeout 150s python scripts/collect_bairros.py; then
+            echo "GeoCanoas oficial atualizado e validado"
+          else
+            echo "::warning::GeoCanoas FeatureServer indisponível: snapshot geométrico anterior recuperado"
+            cp /tmp/geocanoas-prior/* public/data/
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          d=Path("public/data")
+          x=json.loads((d/"bairros-economia.json").read_text())
+          source=json.loads((d/"bairros-oficiais.geojson").read_text())
+          cnpj=json.loads((d/"cnpj.json").read_text())
+          assert x["status"]=="verified" and x["territory"]=="4304606"
+          assert x["reference"]==cnpj["reference"], "Existing bairros snapshot is stale relative to CNPJ"
+          assert len(source["features"])==len(x["neighborhoods"])==18
+          print("GEOCANOAS_SNAPSHOT_FALLBACK",x["reference"],flush=True)
+          PY
+          fi
       - name: Gerar hexágonos 500m e calor de endereços não domiciliares CNEFE/IBGE
         run: python scripts/collect_hex500.py
       - name: Validar domínio, dados originais, formatos e arquivo de mapa
