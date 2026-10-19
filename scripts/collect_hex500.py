@@ -193,7 +193,7 @@ def extract():
                 if not boundary.covers(mid):mid=clip.representative_point()
                 lon,lat=inv.transform(mid.x,mid.y)
                 heat.append({"type":"Feature","properties":{"cell":props["cell"],
-                    "w":high,"cw":(matched_cell["matched"] if matched_cell else 0),
+                    "w":high,"nw":total,"cw":(matched_cell["matched"] if matched_cell else 0),
                     "source":"cnefe2022_hex_center",**{k:v for k,v in props.items() if k.startswith("hk")},
                     **({("cws"+k[1:]):v for k,v in matched_cell.items() if k.startswith("s") and len(k)==2} if matched_cell else {})},
                     "geometry":{"type":"Point","coordinates":[lon,lat]}})
@@ -265,7 +265,7 @@ def extract():
           "source":SOURCE,"sourceSha256":sha,
           "bairrosSource":"https://geo.canoas.rs.gov.br/server/rest/services/BAIRROSOFICIAL/FeatureServer/0",
           "dataMeaning":"Endereços de estabelecimentos observados no CNEFE 2022; NÃO são CNPJs da Receita",
-          "cellWidthMeters":500,"cellDefinition":"Hexágonos regulares com distância entre faces paralelas de 500 metros, EPSG:31982",
+          "cellWidthMeters":500,"heatMetricsVersion":2,"cellDefinition":"Hexágonos regulares com distância entre faces paralelas de 500 metros, EPSG:31982",
           "pmtiles":{"path":"/data/cnefe-hex500.pmtiles","layers":["hex500","heat500","hotspots500"],
                      "bytes":pm.stat().st_size,"sha256":hashlib.sha256(pm.read_bytes()).hexdigest()},
           "coverage":{"allCnefeRecords":processed,"nonResidentialWithCoordinatesInOfficialBairros":selected,
