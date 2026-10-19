@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "status": "not_loaded",
+  "territory": "4304606",
+  "reference": "CNEFE 2022",
+  "cellWidthMeters": 500,
+  "pmtiles": null,
+  "coverage": null,
+  "notes": [
+    "Carga CNEFE 2022 e PMTiles de hexágonos 500m ainda não homologada."
+  ]
+}

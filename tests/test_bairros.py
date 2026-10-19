@@ -24,4 +24,16 @@ class TestGeocanoasBairros(unittest.TestCase):
         self.assertIsNone(module.safe_number(None))
         self.assertIsNone(module.safe_number(float("nan")))
         self.assertEqual(module.safe_number(0),0.0)
+
+    def test_hex_grid_utm_width_and_stable_assignment(self):
+        from collect_hex500 import RADIUS,SCALE,hexagon,index_of,center,safe_public
+        self.assertAlmostEqual(SCALE,500.0,places=5)
+        self.assertAlmostEqual(RADIUS*3**.5,500.0,places=5)
+        for i,j in ((950,15440),(970,15460),(960,15455)):
+            x,y=center(i,j)
+            self.assertEqual(index_of(x,y),(i,j))
+            self.assertTrue(hexagon(i,j).covers(__import__("shapely.geometry",fromlist=["Point"]).Point(x,y)))
+        self.assertIsNone(safe_public(3))
+        self.assertEqual(safe_public(0),0)
+        self.assertEqual(safe_public(5),5)
 if __name__=="__main__":unittest.main()
