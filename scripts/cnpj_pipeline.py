@@ -213,6 +213,14 @@ def shard(reference, index):
                 normalize(row[17])[:60], row[18].strip(),
             ])
             accepted += 1
+    # Optional, privacy-preserving exact-address CNEFE match on the still-local RFB
+    # ZIP. It emits only 500m cell counters; the ZIP is deleted immediately after.
+    try:
+        from cnpj_geo import match_shard
+        match_shard(reference,index,municipio,source,csv_zip)
+    except Exception as geo_error:
+        print("AVISO CNPJ_CNEFE_MATCH indisponível no fragmento",
+              index, repr(geo_error), file=sys.stderr, flush=True)
     source.unlink(missing_ok=True)
     manifest = {
         "reference": reference, "index": index, "sourceFile": filename,
