@@ -6,6 +6,7 @@ on:
       - scripts/collect_bairros.py
       - scripts/collect_hex500.py
       - tests/test_cnpj_geocoding.py
+      - tests/test_cartographic_integrity.py
       - .github/workflows/bairros.yml
       - public/data/cnpj.json
       - public/data/cnpj-geo-hex500.json
@@ -45,6 +46,8 @@ jobs:
           tippecanoe --version
       - name: Testes de bairros, geometrias e hexágonos
         run: python -m unittest discover -s tests -p 'test_bairros.py' -v
+      - name: Auditoria cartográfica de supressão e consistência dos dados atuais
+        run: python -m unittest discover -s tests -p 'test_cartographic_integrity.py' -v
       - name: Testar cruzamento exato e limiares de privacidade CNPJ
         run: python -m unittest discover -s tests -p 'test_cnpj_geocoding.py' -v
       - name: Coletar 18 bairros GeoCanoas, conciliar CNPJs e gerar PMTiles
@@ -69,6 +72,20 @@ jobs:
           assert hexdata["privacy"]["individualCoordinatesPublished"] is False
           assert hexdata["coverage"]["heatCellsAtLeastFiveHighQualityAddresses"]>=250
           assert "hotspots500" in hexdata["pmtiles"]["layers"]
+          assert "hex_bairros" in hexdata["pmtiles"]["layers"]
+          assert hexdata["spatialOverlayVersion"]==1
+          topo=hexdata["spatialTopology"]
+          assert len(topo["neighborhoods"])==18
+          assert len(topo["fullCellBairro"])==topo["fullyContainedHexagons"]
+          assert topo["fullyContainedHexagons"]+topo["crossBorderHexagons"]==hexdata["coverage"]["gridCells"]
+          assert topo["fragments"]>=hexdata["coverage"]["gridCells"]
+          assert set(topo["fullCellBairro"]).issubset({row["cell"] for row in hexdata["cells"]})
+          observed=sum(row["observedAddresses"] or 0 for row in topo["neighborhoods"])
+          suppressed=sum(row["observedAddresses"] is None for row in topo["neighborhoods"])
+          located=hexdata["coverage"]["nonResidentialWithCoordinatesInOfficialBairros"]-topo["unassignedCnefePointBoundary"]-topo["ambiguousCnefePointBoundary"]
+          assert observed<=located and located-observed<=suppressed*4
+          assert all(row["cnpjCellsPublished"]<=row["fullCells"] for row in topo["neighborhoods"])
+          assert all(row["partialAreaKm2"]>=0 and row["fullCellAreaKm2"]>=0 for row in topo["neighborhoods"])
           hotspots=hexdata.get("economicHotspots",[])
           assert len({h["id"] for h in hotspots})==len(hotspots)
           assert all(h["matched"]>=60 and h["hexagons"]>=3 for h in hotspots)
