@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import {CnpjSpatialInsights} from "@/components/cnpj-spatial-insights";
 import {useEffect,useMemo,useRef,useState} from "react";
 import maplibregl,{LngLatBounds,type ExpressionSpecification} from "maplibre-gl";
 import {PMTiles,Protocol,type Source} from "pmtiles";
@@ -289,6 +290,10 @@ export function Hex500Dashboard(){
      <ul className="mt-3 list-disc space-y-1.5 pl-4 text-xs leading-relaxed text-slate-600">{(data.notes||[]).map((t,i)=><li key={i}>{t}</li>)}</ul>
     </div>
    </section>
+   {data.cnpjMatch&&data.cnpjReference&&
+    <CnpjSpatialInsights reference={data.cnpjReference} coverage={data.cnpjMatch}
+     cells={cells} selectedSector={cnpjSector}
+     onSelectCell={(id,lon,lat)=>{setSelected(id);mapRef.current?.flyTo({center:[lon,lat],zoom:14.1})}}/>}
   </>}
  </main>;
 }
