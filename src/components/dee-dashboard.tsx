@@ -37,7 +37,6 @@ export function DeeDashboard() {
     const a=document.createElement("a");a.href=url;a.download="canoas-dee-emprego-exportacoes.csv";a.click();URL.revokeObjectURL(url);
   };
   return <main className="mx-auto max-w-[1400px] px-4 py-8 text-ink sm:px-6 sm:py-12">
-    <Link href="/" className="text-sm font-semibold text-brand-700">← Painel principal</Link>
     <div className="mt-7 flex flex-wrap items-end justify-between gap-4">
       <div><span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700"><BriefcaseBusiness size={16}/> DEE / DataRS · Recorte Canoas</span>
       <h1 className="mt-3 text-2xl font-extrabold sm:text-4xl">Emprego e comércio exterior</h1>
