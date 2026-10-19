@@ -1,0 +1,331 @@
+{
+  "schemaVersion": 1,
+  "status": "verified",
+  "source": "Firjan – Índice Firjan de Desenvolvimento Municipal (IFDM)",
+  "sourceUrl": "https://www.firjan.com.br/data/files/09/42/7A/34/0EFA6910734FAA69D8284EA8/Serie-Historica-IFDM-2013-a-2023.xlsx",
+  "publicationUrl": "https://www.firjan.com.br/ifdm/downloads/",
+  "methodologyUrl": "https://www.firjan.com.br/ifdm/consulta-ao-indice/consulta-ao-indice.htm",
+  "edition": 2025,
+  "referenceYear": 2023,
+  "territory": "4304606",
+  "sourceMunicipalityCode": "430460",
+  "municipality": "Canoas",
+  "state": "RS",
+  "range": {
+    "start": 2013,
+    "end": 2023,
+    "count": 11
+  },
+  "scale": {
+    "min": 0,
+    "max": 1,
+    "criticalBelow": 0.4,
+    "lowBelow": 0.6,
+    "moderateBelow": 0.8
+  },
+  "notes": [
+    "Série histórica da edição IFDM 2025, recalculada pela metodologia revisada. Não conectar séries de edições metodologicamente distintas.",
+    "Ano-base 2023 é a última referência disponível na edição 2025, não representa uma medição de 2026.",
+    "Índice de 0 a 1; desenvolvimento crítico <0,4; baixo de 0,4 a <0,6; moderado de 0,6 a <0,8; alto ≥0,8.",
+    "O código municipal de seis dígitos 430460 utilizado pela Firjan corresponde ao IBGE 4304606 (Canoas)."
+  ],
+  "series": [
+    {
+      "year": 2013,
+      "values": {
+        "general": 0.6549,
+        "education": 0.3531,
+        "health": 0.6447,
+        "employmentIncome": 0.9668
+      },
+      "ranking": {
+        "general": {
+          "state": 112,
+          "brazil": 666
+        },
+        "education": {
+          "state": 406,
+          "brazil": 3557
+        },
+        "health": {
+          "state": 125,
+          "brazil": 478
+        },
+        "employmentIncome": {
+          "state": 17,
+          "brazil": 71
+        }
+      }
+    },
+    {
+      "year": 2014,
+      "values": {
+        "general": 0.6651,
+        "education": 0.3894,
+        "health": 0.6574,
+        "employmentIncome": 0.9486
+      },
+      "ranking": {
+        "general": {
+          "state": 114,
+          "brazil": 687
+        },
+        "education": {
+          "state": 397,
+          "brazil": 3472
+        },
+        "health": {
+          "state": 105,
+          "brazil": 470
+        },
+        "employmentIncome": {
+          "state": 32,
+          "brazil": 128
+        }
+      }
+    },
+    {
+      "year": 2015,
+      "values": {
+        "general": 0.6448,
+        "education": 0.3897,
+        "health": 0.6572,
+        "employmentIncome": 0.8875
+      },
+      "ranking": {
+        "general": {
+          "state": 134,
+          "brazil": 887
+        },
+        "education": {
+          "state": 413,
+          "brazil": 3676
+        },
+        "health": {
+          "state": 119,
+          "brazil": 532
+        },
+        "employmentIncome": {
+          "state": 51,
+          "brazil": 261
+        }
+      }
+    },
+    {
+      "year": 2016,
+      "values": {
+        "general": 0.6277,
+        "education": 0.382,
+        "health": 0.6883,
+        "employmentIncome": 0.8129
+      },
+      "ranking": {
+        "general": {
+          "state": 144,
+          "brazil": 992
+        },
+        "education": {
+          "state": 408,
+          "brazil": 3715
+        },
+        "health": {
+          "state": 87,
+          "brazil": 331
+        },
+        "employmentIncome": {
+          "state": 79,
+          "brazil": 437
+        }
+      }
+    },
+    {
+      "year": 2017,
+      "values": {
+        "general": 0.6284,
+        "education": 0.3655,
+        "health": 0.7224,
+        "employmentIncome": 0.7973
+      },
+      "ranking": {
+        "general": {
+          "state": 163,
+          "brazil": 1159
+        },
+        "education": {
+          "state": 441,
+          "brazil": 4239
+        },
+        "health": {
+          "state": 58,
+          "brazil": 184
+        },
+        "employmentIncome": {
+          "state": 103,
+          "brazil": 543
+        }
+      }
+    },
+    {
+      "year": 2018,
+      "values": {
+        "general": 0.6241,
+        "education": 0.368,
+        "health": 0.6841,
+        "employmentIncome": 0.8201
+      },
+      "ranking": {
+        "general": {
+          "state": 188,
+          "brazil": 1311
+        },
+        "education": {
+          "state": 441,
+          "brazil": 4340
+        },
+        "health": {
+          "state": 135,
+          "brazil": 587
+        },
+        "employmentIncome": {
+          "state": 90,
+          "brazil": 469
+        }
+      }
+    },
+    {
+      "year": 2019,
+      "values": {
+        "general": 0.6367,
+        "education": 0.4123,
+        "health": 0.6833,
+        "employmentIncome": 0.8145
+      },
+      "ranking": {
+        "general": {
+          "state": 192,
+          "brazil": 1278
+        },
+        "education": {
+          "state": 437,
+          "brazil": 4307
+        },
+        "health": {
+          "state": 135,
+          "brazil": 555
+        },
+        "employmentIncome": {
+          "state": 97,
+          "brazil": 537
+        }
+      }
+    },
+    {
+      "year": 2020,
+      "values": {
+        "general": 0.6609,
+        "education": 0.428,
+        "health": 0.7596,
+        "employmentIncome": 0.7952
+      },
+      "ranking": {
+        "general": {
+          "state": 175,
+          "brazil": 1130
+        },
+        "education": {
+          "state": 430,
+          "brazil": 4339
+        },
+        "health": {
+          "state": 45,
+          "brazil": 149
+        },
+        "employmentIncome": {
+          "state": 110,
+          "brazil": 667
+        }
+      }
+    },
+    {
+      "year": 2021,
+      "values": {
+        "general": 0.6687,
+        "education": 0.3988,
+        "health": 0.7432,
+        "employmentIncome": 0.8642
+      },
+      "ranking": {
+        "general": {
+          "state": 191,
+          "brazil": 1245
+        },
+        "education": {
+          "state": 455,
+          "brazil": 4652
+        },
+        "health": {
+          "state": 72,
+          "brazil": 260
+        },
+        "employmentIncome": {
+          "state": 106,
+          "brazil": 548
+        }
+      }
+    },
+    {
+      "year": 2022,
+      "values": {
+        "general": 0.6902,
+        "education": 0.4562,
+        "health": 0.7126,
+        "employmentIncome": 0.9017
+      },
+      "ranking": {
+        "general": {
+          "state": 178,
+          "brazil": 1219
+        },
+        "education": {
+          "state": 447,
+          "brazil": 4585
+        },
+        "health": {
+          "state": 123,
+          "brazil": 593
+        },
+        "employmentIncome": {
+          "state": 89,
+          "brazil": 425
+        }
+      }
+    },
+    {
+      "year": 2023,
+      "values": {
+        "general": 0.7239,
+        "education": 0.507,
+        "health": 0.7703,
+        "employmentIncome": 0.8944
+      },
+      "ranking": {
+        "general": {
+          "state": 144,
+          "brazil": 1036
+        },
+        "education": {
+          "state": 438,
+          "brazil": 4671
+        },
+        "health": {
+          "state": 65,
+          "brazil": 263
+        },
+        "employmentIncome": {
+          "state": 95,
+          "brazil": 526
+        }
+      }
+    }
+  ]
+}
