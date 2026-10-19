@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import data from "@/data/external-indicators.json";
 import { ExternalDataPanel } from "@/components/external-data-panel";
 import type { ExternalIndicatorRecord } from "@/lib/external-sources";
@@ -14,7 +13,6 @@ export default function FontesPage() {
   const records = data.records as ExternalIndicatorRecord[];
   return (
     <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 sm:py-12">
-      <Link href="/" className="text-sm font-semibold text-brand-700">← Voltar ao observatório</Link>
       <div className="mb-7 mt-7">
         <p className="text-xs font-bold uppercase tracking-wider text-brand-700">Inteligência econômica</p>
         <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-ink sm:text-4xl">Fontes complementares</h1>
