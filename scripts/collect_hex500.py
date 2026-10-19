@@ -243,7 +243,7 @@ def extract():
                 hotspot_summary.append({"id":region,"rank":rank,
                   "matched":sum_cnpj,"hexagons":len(group),
                   "lon":round(point.x,6),"lat":round(point.y,6)})
-    actual_heat=sum(1 for row in heat if row["properties"]["w"]>=MIN)
+    actual_heat=sum(1 for row in heat if (row["properties"]["w"] or 0)>=MIN)
     matched_heat=sum(1 for row in heat if row["properties"]["cw"]>=MIN)
     if totalcells<300 or actual_heat<80:
         raise RuntimeError(f"Unexpected grid coverage {totalcells}, heat cells {len(heat)}")
