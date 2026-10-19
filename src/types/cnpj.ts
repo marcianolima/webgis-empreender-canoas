@@ -16,6 +16,7 @@ export type CnpjSnapshot = {
     companyShards: number;
     simplesLoaded: boolean;
     recordsMunicipality: number;
+    dateFieldOrderVerified?: boolean;
     totalRowsReadEstablishments: number;
   };
   kpis: null | {

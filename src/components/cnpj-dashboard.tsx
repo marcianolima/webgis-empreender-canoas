@@ -29,6 +29,7 @@ export function CnpjDashboard() {
 
   const official = data?.status === "official" && !!data.kpis;
   const kpi = data?.kpis;
+  const datesVerified = data?.coverage?.dateFieldOrderVerified === true;
   const year = data?.reference?.slice(0,4) || "";
   const sectors = data?.bySector || [];
   const places = data?.byDistrictDeclared || [];
@@ -77,12 +78,17 @@ export function CnpjDashboard() {
       <div className="mt-5 rounded-xl bg-brand-50 px-4 py-3 text-sm font-medium text-brand-900">
         Fotografia oficial RFB: <strong>{data.reference}</strong> · {num.format(data.coverage?.recordsMunicipality || 0)} estabelecimentos lidos no recorte · <strong>{data.coverage?.establishmentShards}/10</strong> partes de Estabelecimentos e <strong>{data.coverage?.companyShards}/10</strong> partes de Empresas.
       </div>
+      {!datesVerified && <p role="status" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-900"><strong>Auditoria de datas da Receita Federal:</strong> a fotografia atual não comprova a interpretação correta das colunas de data de abertura e da situação cadastral. Indicadores de abertura, baixas por ano e séries mensais foram temporariamente ocultados até uma carga integral com o mapeamento de colunas corrigido e validado. As contagens atuais de estabelecimentos, CNAE e bairros continuam disponíveis.</p>}
       <section className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Indicadores CNPJ">
         {[
           {name:"Estabelecimentos ativos",value:kpi.active,note:"Situação cadastral 02",icon:<Building2 size={18}/>},
+          {name:"Registros cadastrais totais",value:kpi.total,note:"Estabelecimentos em todas as situações cadastrais",icon:<Building2 size={18}/>},
+          {name:"Baixados na fotografia",value:kpi.baixados_snapshot,note:"Situação cadastral 08",icon:<FileClock size={18}/>},
+          ...(datesVerified ? [
           {name:"Aberturas no mês",value:kpi.openMonth,note:"Data de início da atividade em "+data.reference,icon:<ChartBar size={18}/>},
           {name:"Aberturas no ano",value:kpi.openYear,note:"Ano de início "+year,icon:<Layers size={18}/>},
           {name:"Baixas no ano",value:kpi.closedYearLatestSituation,note:"Situação 08 na fotografia, data de situação em "+year,icon:<FileClock size={18}/>},
+          ] : []),
         ].map(item => <div key={item.name} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
           <div className="flex justify-between gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500"><span>{item.name}</span><span className="text-brand-700">{item.icon}</span></div>
           <p className="mt-3 text-3xl font-extrabold">{num.format(item.value)}</p>
@@ -93,17 +99,18 @@ export function CnpjDashboard() {
         <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">MEI entre optantes conhecidos</p><p className="mt-2 text-2xl font-bold">{kpi.meiKnown ? fmtPercent(100*kpi.meiActive/kpi.meiKnown) : "N/D"}</p><p className="text-xs text-slate-500">{num.format(kpi.meiKnown)} ativos com campo conhecido</p></div>
         <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">Simples entre optantes conhecidos</p><p className="mt-2 text-2xl font-bold">{kpi.simplesKnown ? fmtPercent(100*kpi.simplesActive/kpi.simplesKnown) : "N/D"}</p><p className="text-xs text-slate-500">{num.format(kpi.simplesKnown)} ativos com campo conhecido</p></div>
         <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">Baixados na fotografia</p><p className="mt-2 text-2xl font-bold">{num.format(kpi.baixados_snapshot)}</p><p className="text-xs text-slate-500">Não é número de baixas do mês</p></div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">Saldo cadastral aproximado no ano</p><p className="mt-2 text-2xl font-bold">{num.format(kpi.balanceYearProxy)}</p><p className="text-xs text-slate-500">Não é variação de estoque entre snapshots</p></div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">Saldo cadastral aproximado no ano</p><p className="mt-2 text-2xl font-bold">{datesVerified ? num.format(kpi.balanceYearProxy) : "N/D"}</p><p className="text-xs text-slate-500">Não é variação de estoque entre snapshots</p></div>
       </section>
       <section className="mt-6 grid gap-5 xl:grid-cols-2">
         <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
           <h2 className="text-lg font-bold">Aberturas e baixas por mês</h2>
+          {!datesVerified ? <p className="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">Série temporal indisponível até a validação dos campos de data da Receita.</p> : <>
           <p className="mt-1 text-xs text-slate-500">Aberturas: data de início. Baixas: última situação 08 com data cadastral no mês.</p>
           <div className="mt-5 h-[290px]" role="img" aria-label="Séries de aberturas e baixas cadastrais da Receita Federal">
             <ResponsiveContainer width="100%" height="100%"><LineChart data={data.monthly.slice(-36)} margin={{left:-12,right:12,bottom:4}}>
               <CartesianGrid vertical={false} stroke="#e6ebef"/><XAxis dataKey="month" minTickGap={20} tick={{fontSize:9}}/><YAxis width={55} tick={{fontSize:10}}/><Tooltip/><Legend wrapperStyle={{fontSize:11}}/><Line name="Aberturas" dataKey="openings" stroke="#087f66" strokeWidth={2.5} dot={false}/><Line name="Baixas (última situação)" dataKey="closingsLatestSituation" stroke="#d97742" strokeWidth={2.5} dot={false}/>
             </LineChart></ResponsiveContainer>
-          </div>
+          </div></>}
         </div>
         <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
           <h2 className="text-lg font-bold">Principais seções CNAE</h2>

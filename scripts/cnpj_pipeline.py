@@ -398,7 +398,7 @@ def assemble(reference, source_dir):
             "unit": "estabelecimentos CNPJ (matrizes + filiais)",
             "coverage": {"establishmentShards": 10, "companyShards": 10,
                          "simplesLoaded": True, "totalRowsReadEstablishments": sum(v["rowsRead"] for v in manifests),
-                         "recordsMunicipality": count, "missingStartDates": bad_dates,
+                         "recordsMunicipality": count, "dateFieldOrderVerified": True, "missingStartDates": bad_dates,
                          "companyMatchedBasics": sum(v.get("matchedBasics",0) for v in sources)},
             "kpis": {
                 "total": count, "active": active, "baixados_snapshot": status["08"],
@@ -437,6 +437,7 @@ def assemble(reference, source_dir):
                     "MEI/Simples pela opção cadastral de Empresas/Simples; percentuais usam apenas optantes com situação conhecida.",
                     "Bairro é campo informado à RFB; não validado contra os polígonos municipais.",
                     "Células de bairro × seção com menos de cinco empresas são omitidas por minimização.",
+                    "Datas RFB verificadas: início de atividade na coluna 10 e situação cadastral na coluna 6 de Estabelecimentos.",
                     "Nenhum CNPJ, nome, endereço individual ou dado de sócios é publicado."
                 ],
                 "sources": sources,
