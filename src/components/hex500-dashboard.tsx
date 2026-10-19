@@ -19,7 +19,7 @@ type SourceData={schemaVersion:1;status:"verified"|"not_loaded";territory:string
  notInOfficialBairros:number;invalidCoordinates:number;gridCells:number;
  cellsWithNonResidential:number;heatCellsAtLeastFiveHighQualityAddresses:number;
  kindCounts:Record<string,number>;geocodingLevelCounts:Record<string,number>};
- spatialTopology?:{fragments:number;fullyContainedHexagons:number;crossBorderHexagons:number;
+ spatialTopology?:{fragments:number;fullyContainedHexagons:number;crossBorderHexagons:number;ambiguousOfficialFragments?:number;ambiguousOfficialAreaKm2?:number;
   unassignedCnefePointBoundary:number;ambiguousCnefePointBoundary:number;
   fullCellBairro:Record<string,string>;neighborhoods:Array<{bairro:string;areaKm2:number;fullCells:number;
   borderFragments:number;fullCellAreaKm2:number;partialAreaKm2:number;cnpjPublishedFullCells:number|null;cnpjCellsPublished:number;
@@ -371,7 +371,7 @@ export function Hex500Dashboard(){
     {hasOverlay&&neighborhoodStats?<>
      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {[
-       ["Endereços CNEFE no bairro",fmt(neighborhoodStats.observedAddresses),"Contagem direta das coordenadas observadas"],
+       ["Endereços CNEFE no bairro",fmt(neighborhoodStats.observedAddresses),"Coordenadas fornecidas pelo IBGE, inclusive estimadas"],
        ["Densidade por km²",fmt(neighborhoodStats.observedPerKm2),"Território completo, inclusive áreas não urbanizadas"],
        ["Hexágonos integralmente contidos",num.format(neighborhoodStats.fullCells),"Contagens atribuíveis sem rateio"],
        ["Fragmentos de divisa",num.format(neighborhoodStats.borderFragments),"Geometria, sem repartir observações"],
@@ -383,7 +383,8 @@ export function Hex500Dashboard(){
      <p className="text-xs leading-relaxed text-slate-600">Área oficial: {fmt(neighborhoodStats.areaKm2)} km². Interseções calculadas em EPSG:31982. <strong>Partes de divisa aparecem em bege</strong> sem receber as contagens de todo o hexágono. CNPJs publicados em células integralmente contidas: {fmt(neighborhoodStats.cnpjPublishedFullCells)}, em {num.format(neighborhoodStats.cnpjCellsPublished)} células publicáveis. Esse subtotal abrange somente o subconjunto geocodificado e não o universo empresarial do bairro.</p>
     </>:<p className="text-xs text-amber-900">O PMTiles ainda não inclui as interseções: permanece a seleção exploratória pelo ponto representativo das células.</p>}
    </section>}
-   {!!data.economicHotspots?.length&&<section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+   {hasOverlay&&!!data.spatialTopology?.ambiguousOfficialAreaKm2&&<p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">A malha oficial apresenta {fmt(data.spatialTopology.ambiguousOfficialAreaKm2)} km² de áreas sobrepostas entre bairros, não atribuídas arbitrariamente. Essas ambiguidades territoriais merecem revisão na fonte cartográfica oficial.</p>}
+   {!!data.economicHotspots?.length&&bairro==="all"&&<section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
      <div className="flex flex-wrap items-center justify-between gap-3">
       <div><h2 className="text-sm font-bold text-amber-900">Núcleos contíguos de concentração empresarial</h2>
        <p className="mt-1 text-xs leading-relaxed text-amber-900">{data.economicHotspots.length} agrupamentos identificados com hexágonos vizinhos do quartil superior, pelo menos 3 células e 60 CNPJs conciliados no conjunto. São concentração do subconjunto geocodificado, não do total municipal.</p></div>
@@ -401,7 +402,7 @@ export function Hex500Dashboard(){
     </section>}
    <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_325px]">
     <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-card sm:p-4">
-     <h2 className="mb-3 flex items-center gap-2 text-sm font-bold"><MapPin size={16}/> {mode==="heat"?"Mapa de calor das células":"Densidade por hexágono"} · {metricLabel}</h2>
+     <h2 className="mb-3 flex items-center gap-2 text-sm font-bold"><MapPin size={16}/> {mode==="heat"?"Mapa de calor das células":"Distribuição por hexágono"} · {metricLabel}</h2>
      <div className="relative">
       <div ref={canvas} className="h-[410px] overflow-hidden rounded-xl bg-slate-100 sm:h-[590px]" role="region" aria-label="Mapa PMTiles hexágonos 500m, CNEFE Canoas"/>
       {!mapReady&&!mapError&&<div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/70 text-sm font-semibold text-slate-600">Carregando camada de hexágonos PMTiles…</div>}
