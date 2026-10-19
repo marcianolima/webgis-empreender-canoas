@@ -119,7 +119,7 @@ def extract():
     x0,y0,x1,y1=bounds
     imin=int(math.floor(x0/SCALE))-2;imax=int(math.ceil(x1/SCALE))+2
     jmin=int(math.floor(y0/DY))-2;jmax=int(math.ceil(y1/DY))+2
-    hexes=[];heat=[];totalcells=0
+    hexes=[];heat=[];cells=[];totalcells=0
     hexjson=WORK/"hex500.geojson"
     heatjson=WORK/"heat500.geojson"
     for j in range(jmin,jmax+1):
@@ -153,6 +153,9 @@ def extract():
                     props["k"+kind]=bucket["kind_"+kind]
             geom=transform(inv.transform,clip)
             hexes.append({"type":"Feature","properties":props,"geometry":mapping(geom)})
+            centroid=clip.representative_point()
+            lonc,latc=inv.transform(centroid.x,centroid.y)
+            cells.append({**props,"lon":round(lonc,6),"lat":round(latc,6)})
             # Weighted center of the *aggregate hex cell* is not a position of a
             # company or of an IBGE address. Show only sufficiently numerous
             # original/adjusted CNEFE coordinates as smoothed heat intensity.
@@ -161,7 +164,7 @@ def extract():
                 if not boundary.covers(mid):mid=clip.representative_point()
                 lon,lat=inv.transform(mid.x,mid.y)
                 heat.append({"type":"Feature","properties":{"cell":props["cell"],
-                    "w":high,"source":"cnefe2022_hex_center"},
+                    "w":high,"source":"cnefe2022_hex_center",**{k:v for k,v in props.items() if k.startswith("k")}},
                     "geometry":{"type":"Point","coordinates":[lon,lat]}})
     if totalcells<300 or len(heat)<80:
         raise RuntimeError(f"Unexpected grid coverage {totalcells}, heat cells {len(heat)}")
@@ -193,6 +196,7 @@ def extract():
              "geocodingLevelCounts":{k:byquality[k] for k in QUALITY}},
           "kinds":{k:v for k,v in KINDS.items()},
           "quality":QUALITY,
+          "cells":cells,
           "privacy":{"minPublishedCellCount":MIN,
                      "individualCoordinatesPublished":False,
                      "householdsPublished":False,
