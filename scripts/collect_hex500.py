@@ -46,6 +46,11 @@ def index_of(x,y):
     i,j=min(candidates,key=lambda ij:(center(*ij)[0]-x)**2+(center(*ij)[1]-y)**2)
     return (i,j)
 
+def hex_neighbors(i,j):
+    """Six adjacent flat-to-flat hexagonal cells in an odd-row offset grid."""
+    shift=(i-1,i) if j%2==0 else (i,i+1)
+    return {(i-1,j),(i+1,j),*((ii,jj) for jj in (j-1,j+1) for ii in shift)}
+
 def within(x,y,polygon):
     return polygon.covers(Point(x,y))
 
@@ -211,10 +216,7 @@ def extract():
                 i,j=int(ij[0]),int(ij[1])
                 # Offset rows: even j connects to upper/lower i-1 and i;
                 # odd j to upper/lower i and i+1.
-                shift=[i-1,i] if j%2==0 else [i,i+1]
-                adjacent={(i-1,j),(i+1,j)}
-                adjacent.update((ii,jj) for jj in (j-1,j+1) for ii in shift)
-                neighbors[key]={f"h{a}_{b}" for a,b in adjacent if f"h{a}_{b}" in core}
+                neighbors[key]={f"h{a}_{b}" for a,b in hex_neighbors(i,j) if f"h{a}_{b}" in core}
             visited=set()
             components=[]
             for key in sorted(core):
