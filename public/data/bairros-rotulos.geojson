@@ -1,0 +1,264 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "source": "GeoCanoas BAIRROSOFICIAL",
+    "sourceFile": "bairros-oficiais.geojson",
+    "featureCount": 18,
+    "geometryType": "Point",
+    "notes": "Ponto interior único para rotulagem; não é endereço nem localização de empresa"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "bairro": "Brigadeira",
+        "oid": 983
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -51.1504477,
+          -29.8713558
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "bairro": "Centro",
+        "oid": 996
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -51.184834,
+          -29.9132374
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "bairro": "Estância Velha",
+        "oid": 995
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -51.1433072,
+          -29.9221594
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "bairro": "Fátima",
+        "oid": 990
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -51.1908671,
+          -29.9421636
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "bairro": "Guajuviras",
+        "oid": 986
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -51.1260705,
+          -29.9025472
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "bairro": "Harmonia",
+        "oid": 980
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -51.2155896,
+          -29.9095825
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "bairro": "Igara",
+        "oid": 985
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -51.1602355,
+          -29.8988228
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "bairro": "Ilhas das Garças",
+        "oid": 984
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -51.2147602,
+          -29.9567469
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "bairro": "Industrial",
+        "oid": 981
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -51.2115263,
+          -29.8776457
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "bairro": "Marechal Rondon",
+        "oid": 991
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -51.1661779,
+          -29.9160515
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "bairro": "Mathias Velho",
+        "oid": 987
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -51.2090349,
+          -29.9018812
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "bairro": "Mato Grande",
+        "oid": 979
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -51.2098594,
+          -29.9269777
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "bairro": "Niterói",
+        "oid": 989
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -51.1569957,
+          -29.9569101
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "bairro": "Nossa Senhora das Graças",
+        "oid": 988
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -51.1515592,
+          -29.9363187
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "bairro": "Olaria",
+        "oid": 994
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -51.1231077,
+          -29.9162733
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "bairro": "Rio Branco",
+        "oid": 1281
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -51.1921658,
+          -29.9643912
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "bairro": "São José",
+        "oid": 993
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -51.1600881,
+          -29.8860364
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "bairro": "São Luís",
+        "oid": 982
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -51.2124666,
+          -29.8924996
+        ]
+      }
+    }
+  ]
+}
