@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import {CnpjSpatialInsights} from "@/components/cnpj-spatial-insights";
 import {useEffect,useMemo,useRef,useState} from "react";
 import maplibregl,{LngLatBounds,type ExpressionSpecification,type FilterSpecification} from "maplibre-gl";
@@ -303,7 +302,6 @@ export function Hex500Dashboard(){
   }
  }
  return <main className="mx-auto max-w-[1540px] space-y-5 px-4 pb-16 pt-8 text-ink sm:px-6">
-  <Link href="/bairros" className="text-sm font-semibold text-brand-700">← Mapa econômico de bairros</Link>
   <header className="flex flex-wrap items-end justify-between gap-3">
    <div className="max-w-4xl">
     <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700"><Hexagon size={15}/> Hexágonos 500 m · IBGE CNEFE 2022 · PMTiles</span>
