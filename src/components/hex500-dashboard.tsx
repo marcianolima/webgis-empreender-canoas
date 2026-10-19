@@ -28,18 +28,18 @@ const metrics:{id:Metric;label:string}[]=[
  {id:"k3",label:"Estabelecimentos agropecuários"}, {id:"k4",label:"Estabelecimentos de ensino"},
  {id:"k5",label:"Estabelecimentos de saúde"}, {id:"k6",label:"Estabelecimentos de outras finalidades"},
  {id:"k8",label:"Estabelecimentos religiosos"}];
-function numberIn(cell:Cell,metric:Metric):number|null{
+function numberIn(cell:Cell,metric:string):number|null{
  const x=cell[metric];
  return typeof x==="number"&&Number.isFinite(x)?x:null;
 }
 function fmt(v:number|null){return v===null?"N/D":n2.format(v);}
-function scale(cells:Cell[],metric:Metric){
+function scale(cells:Cell[],metric:string){
  const a=cells.map(c=>numberIn(c,metric)).filter((n):n is number=>n!==null).sort((a,b)=>a-b);
  if(!a.length)return [5,10,20,40];
  const low=a[0];
  return Array.from(new Set([0.2,0.4,0.6,0.8].map(q=>a[Math.floor((a.length-1)*q)]))).filter(n=>n>low);
 }
-function expression(metric:Metric,steps:number[]):ExpressionSpecification{
+function expression(metric:string,steps:number[]):ExpressionSpecification{
  const vals:Array<string|number>=[];steps.forEach((step,i)=>{vals.push(step,C[Math.min(i+1,C.length-1)]);});
  return ["case",["has",metric],["step",["to-number",["get",metric]],C[0],...vals],"#e1e5e9"] as unknown as ExpressionSpecification;
 }
@@ -48,7 +48,7 @@ function add(root:HTMLElement,label:string,value:string){
  const b=document.createElement("strong");b.textContent=label+": ";
  line.append(b,document.createTextNode(value));root.append(line);
 }
-function csvExport(data:SourceData,cells:Cell[],metric:Metric){
+function csvExport(data:SourceData,cells:Cell[],metric:string){
  const header=["territorio_ibge","fonte","referencia","id_hex","largura_faces_m","lon_centro_estatistico","lat_centro_estatistico","area_recortada_km2","indicador","valor"];
  const rows=cells.map(c=>["4304606","IBGE CNEFE 2022","2022",c.cell,"500",String(c.lon),String(c.lat),
   String(c.a_km2),metric,String(numberIn(c,metric)??"")]);
@@ -67,14 +67,17 @@ export function Hex500Dashboard(){
  const [mapReady,setMapReady]=useState(false);
  const [mode,setMode]=useState<Mode>("hex");
  const [metric,setMetric]=useState<Metric>("n");
+ const [cnpjSector,setCnpjSector]=useState("all");
  const [selected,setSelected]=useState("");
  const [search,setSearch]=useState("");
  const [osm,setOsm]=useState(true);
  const cells=useMemo(()=>data?.cells||[],[data]);
- const ranking=useMemo(()=>cells.filter(c=>numberIn(c,metric)!==null).sort((a,b)=>(numberIn(b,metric)||0)-(numberIn(a,metric)||0)),[cells,metric]);
- const thresholds=useMemo(()=>scale(cells,metric),[cells,metric]);
+ const sectorsCnpj=useMemo(()=>Array.from(new Set(cells.flatMap(c=>Object.keys(c).filter(k=>/^cs[A-U]$/.test(k)).map(k=>k.slice(-1))))).sort(),[cells]);
+ const selectedMetric=metric==="cnpj"&&cnpjSector!=="all"?"cs"+cnpjSector:metric;
+ const ranking=useMemo(()=>cells.filter(c=>numberIn(c,selectedMetric)!==null).sort((a,b)=>(numberIn(b,selectedMetric)||0)-(numberIn(a,selectedMetric)||0)),[cells,selectedMetric]);
+ const thresholds=useMemo(()=>scale(cells,selectedMetric),[cells,selectedMetric]);
  current.current=data?{data,metric,cells}:null;
- const metricLabel=metrics.find(m=>m.id===metric)?.label||metric;
+ const metricLabel=(metrics.find(m=>m.id===metric)?.label||metric)+(metric==="cnpj"&&cnpjSector!=="all"?" · CNAE seção "+cnpjSector:"");
  const highlight=cells.find(c=>c.cell===selected);
  useEffect(()=>{
   const ctl=new AbortController();
@@ -169,18 +172,18 @@ export function Hex500Dashboard(){
   const map=mapRef.current;
   if(!map||!mapReady)return;
   map.setLayoutProperty("hex-fill","visibility","visible");
-  map.setPaintProperty("hex-fill","fill-color",expression(metric,thresholds));
+  map.setPaintProperty("hex-fill","fill-color",expression(selectedMetric,thresholds));
   map.setPaintProperty("hex-fill","fill-opacity",mode==="hex"?.78:.015);
   map.setLayoutProperty("hex-line","visibility",mode==="hex"?"visible":"none");
   map.setLayoutProperty("heat","visibility",mode==="heat"?"visible":"none");
   map.setFilter("selected-hex",["==",["get","cell"],selected||"____"]);
   if(mode==="heat"){
-    const key=metric==="cnpj"?"cw":metric.startsWith("k")?"h"+metric:"w";
+    const key=metric==="cnpj"?(cnpjSector==="all"?"cw":"cws"+cnpjSector):metric.startsWith("k")?"h"+metric:"w";
     map.setFilter("heat",[">=",["coalesce",["get",key],0],5]);
     map.setPaintProperty("heat","heatmap-weight",["interpolate",["linear"],
       ["to-number",["get",key],0],5,.16,100,1] as ExpressionSpecification);
   }
- },[mode,metric,thresholds,mapReady,selected]);
+ },[mode,metric,cnpjSector,selectedMetric,thresholds,mapReady,selected]);
  useEffect(()=>{const map=mapRef.current;if(map&&mapReady)map.setLayoutProperty("osm","visibility",osm?"visible":"none")},[osm,mapReady]);
  return <main className="mx-auto max-w-[1540px] space-y-5 px-4 pb-16 pt-8 text-ink sm:px-6">
   <Link href="/bairros" className="text-sm font-semibold text-brand-700">← Mapa econômico de bairros</Link>
@@ -190,7 +193,7 @@ export function Hex500Dashboard(){
     <h1 className="mt-3 text-2xl font-extrabold sm:text-4xl">Concentração territorial de estabelecimentos</h1>
     <p className="mt-3 text-sm leading-relaxed text-slate-600">Grade hexagonal de 500 m e calor estatístico calculados a partir de endereços não domiciliares georreferenciados do IBGE. CNPJs com endereço exatamente conciliado só aparecem como agregado, quando a base correspondente estiver disponível.</p>
    </div>
-   {data?.status==="verified"&&<button onClick={()=>csvExport(data,cells,metric)} className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white"><Download size={16}/> Exportar CSV</button>}
+   {data?.status==="verified"&&<button onClick={()=>csvExport(data,cells,selectedMetric)} className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white"><Download size={16}/> Exportar CSV</button>}
   </header>
   {error&&<p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</p>}
   {data?.status==="not_loaded"&&<p className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">A coleta CNEFE e a geração dos hexágonos estão em validação; não há grade sintética ou contagens imputadas.</p>}
@@ -220,6 +223,9 @@ export function Hex500Dashboard(){
       {metrics.filter(m=>m.id!=="cnpj"||data.cnpjMatch).map(m=><option key={m.id} value={m.id}>{m.label}</option>)}
      </select>
     </label>
+    {metric==="cnpj"&&data.cnpjMatch&&<label className="text-xs font-bold text-slate-600">Seção CNAE do CNPJ coincidente
+     <select value={cnpjSector} onChange={e=>{setCnpjSector(e.target.value);setSelected("")}} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-normal"><option value="all">Todos os setores conciliados</option>{sectorsCnpj.map(x=><option key={x} value={x}>Seção {x} · células ≥5</option>)}</select>
+    </label>}
     <label className="text-xs font-bold text-slate-600">Base cartográfica
      <select value={osm?"osm":"off"} onChange={e=>setOsm(e.target.value==="osm")} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-normal">
       <option value="osm">OSM e bairros oficiais</option><option value="off">Bairros oficiais sem ruas</option>
@@ -247,7 +253,7 @@ export function Hex500Dashboard(){
      <div className="mt-3 max-h-[495px] space-y-1 overflow-auto">
       {ranking.filter(c=>c.cell.toLowerCase().includes(search.toLowerCase())).slice(0,120).map((c,i)=><button key={c.cell} onClick={()=>{setSelected(c.cell);mapRef.current?.flyTo({center:[c.lon,c.lat],zoom:14.2})}}
         className={"flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-left "+(selected===c.cell?"border-brand-600 bg-brand-50":"border-slate-100 bg-slate-50 hover:border-brand-200")}>
-        <span className="text-xs text-slate-600">{i+1}. {c.cell}</span><strong className="text-sm tabular-nums">{fmt(numberIn(c,metric))}</strong>
+        <span className="text-xs text-slate-600">{i+1}. {c.cell}</span><strong className="text-sm tabular-nums">{fmt(numberIn(c,selectedMetric))}</strong>
       </button>)}
      </div>
      {highlight&&<div className="mt-3 rounded-xl bg-brand-50 p-3 text-xs leading-relaxed">
