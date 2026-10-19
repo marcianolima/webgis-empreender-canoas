@@ -69,7 +69,7 @@ jobs:
                   await group.click()
                   assert await group.get_attribute("aria-expanded")=="true"
                   await drawer.get_by_role("button",name="Fechar menu principal").click()
-                  assert not await drawer.count()
+                  await drawer.wait_for(state="detached",timeout=4000)
                 await home.evaluate("window.scrollTo(0,document.documentElement.scrollHeight)")
                 await home.wait_for_timeout(300)
                 top=await header.evaluate("(el)=>el.getBoundingClientRect().top")
