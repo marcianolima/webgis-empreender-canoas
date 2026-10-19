@@ -7,6 +7,9 @@ import { Building2, CheckCircle2, Database, Download, ExternalLink, Globe2, Land
 import { ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, LineChart, Line, BarChart, Bar } from "recharts";
 import type { OfficialEconomy } from "@/types/official";
 
+import {FirjanPanel} from "@/components/firjan-panel";
+import {FirjanFiscalPanel} from "@/components/firjan-fiscal-panel";
+
 const OfficialMap = dynamic(() => import("@/components/official-map"), { ssr: false, loading: () => <div className="h-[350px] rounded-xl bg-slate-100 p-4 text-sm">Carregando cartografia…</div> });
 const prefix = process.env.NEXT_PUBLIC_BASE_PATH || "";
 const number = new Intl.NumberFormat("pt-BR");
@@ -105,6 +108,8 @@ export function OfficialDashboard() {
           <Card icon={<Users size={19}/>} label={hasPopulationEstimate ? "População estimada" : "População residente"} value={lastPopulation && number.format(lastPopulation.value)} note={"IBGE " + (hasPopulationEstimate ? "Estimativa" : "Censo") + " " + (lastPopulation?.year ?? "—") + ". " + (hasPopulationEstimate ? "Estimativa anual, não contagem censitária. Censo 2022: " + (censusPopulation ? number.format(censusPopulation.value) : "N/D") + "." : "Contagem censitária, distinta de estimativas.")}/>
         </div>
       </section>
+      <FirjanPanel/>
+      <FirjanFiscalPanel/>
       <div className="grid min-w-0 gap-5 lg:grid-cols-2">
         <Panel title="Empresas e organizações no tempo" note="Séries separadas: 2006–2021 (tabela 993) e 2022 em diante (tabela 9582). Houve mudança metodológica em 2022; a transição não deve ser interpretada como crescimento.">
           {data?.cempre.length ? <div className="h-[280px] w-full" role="img" aria-label="Evolução anual de empresas e outras organizações de Canoas">
