@@ -259,15 +259,24 @@ export function Hex500Dashboard(){
  useEffect(()=>{
   const map=mapRef.current;
   if(!map||!mapReady)return;
-  map.setLayoutProperty("hex-fill","visibility","visible");
+  const exactBairro=hasOverlay&&bairro!=="all";
+  map.setLayoutProperty("hex-fill","visibility",exactBairro?"none":"visible");
   const spatialFilter:FilterSpecification|null=bairro==="all"?null:["in",["get","cell"],["literal",visibleIds]];
+  if(hasOverlay){
+   map.setLayoutProperty("hex-bairro-fill","visibility",exactBairro?"visible":"none");
+   map.setLayoutProperty("hex-bairro-border","visibility",exactBairro?"visible":"none");
+   map.setFilter("hex-bairro-fill",["==",["get","bairro"],bairro]);
+   map.setFilter("hex-bairro-border",["==",["get","bairro"],bairro]);
+   map.setPaintProperty("hex-bairro-fill","fill-color",
+    ["case",["==",["get","full"],0],"#f0d5a8",expression(selectedMetric,thresholds)] as ExpressionSpecification);
+  }
   map.setFilter("hex-fill",spatialFilter);
   map.setFilter("hex-line",spatialFilter);
   map.setFilter("bairro-focus",["==",["get","BAIRRO"],bairro==="all"?"__nenhum__":bairro]);
   map.setPaintProperty("hex-fill","fill-color",expression(selectedMetric,thresholds));
   map.setPaintProperty("hex-fill","fill-opacity",mode==="hex"?.78:.015);
-  map.setLayoutProperty("hex-line","visibility",mode==="hex"?"visible":"none");
-  map.setLayoutProperty("heat","visibility",mode==="heat"&&!!activeHeatKey?"visible":"none");
+  map.setLayoutProperty("hex-line","visibility",mode==="hex"&&!exactBairro?"visible":"none");
+  map.setLayoutProperty("heat","visibility",mode==="heat"&&!!activeHeatKey&&bairro==="all"?"visible":"none");
   map.setLayoutProperty("hotspots-fill","visibility",showHotspots&&bairro==="all"?"visible":"none");
   map.setLayoutProperty("hotspots-border","visibility",showHotspots&&bairro==="all"?"visible":"none");
   map.setFilter("selected-hex",["==",["get","cell"],selected||"____"]);
@@ -277,10 +286,10 @@ export function Hex500Dashboard(){
     map.setPaintProperty("heat","heatmap-weight",["interpolate",["linear"],
       ["to-number",["get",activeHeatKey],0],5,.16,100,1] as ExpressionSpecification);
   }
- },[mode,selectedMetric,thresholds,mapReady,selected,showHotspots,bairro,visibleIds,activeHeatKey]);
+ },[mode,selectedMetric,thresholds,mapReady,selected,showHotspots,bairro,visibleIds,activeHeatKey,hasOverlay]);
  useEffect(()=>{const map=mapRef.current;if(map&&mapReady)map.setLayoutProperty("osm","visibility",osm?"visible":"none")},[osm,mapReady]);
  function chooseBairro(next:string){
-  setBairro(next);setSelected("");
+  setBairro(next);setSelected("");if(next!=="all")setMode("hex");
   const map=mapRef.current;
   if(!map)return;
   if(next==="all"){map.flyTo({center:[-51.19,-29.914],zoom:11.2});return;}
@@ -333,7 +342,7 @@ export function Hex500Dashboard(){
     <div className="text-xs font-bold text-slate-600">Visualização
      <div className="mt-2 flex gap-2">
       <button onClick={()=>setMode("hex")} className={"flex flex-1 items-center justify-center gap-1 rounded-xl px-3 py-2.5 text-xs font-semibold "+(mode==="hex"?"bg-brand-600 text-white":"bg-slate-100 text-slate-600")}><Layers3 size={14}/> Hexágonos</button>
-      <button disabled={!activeHeatKey} title={metric==="d_km2"?"Densidade por área não pode ser interpolada como contagem":undefined} onClick={()=>setMode("heat")} className={"flex flex-1 items-center justify-center gap-1 rounded-xl px-3 py-2.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40 "+(mode==="heat"?"bg-brand-600 text-white":"bg-slate-100 text-slate-600")}><Flame size={14}/> Calor</button>
+      <button disabled={!activeHeatKey||bairro!=="all"} title={bairro!=="all"?"Calor não disponível em bairros: a suavização ultrapassa divisas":metric==="d_km2"?"Densidade por área não pode ser interpolada como contagem":undefined} onClick={()=>setMode("heat")} className={"flex flex-1 items-center justify-center gap-1 rounded-xl px-3 py-2.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40 "+(mode==="heat"?"bg-brand-600 text-white":"bg-slate-100 text-slate-600")}><Flame size={14}/> Calor</button>
      </div>
     </div>
     <label className="text-xs font-bold text-slate-600">Variável
