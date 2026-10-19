@@ -36,7 +36,8 @@ function fmt(v:number|null){return v===null?"N/D":n2.format(v);}
 function scale(cells:Cell[],metric:Metric){
  const a=cells.map(c=>numberIn(c,metric)).filter((n):n is number=>n!==null).sort((a,b)=>a-b);
  if(!a.length)return [5,10,20,40];
- return [0.2,0.4,0.6,0.8].map(q=>a[Math.floor((a.length-1)*q)]);
+ const low=a[0];
+ return Array.from(new Set([0.2,0.4,0.6,0.8].map(q=>a[Math.floor((a.length-1)*q)]))).filter(n=>n>low);
 }
 function expression(metric:Metric,steps:number[]):ExpressionSpecification{
  const vals:Array<string|number>=[];steps.forEach((step,i)=>{vals.push(step,C[Math.min(i+1,C.length-1)]);});
