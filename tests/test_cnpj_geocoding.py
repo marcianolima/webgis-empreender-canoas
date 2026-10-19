@@ -51,7 +51,15 @@ class TestGeocodingWithSpatialLibraries(unittest.TestCase):
                           {"cell":"h100_201","sector":"G","count":10},
                           {"cell":"h100_202","sector":"G","count":3}]}
             for index in range(10):
-                (root/f"geo-part-{index}.json").write_text(json.dumps(dict(data,shard=index)))
+                # Real low-count cells are distinct across shards; their
+                # counts do not all accumulate in the same hexagon.
+                fragment=dict(data,shard=index,
+                    cells={"h100_200":45,"h100_201":10,
+                           f"h100_{300+2*index}":3,
+                           f"h100_{301+2*index}":2},
+                    sectors=[{"cell":"h100_200","sector":"G","count":40},
+                             {"cell":"h100_201","sector":"G","count":10}])
+                (root/f"geo-part-{index}.json").write_text(json.dumps(fragment))
             with patch.object(cnpj_geo,"DATA",root):
                 cnpj_geo.assemble("2026-10",root)
             result=json.loads((root/"cnpj-geo-hex500.json").read_text())

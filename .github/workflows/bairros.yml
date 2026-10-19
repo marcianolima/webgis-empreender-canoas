@@ -5,6 +5,7 @@ on:
     paths:
       - scripts/collect_bairros.py
       - scripts/collect_hex500.py
+      - tests/test_cnpj_geocoding.py
       - .github/workflows/bairros.yml
       - public/data/cnpj.json
       - public/data/cnpj-geo-hex500.json
