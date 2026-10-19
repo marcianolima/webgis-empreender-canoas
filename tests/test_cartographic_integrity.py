@@ -29,4 +29,19 @@ class TestCartographicIntegrity(unittest.TestCase):
   self.assertGreaterEqual(cov["active"],cov["matched"])
   self.assertTrue(all(c["matched"]>=5 for c in geo["cells"]))
   self.assertFalse(geo["privacy"]["individualCoordinatesPublished"])
+ def test_topology_accounting_when_available(self):
+  d=json.loads((D/"cnefe-hex500.json").read_text(encoding="utf-8"))
+  topo=d.get("spatialTopology")
+  if topo is None:
+   self.skipTest("PMTiles topology pending regeneration by geospatial workflow")
+  self.assertEqual(d["spatialOverlayVersion"],1)
+  self.assertIn("hex_bairros",d["pmtiles"]["layers"])
+  self.assertEqual(len(topo["neighborhoods"]),18)
+  self.assertEqual(len(topo["fullCellBairro"]),topo["fullyContainedHexagons"])
+  self.assertEqual(topo["fullyContainedHexagons"]+topo["crossBorderHexagons"],d["coverage"]["gridCells"])
+  self.assertGreaterEqual(topo["fragments"],d["coverage"]["gridCells"])
+  self.assertEqual(
+   sum(r["observedAddresses"] or 0 for r in topo["neighborhoods"])+
+   topo["unassignedCnefePointBoundary"]+topo["ambiguousCnefePointBoundary"],
+   d["coverage"]["nonResidentialWithCoordinatesInOfficialBairros"])
 if __name__=="__main__":unittest.main()
