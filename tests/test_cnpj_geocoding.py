@@ -48,7 +48,7 @@ class TestGeocodingWithSpatialLibraries(unittest.TestCase):
                               "not_found_in_2022_cnefe":35,"exact_address_match":60},
                "cells":{"h100_200":45,"h100_201":10,"h100_202":3,"h100_203":2},
                "sectors":[{"cell":"h100_200","sector":"G","count":40},
-                          {"cell":"h100_201","sector":"G","count":8},
+                          {"cell":"h100_201","sector":"G","count":10},
                           {"cell":"h100_202","sector":"G","count":3}]}
             for index in range(10):
                 (root/f"geo-part-{index}.json").write_text(json.dumps(dict(data,shard=index)))
