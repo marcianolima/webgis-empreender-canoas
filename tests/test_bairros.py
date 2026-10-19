@@ -34,6 +34,12 @@ class TestGeocanoasBairros(unittest.TestCase):
         RADIUS,SCALE,hexagon,index_of,center,safe_public=(hexmodule.RADIUS,hexmodule.SCALE,hexmodule.hexagon,hexmodule.index_of,hexmodule.center,hexmodule.safe_public)
         self.assertAlmostEqual(SCALE,500.0,places=5)
         self.assertAlmostEqual(RADIUS*3**.5,500.0,places=5)
+        for i,j in ((965,15445),(966,15446)):
+            neighbors=hexmodule.hex_neighbors(i,j)
+            self.assertEqual(len(neighbors),6)
+            for a,b in neighbors:
+                self.assertIn((i,j),hexmodule.hex_neighbors(a,b))
+                self.assertAlmostEqual(__import__("math").dist(center(i,j),center(a,b)),500,places=5)
         for i,j in ((950,15440),(970,15460),(960,15455)):
             x,y=center(i,j)
             self.assertEqual(index_of(x,y),(i,j))

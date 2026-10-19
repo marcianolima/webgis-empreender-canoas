@@ -68,6 +68,12 @@ jobs:
           assert hexdata["coverage"]["nonResidentialWithCoordinatesInOfficialBairros"]>=2000
           assert hexdata["privacy"]["individualCoordinatesPublished"] is False
           assert hexdata["coverage"]["heatCellsAtLeastFiveHighQualityAddresses"]>=250
+          assert "hotspots500" in hexdata["pmtiles"]["layers"]
+          hotspots=hexdata.get("economicHotspots",[])
+          assert len({h["id"] for h in hotspots})==len(hotspots)
+          assert all(h["matched"]>=60 and h["hexagons"]>=3 for h in hotspots)
+          assert all(h["rank"]==i+1 for i,h in enumerate(hotspots))
+          assert sum(h["matched"] for h in hotspots)<=hexdata.get("cnpjMatch",{}).get("matchedInPublishedCells",float("inf"))
           if hexdata.get("cnpjMatch"):
             geocoded=json.loads((base/"cnpj-geo-hex500.json").read_text())
             assert geocoded["reference"]==cnpj["reference"]

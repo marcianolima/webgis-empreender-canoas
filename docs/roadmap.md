@@ -114,3 +114,10 @@
 - [x] Diagnósticos separados de endereço incompleto, não encontrado e ambíguo; reconciliação obrigatória com todos os ativos.
 - [x] Testes de privacidade e regressão da ordem das datas da Receita; gráficos temporais ocultos até verificação de snapshot corrigido.
 - [ ] Homologar resultado final de 10/10 fragmentos da nova carga RFB e a cobertura obtida, sem inferir a partir de amostras.
+
+### Etapa 12 — Inteligência econômica e núcleos contíguos
+- [x] Correção de tipagem TS18049 no painel dos diagnósticos opcionais, com validação GitHub Actions.
+- [x] Novo painel analítico: concentração das 10 maiores células, ranking interativo, CNAE mínimo verificável e série temporal somente com múltiplas competências.
+- [x] Delimitação de polígonos contíguos por vizinhança de hexágonos de 500 m, usando apenas contagens CNPJ geocodificadas e publicáveis.
+- [x] Terceira camada PMTiles `hotspots500`, com contagem mínima e controles de exibição no mapa.
+- [ ] Medir variação territorial entre competências somente após a segunda fotografia real e auditoria de comparabilidade metodológica.
