@@ -34,6 +34,10 @@ jobs:
             with urllib.request.urlopen(ROOT+"data/bairros-economia.json",timeout=20) as r:
               d=json.load(r)
             assert d["status"]=="verified" and len(d["neighborhoods"])==18
+            with urllib.request.urlopen(ROOT+"data/bairros-rotulos.geojson",timeout=20) as r:
+              labels=json.load(r)["features"]
+            assert len(labels)==len({f["properties"]["bairro"] for f in labels})==18
+            assert all(f["geometry"]["type"]=="Point" for f in labels)
             async with async_playwright() as p:
               browser=await p.chromium.launch(headless=True)
               for label,w,h in [("desktop",1366,900),("mobile",390,844)]:
@@ -89,6 +93,10 @@ jobs:
                 assert "59.553" in content or "59,553" in content or "59 553" in content
                 assert "PMTiles indisponível" not in content,content[-3000:]
                 assert "Carregando PMTiles" not in content,content[-3000:]
+                topbar=page.get_by_label("Cabeçalho do observatório")
+                assert await topbar.get_by_role("link",name="Hexágonos e calor").count()==1
+                assert await page.get_by_text("← Observatório econômico").count()==0
+                assert await page.get_by_text("Hexágonos 500 m e mapa de calor →").count()==0
                 assert not errors,errors
                 canvas=page.locator(".maplibregl-canvas")
                 img=Image.open(io.BytesIO(await canvas.screenshot())).convert("RGB")
@@ -99,11 +107,23 @@ jobs:
                   horizontal=await page.evaluate("({scroll:document.documentElement.scrollWidth,window:window.innerWidth})")
                   print("MOBILE_OVERFLOW",horizontal,flush=True)
                   assert horizontal["scroll"]<=horizontal["window"]+12
+                selector=page.locator('label:has-text("Indicador") select').first
+                rank=page.locator('aside:has(h2:text-is("Ranking territorial"))')
+                assert await rank.count()==1
+                for choice,expected in [("active","estabelecimentos"),("density","estab./km²"),("per1000","estab./1.000 habitantes")]:
+                  await selector.select_option(choice)
+                  await page.wait_for_timeout(220)
+                  first=rank.get_by_role("button").first
+                  await first.wait_for()
+                  entry=await first.inner_text()
+                  assert expected in entry,("RANK_UNIT",choice,entry)
+                  assert "km²" not in entry if choice!="density" else True,("INVALID_RANK_UNIT",choice,entry)
                 await page.get_by_label("Seção CNAE").select_option("G")
-                await page.locator('label:has-text("Indicador") select').first.select_option("density")
+                await selector.select_option("density")
                 await page.wait_for_timeout(1000)
                 body=await page.locator("body").inner_text()
                 assert "Estabelecimentos por km²" in body
+                print("BAIRROS_RANK_UNITS_AND_CONTEXT_HEADER_OK",label,flush=True)
                 await page.screenshot(path=f"geo-{label}.png",full_page=True)
                 await page.close()
                 hp=await browser.new_page(viewport={"width":w,"height":h},device_scale_factor=1)
