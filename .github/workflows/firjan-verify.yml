@@ -1,0 +1,51 @@
+name: FIRJAN | Validar fontes IFDM e IFGF
+on:
+  pull_request:
+    paths:
+      - scripts/collect_firjan.py
+      - scripts/collect_ifgf.py
+      - public/data/ifdm-firjan.json
+      - public/data/ifgf-firjan.json
+      - src/components/firjan-panel.tsx
+      - src/components/firjan-fiscal-panel.tsx
+      - tests/test_firjan.py
+      - .github/workflows/firjan-verify.yml
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  validate-sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validar os 23 anos de séries Firjan versionados
+        run: |
+          python -m compileall -q scripts/collect_firjan.py scripts/collect_ifgf.py
+          python -m unittest discover -s tests -p 'test_firjan.py' -v
+      - name: Reproduzir série IFDM diretamente do XLSX oficial
+        run: |
+          cp public/data/ifdm-firjan.json /tmp/ifdm-verified.json
+          timeout 70s python scripts/collect_firjan.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          previous=json.loads(Path("/tmp/ifdm-verified.json").read_text())
+          regenerated=json.loads(Path("public/data/ifdm-firjan.json").read_text())
+          assert regenerated==previous,"IFDM source differs from published audited series"
+          print("IFDM_OFFICIAL_REPRODUCIBLE",regenerated["referenceYear"])
+          PY
+      - name: Reproduzir série IFGF diretamente do XLSX oficial
+        run: |
+          cp public/data/ifgf-firjan.json /tmp/ifgf-verified.json
+          timeout 70s python scripts/collect_ifgf.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          previous=json.loads(Path("/tmp/ifgf-verified.json").read_text())
+          regenerated=json.loads(Path("public/data/ifgf-firjan.json").read_text())
+          assert regenerated==previous,"IFGF source differs from published audited series"
+          print("IFGF_OFFICIAL_REPRODUCIBLE",regenerated["referenceYear"])
+          PY

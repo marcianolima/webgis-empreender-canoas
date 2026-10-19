@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "status": "verified",
+  "source": "Firjan — Índice Firjan de Gestão Fiscal (IFGF)",
+  "sourceUrl": "https://firjan.com.br/data/files/86/20/2F/AC/1345991031B91689D8284EA8/Evolucao_por_Indicador_2013_a_2024_IFGF_2025.xlsx",
+  "publicationUrl": "https://firjan.com.br/ifgf/analises-e-rankings/",
+  "methodologyUrl": "https://www.firjan.com.br/ifgf/metodologia/metodologia.htm",
+  "edition": 2025,
+  "referenceYear": 2024,
+  "territory": "4304606",
+  "sourceMunicipalityCode": "430460",
+  "municipality": "Canoas",
+  "state": "RS",
+  "range": {
+    "start": 2013,
+    "end": 2024,
+    "count": 12
+  },
+  "scale": {
+    "min": 0,
+    "max": 1,
+    "criticalBelow": 0.4,
+    "difficultyBelow": 0.6,
+    "goodBelow": 0.8
+  },
+  "notes": [
+    "Índice de Gestão Fiscal IFGF não se confunde com IFDM de desenvolvimento socioeconômico.",
+    "Ano-base 2024 corresponde à edição IFGF 2025 e não representa 2026.",
+    "Os quatro componentes têm mesmo peso (25% cada): Autonomia, Gastos com Pessoal, Liquidez e Investimentos.",
+    "Os valores são notas padronizadas 0–1; não representam percentuais de gastos, receita, dívida ou investimento.",
+    "A planilha de série histórica Firjan não inclui ranking estadual/nacional: não foram inventadas posições.",
+    "O município utiliza o código 430460 na planilha Firjan, equivalente ao IBGE 4304606."
+  ],
+  "series": [
+    {
+      "year": 2013,
+      "values": {
+        "general": 0.6724,
+        "autonomy": 1,
+        "personnel": 1,
+        "liquidity": 0,
+        "investment": 0.6898
+      }
+    },
+    {
+      "year": 2014,
+      "values": {
+        "general": 0.6418,
+        "autonomy": 1,
+        "personnel": 1,
+        "liquidity": 0,
+        "investment": 0.5673
+      }
+    },
+    {
+      "year": 2015,
+      "values": {
+        "general": 0.667,
+        "autonomy": 1,
+        "personnel": 1,
+        "liquidity": 0,
+        "investment": 0.668
+      }
+    },
+    {
+      "year": 2016,
+      "values": {
+        "general": 0.7142,
+        "autonomy": 1,
+        "personnel": 1,
+        "liquidity": 0,
+        "investment": 0.8569
+      }
+    },
+    {
+      "year": 2017,
+      "values": {
+        "general": 0.5644,
+        "autonomy": 1,
+        "personnel": 1,
+        "liquidity": 0,
+        "investment": 0.2578
+      }
+    },
+    {
+      "year": 2018,
+      "values": {
+        "general": 0.5406,
+        "autonomy": 1,
+        "personnel": 1,
+        "liquidity": 0,
+        "investment": 0.1623
+      }
+    },
+    {
+      "year": 2019,
+      "values": {
+        "general": 0.5546,
+        "autonomy": 1,
+        "personnel": 1,
+        "liquidity": 0,
+        "investment": 0.2183
+      }
+    },
+    {
+      "year": 2020,
+      "values": {
+        "general": 0.593,
+        "autonomy": 1,
+        "personnel": 1,
+        "liquidity": 0,
+        "investment": 0.3721
+      }
+    },
+    {
+      "year": 2021,
+      "values": {
+        "general": 0.6899,
+        "autonomy": 1,
+        "personnel": 1,
+        "liquidity": 0.6016,
+        "investment": 0.1581
+      }
+    },
+    {
+      "year": 2022,
+      "values": {
+        "general": 0.7391,
+        "autonomy": 1,
+        "personnel": 1,
+        "liquidity": 0.5069,
+        "investment": 0.4494
+      }
+    },
+    {
+      "year": 2023,
+      "values": {
+        "general": 0.5824,
+        "autonomy": 1,
+        "personnel": 0.9474,
+        "liquidity": 0,
+        "investment": 0.3821
+      }
+    },
+    {
+      "year": 2024,
+      "values": {
+        "general": 0.6639,
+        "autonomy": 1,
+        "personnel": 1,
+        "liquidity": 0.4072,
+        "investment": 0.2485
+      }
+    }
+  ]
+}
