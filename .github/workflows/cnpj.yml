@@ -50,6 +50,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Disponibilizar análise espacial para geocodificação exata IBGE
+        run: python -m pip install --quiet "shapely>=2,<3" "pyproj>=3.6,<4"
       - name: Ler ZIP RFB e filtrar Canoas sem criar dados
         run: python scripts/cnpj_pipeline.py shard --reference "${{ needs.discover.outputs.reference }}" --index "${{ matrix.index }}"
       - uses: actions/upload-artifact@v4
@@ -58,6 +60,7 @@ jobs:
           path: |
             work/cnpj/shard-${{ matrix.index }}.csv.gz
             work/cnpj/shard-${{ matrix.index }}.json
+            work/cnpj/geo-part-${{ matrix.index }}.json
           if-no-files-found: error
           retention-days: 7
           compression-level: 0
@@ -79,6 +82,13 @@ jobs:
           merge-multiple: true
       - name: Cruzar dez Empresas + Simples, validar e produzir agregado
         run: python scripts/cnpj_pipeline.py assemble --reference "${{ needs.discover.outputs.reference }}" --source-dir work/shards
+      - name: Combinar hexágonos empresariais geocodificados sem publicar endereços
+        run: |
+          if test -f work/shards/geo-part-0.json && test -f work/shards/geo-part-1.json && test -f work/shards/geo-part-2.json && test -f work/shards/geo-part-3.json && test -f work/shards/geo-part-4.json && test -f work/shards/geo-part-5.json && test -f work/shards/geo-part-6.json && test -f work/shards/geo-part-7.json && test -f work/shards/geo-part-8.json && test -f work/shards/geo-part-9.json; then
+            python scripts/cnpj_geo.py assemble --reference "${{ needs.discover.outputs.reference }}" --source-dir work/shards || echo "Cruzamento opcional de endereços indisponível; CNPJ principal mantido"
+          else
+            echo "Cruzamento CNPJ x CNEFE parcial; nenhuma contagem georreferenciada será publicada."
+          fi
       - name: Testar publicação anônima e a cobertura integral
         run: |
           python - <<'PY'
@@ -100,7 +110,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cnpj-agregado-validado
-          path: public/data/cnpj.json
+          path: |
+            public/data/cnpj.json
+            public/data/cnpj-geo-hex500.json
           if-no-files-found: error
           retention-days: 30
       - name: Commit apenas dos agregados, nunca dos arquivos CNPJ individuais
@@ -109,11 +121,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           cp public/data/cnpj.json /tmp/cnpj-aggregates-approved.json
+          if test -f public/data/cnpj-geo-hex500.json; then cp public/data/cnpj-geo-hex500.json /tmp/cnpj-geocoded-approved.json; fi
           for attempt in 1 2 3 4 5; do
             git fetch origin main
             git reset --hard origin/main
             cp /tmp/cnpj-aggregates-approved.json public/data/cnpj.json
+            if test -f /tmp/cnpj-geocoded-approved.json; then cp /tmp/cnpj-geocoded-approved.json public/data/cnpj-geo-hex500.json; fi
             git add public/data/cnpj.json
+            if test -f /tmp/cnpj-geocoded-approved.json; then git add public/data/cnpj-geo-hex500.json; fi
             if git diff --cached --quiet; then
               echo "Agregado oficial já publicado no último commit"; break
             fi
