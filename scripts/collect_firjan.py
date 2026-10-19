@@ -66,7 +66,7 @@ def read_sheet(z: zipfile.ZipFile, path: str, strings: list[str], key: str) -> d
     if len(matches) != 1 or first is None:
         raise ValueError(f"Municipal source record mismatch in {path}: {len(matches)}")
     required = {"general": "IFDM ", "education": "IFDM Educação ",
-                "health": "IFDM Saúde ", "employmentIncome": "IFDM Emprego & Renda "}
+                "health": "IFDM Saúde ", "employmentIncome": "IFDM Emprego "}
     # Make sure workbooks/sheets have not been reordered or modified.
     for i, year in enumerate(YEARS):
         col = column(5 + i * 3)
