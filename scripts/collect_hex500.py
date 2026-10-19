@@ -188,9 +188,12 @@ def extract():
                 lon,lat=inv.transform(mid.x,mid.y)
                 heat.append({"type":"Feature","properties":{"cell":props["cell"],
                     "w":high,"cw":(matched_cell["matched"] if matched_cell else 0),
-                    "source":"cnefe2022_hex_center",**{k:v for k,v in props.items() if k.startswith("hk")}},
+                    "source":"cnefe2022_hex_center",**{k:v for k,v in props.items() if k.startswith("hk")},
+                    **{("cw"+k[1:]):v for k,v in matched_cell.items() if k.startswith("s") and len(k)==2} if matched_cell else {}},
                     "geometry":{"type":"Point","coordinates":[lon,lat]}})
-    if totalcells<300 or len(heat)<80:
+    actual_heat=sum(1 for row in heat if row["properties"]["w"]>=MIN)
+    matched_heat=sum(1 for row in heat if row["properties"]["cw"]>=MIN)
+    if totalcells<300 or actual_heat<80:
         raise RuntimeError(f"Unexpected grid coverage {totalcells}, heat cells {len(heat)}")
     WORK.mkdir(parents=True,exist_ok=True)
     for filename,features in ((hexjson,hexes),(heatjson,heat)):
@@ -215,7 +218,8 @@ def extract():
           "coverage":{"allCnefeRecords":processed,"nonResidentialWithCoordinatesInOfficialBairros":selected,
              "notInOfficialBairros":outside,"invalidCoordinates":bad,
              "gridCells":totalcells,"cellsWithNonResidential":len(bycell),
-             "heatCellsAtLeastFiveHighQualityAddresses":len(heat),
+             "heatCellsAtLeastFiveHighQualityAddresses":actual_heat,
+             "heatCellsWithVerifiedCnpjSubset":matched_heat,
              "kindCounts":{k:kinds[k] for k in KINDS},
              "geocodingLevelCounts":{k:byquality[k] for k in QUALITY}},
           "kinds":{k:v for k,v in KINDS.items()},
