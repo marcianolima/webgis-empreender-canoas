@@ -25,6 +25,7 @@ class TestGeocanoasBairros(unittest.TestCase):
         self.assertIsNone(module.safe_number(float("nan")))
         self.assertEqual(module.safe_number(0),0.0)
 
+    @unittest.skipUnless(__import__("importlib").util.find_spec("shapely") is not None and __import__("importlib").util.find_spec("pyproj") is not None,"Geometric math requires shapely and pyproj installed in geospatial worker")
     def test_hex_grid_utm_width_and_stable_assignment(self):
         import importlib.util
         s=importlib.util.spec_from_file_location("collect_hex500",pathlib.Path(__file__).resolve().parents[1]/"scripts/collect_hex500.py")
