@@ -74,7 +74,13 @@ export function SiteShell({children}:{children:React.ReactNode}){
  const [opened,setOpened]=useState<Record<string,boolean>>({territorio:true});
  const [drawerOpen,setDrawerOpen]=useState(false);
  const closeButton=useRef<HTMLButtonElement>(null);
- const locationPath=pathname||"/";
+ // Next.js static export uses trailingSlash; normalize router paths for
+ // header shortcuts and selected sidebar links on GitHub Pages.
+ const configuredBase=process.env.NEXT_PUBLIC_BASE_PATH||"";
+ const routerPath=pathname||"/";
+ const pathnameWithoutBase=configuredBase&&routerPath.startsWith(configuredBase+"/")
+  ?routerPath.slice(configuredBase.length):routerPath;
+ const locationPath=pathnameWithoutBase.replace(/\/+$/,"")||"/";
  const groupForPage=useMemo(()=>currentGroup(locationPath),[locationPath]);
  const contextAction=headerActions[locationPath];
 
