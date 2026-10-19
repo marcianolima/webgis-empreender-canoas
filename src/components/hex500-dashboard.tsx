@@ -18,7 +18,7 @@ type SourceData={schemaVersion:1;status:"verified"|"not_loaded";territory:string
  notInOfficialBairros:number;invalidCoordinates:number;gridCells:number;
  cellsWithNonResidential:number;heatCellsAtLeastFiveHighQualityAddresses:number;
  kindCounts:Record<string,number>;geocodingLevelCounts:Record<string,number>};
- kinds?:Record<string,string>;cells?:Cell[];notes?:string[];privacy?:{individualCoordinatesPublished:boolean};cnpjMatch?:{active:number;hasUsableAddress:number;matched:number;matchedPercent:number;cellsPublished:number;matchedInPublishedCells:number;unpublishedBelowPrivacyThreshold?:number;diagnostics?:Record<string,number>}|null;cnpjReference?:string|null};
+ kinds?:Record<string,string>;cells?:Cell[];notes?:string[];privacy?:{individualCoordinatesPublished:boolean};cnpjMatch?:{active:number;hasUsableAddress:number;matched:number;matchedPercent:number;cellsPublished:number;matchedInPublishedCells:number;unpublishedBelowPrivacyThreshold?:number;diagnostics?:Record<string,number>}|null;cnpjReference?:string|null;economicHotspots?:{id:string;rank:number;matched:number;hexagons:number;lon:number;lat:number}[];hotspotMethod?:string};
 type Metric="n"|"n_high"|"d_km2"|"k3"|"k4"|"k5"|"k6"|"k8"|"cnpj";
 type Mode="hex"|"heat";
 const kinds:Record<string,string>={k3:"Agropecuário",k4:"Ensino",k5:"Saúde",k6:"Outras finalidades",k8:"Religioso"};
@@ -69,6 +69,7 @@ export function Hex500Dashboard(){
  const [mode,setMode]=useState<Mode>("hex");
  const [metric,setMetric]=useState<Metric>("n");
  const [cnpjSector,setCnpjSector]=useState("all");
+ const [showHotspots,setShowHotspots]=useState(false);
  const [selected,setSelected]=useState("");
  const [search,setSearch]=useState("");
  const [osm,setOsm]=useState(true);
@@ -131,6 +132,10 @@ export function Hex500Dashboard(){
         "heatmap-radius":["interpolate",["linear"],["zoom"],9,14,15,35],
         "heatmap-opacity":.82,
         "heatmap-color":["interpolate",["linear"],["heatmap-density"],0,"rgba(0,0,0,0)",.18,"#c7e8dc",.4,"#74bea9",.65,"#f2ce7c",.85,"#e28b45",1,"#b94a37"]}},
+      {id:"hotspots-fill",type:"fill",source:"grid","source-layer":"hotspots500",layout:{visibility:"none"},
+       paint:{"fill-color":"#f5bb63","fill-opacity":.16}},
+      {id:"hotspots-border",type:"line",source:"grid","source-layer":"hotspots500",layout:{visibility:"none"},
+       paint:{"line-color":"#dc6f24","line-width":3,"line-opacity":.9}},
       {id:"official-border",type:"line",source:"bairros",
        paint:{"line-color":"#122f33","line-width":2}},
       {id:"official-label",type:"symbol",source:"bairros",
@@ -179,6 +184,8 @@ export function Hex500Dashboard(){
   map.setPaintProperty("hex-fill","fill-opacity",mode==="hex"?.78:.015);
   map.setLayoutProperty("hex-line","visibility",mode==="hex"?"visible":"none");
   map.setLayoutProperty("heat","visibility",mode==="heat"?"visible":"none");
+  map.setLayoutProperty("hotspots-fill","visibility",showHotspots?"visible":"none");
+  map.setLayoutProperty("hotspots-border","visibility",showHotspots?"visible":"none");
   map.setFilter("selected-hex",["==",["get","cell"],selected||"____"]);
   if(mode==="heat"){
     const key=metric==="cnpj"?(cnpjSector==="all"?"cw":"cws"+cnpjSector):metric.startsWith("k")?"h"+metric:"w";
@@ -186,7 +193,7 @@ export function Hex500Dashboard(){
     map.setPaintProperty("heat","heatmap-weight",["interpolate",["linear"],
       ["to-number",["get",key],0],5,.16,100,1] as ExpressionSpecification);
   }
- },[mode,metric,cnpjSector,selectedMetric,thresholds,mapReady,selected]);
+ },[mode,metric,cnpjSector,selectedMetric,thresholds,mapReady,selected,showHotspots]);
  useEffect(()=>{const map=mapRef.current;if(map&&mapReady)map.setLayoutProperty("osm","visibility",osm?"visible":"none")},[osm,mapReady]);
  return <main className="mx-auto max-w-[1540px] space-y-5 px-4 pb-16 pt-8 text-ink sm:px-6">
   <Link href="/bairros" className="text-sm font-semibold text-brand-700">← Mapa econômico de bairros</Link>
@@ -247,6 +254,22 @@ export function Hex500Dashboard(){
      </select>
     </label>
    </section>
+   {!!data.economicHotspots?.length&&<section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+     <div className="flex flex-wrap items-center justify-between gap-3">
+      <div><h2 className="text-sm font-bold text-amber-900">Núcleos contíguos de concentração empresarial</h2>
+       <p className="mt-1 text-xs leading-relaxed text-amber-900">{data.economicHotspots.length} agrupamentos identificados com hexágonos vizinhos do quartil superior, pelo menos 3 células e 60 CNPJs conciliados no conjunto. São concentração do subconjunto geocodificado, não do total municipal.</p></div>
+      <label className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-amber-900">
+       <input type="checkbox" checked={showHotspots} onChange={e=>setShowHotspots(e.target.checked)}/> Mostrar perímetros dos núcleos
+      </label>
+     </div>
+     <div className="mt-3 flex flex-wrap gap-2">
+      {data.economicHotspots.slice(0,12).map(x=><button key={x.id}
+        className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-left text-xs text-amber-900 hover:border-amber-600"
+        onClick={()=>{setShowHotspots(true);mapRef.current?.flyTo({center:[x.lon,x.lat],zoom:12.7})}}>
+        <strong>Núcleo {x.rank}</strong> · {num.format(x.matched)} CNPJs · {x.hexagons} hexágonos
+      </button>)}
+     </div>
+    </section>}
    <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_325px]">
     <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-card sm:p-4">
      <h2 className="mb-3 flex items-center gap-2 text-sm font-bold"><MapPin size={16}/> {mode==="heat"?"Mapa de calor das células":"Densidade por hexágono"} · {metricLabel}</h2>
