@@ -157,6 +157,8 @@ def extract():
     hexes=[];heat=[];cells=[];fragments=[];totalcells=0
     fully_contained={}
     border_cells=0
+    unresolved_m2=0.
+    ambiguous_parts=0
     spatial_rows={name:{"bairro":name,"areaKm2":round(geom.area/1_000_000,5),
         "fullCells":0,"borderFragments":0,"fullCellAreaKm2":0.,
         "partialAreaKm2":0.,"cnpjPublishedFullCells":0,"cnpjCellsPublished":0}
@@ -210,19 +212,41 @@ def extract():
             # True UTM polygon intersection. No proportionally allocated
             # establishment totals: the underlying CNPJ is known per HEX,
             # not per fragment, and edge cells must remain unassigned.
-            pieces=[]
+            # Official neighborhood polygons can overlap locally. We
+            # explicitly retain those geometries as UNASSIGNED instead of
+            # allocating records to an arbitrary administrative polygon.
+            candidates=[]
             for region,polygon in regions:
                 if not clip.intersects(polygon):continue
                 part=clip.intersection(polygon)
-                if part.is_empty:continue
                 if part.geom_type=="GeometryCollection":
-                    part=unary_union([p for p in part.geoms
-                        if p.geom_type in ("Polygon","MultiPolygon")])
+                    part=unary_union([p for p in part.geoms if p.geom_type in ("Polygon","MultiPolygon")])
                 if part.is_empty or part.geom_type not in ("Polygon","MultiPolygon") or part.area<=.01:continue
-                pieces.append((region,part))
-            if not pieces or abs(sum(part.area for _,part in pieces)-clip.area)>max(.1,clip.area*.002):
-                raise RuntimeError(f"Official bairro intersection fails area conservation for {props['cell']}")
-            belongs=len(pieces)==1 and abs(pieces[0][1].area-clip.area)<=max(.1,clip.area*.00001)
+                candidates.append((region,part))
+            pieces=[]
+            for name,part in candidates:
+                others=[other for other_name,other in candidates if other_name!=name and part.intersects(other)]
+                if others:part=part.difference(unary_union(others))
+                if part.geom_type=="GeometryCollection":
+                    part=unary_union([p for p in part.geoms if p.geom_type in ("Polygon","MultiPolygon")])
+                if not part.is_empty and part.geom_type in ("Polygon","MultiPolygon") and part.area>.01:
+                    pieces.append((name,part))
+            owned=unary_union([geom for _,geom in pieces])
+            unresolved=clip.difference(owned)
+            if unresolved.geom_type=="GeometryCollection":
+                unresolved=unary_union([p for p in unresolved.geoms if p.geom_type in ("Polygon","MultiPolygon")])
+            unresolved_area=unresolved.area if not unresolved.is_empty else 0.
+            if abs(sum(part.area for _,part in pieces)+unresolved_area-clip.area)>max(.1,clip.area*.002):
+                raise RuntimeError(f"Official bairro topology fails area conservation for {props['cell']}")
+            if unresolved_area>.01:
+                unresolved_m2+=unresolved_area
+                ambiguous_parts+=1
+                fragments.append({"type":"Feature",
+                    "properties":{"cell":props["cell"],"bairro":"__sobreposicao_oficial__",
+                      "full":0,"area_km2":round(unresolved_area/1_000_000,6),
+                      "share_pct":round(100*unresolved_area/clip.area,3)},
+                    "geometry":mapping(transform(inv.transform,unresolved))})
+            belongs=len(pieces)==1 and unresolved_area<=max(.1,clip.area*.00001) and abs(pieces[0][1].area-clip.area)<=max(.1,clip.area*.00001)
             if belongs:fully_contained[props["cell"]]=pieces[0][0]
             else:border_cells+=1
             for name,part in pieces:
@@ -353,6 +377,7 @@ def extract():
           "spatialTopology":{"method":"EPSG:31982 polygon intersection between official bairros and hexagon clipped to municipal boundary",
              "fragments":len(fragments),"fullyContainedHexagons":len(fully_contained),
              "crossBorderHexagons":border_cells,
+             "ambiguousOfficialFragments":ambiguous_parts,"ambiguousOfficialAreaKm2":round(unresolved_m2/1_000_000,5),
              "unassignedCnefePointBoundary":region_unassigned,
              "ambiguousCnefePointBoundary":region_ambiguous,
              "fullCellBairro":fully_contained,
