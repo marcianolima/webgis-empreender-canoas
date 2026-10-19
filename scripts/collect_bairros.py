@@ -188,6 +188,23 @@ def main():
        "--no-tile-size-limit","--no-feature-limit","-o",str(tiles),str(gfile)],
        check=True,timeout=160)
     validate_archive(tiles)
+    # Persist the exact official polygon geometries as a reusable project asset.
+    # The unversioned GeoCanoas REST service is NOT the browser's source of truth.
+    reference_polygons={
+      "type":"FeatureCollection",
+      "metadata":{"source":BASE,"sridOriginal":31982,"sridGeoJSON":4326,
+                  "retrievedAt":now,"featureCount":18,
+                  "notes":"18 polygon features from the public BAIRROSOFICIAL layer; no company locations"},
+      "features":[
+        {"type":"Feature","id":row["id"],
+         "properties":{"OBJECTID_1":row["id"],"BAIRRO":row["name"],
+                       "POPULACAO_2022":row["population2022"],"AREA_KM2":row["areaKm2"]},
+         "geometry":feature["geometry"]}
+        for row,feature in zip(rows,work)
+      ]
+    }
+    official_file=DATA/"bairros-oficiais.geojson"
+    official_file.write_text(json.dumps(reference_polygons,ensure_ascii=False,separators=(",",":"))+"\\n",encoding="utf-8")
     sha=hashlib.sha256(tiles.read_bytes()).hexdigest()
     output={"schemaVersion":1,"status":"verified","reference":reference,"generatedAt":now,
        "territory":"4304606","sourceUrl":BASE,"sourceCnpj":"Receita Federal — CNPJ "+reference,
