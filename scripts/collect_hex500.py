@@ -110,7 +110,9 @@ def extract():
                 bucket["total"]+=1
                 bucket["kind_"+kind]+=1
                 bucket["quality_"+level]+=1
-                if level in ("1","2"):bucket["high"]+=1
+                if level in ("1","2"):
+                    bucket["high"]+=1
+                    bucket["high_kind_"+kind]+=1
                 else:bucket["approx"]+=1
                 byquality[level]+=1
                 kinds[kind]+=1
@@ -151,6 +153,8 @@ def extract():
             for kind in KINDS:
                 if bucket["kind_"+kind]>=MIN and total-bucket["kind_"+kind]>=MIN:
                     props["k"+kind]=bucket["kind_"+kind]
+                if bucket["high_kind_"+kind]>=MIN and high-bucket["high_kind_"+kind]>=MIN:
+                    props["hk"+kind]=bucket["high_kind_"+kind]
             geom=transform(inv.transform,clip)
             hexes.append({"type":"Feature","properties":props,"geometry":mapping(geom)})
             centroid=clip.representative_point()
@@ -164,7 +168,7 @@ def extract():
                 if not boundary.covers(mid):mid=clip.representative_point()
                 lon,lat=inv.transform(mid.x,mid.y)
                 heat.append({"type":"Feature","properties":{"cell":props["cell"],
-                    "w":high,"source":"cnefe2022_hex_center",**{k:v for k,v in props.items() if k.startswith("k")}},
+                    "w":high,"source":"cnefe2022_hex_center",**{k:v for k,v in props.items() if k.startswith("hk")}},
                     "geometry":{"type":"Point","coordinates":[lon,lat]}})
     if totalcells<300 or len(heat)<80:
         raise RuntimeError(f"Unexpected grid coverage {totalcells}, heat cells {len(heat)}")
