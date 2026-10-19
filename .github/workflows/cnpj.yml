@@ -1,5 +1,11 @@
 name: CNPJ Receita Federal | Carga integral e atualização
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/cnpj.yml
+      - scripts/cnpj_geo.py
+      - scripts/cnpj_pipeline.py
   workflow_dispatch:
     inputs:
       reference:
@@ -113,6 +119,7 @@ jobs:
           path: |
             public/data/cnpj.json
             public/data/cnpj-geo-hex500.json
+            public/data/cnpj-geo-hex500-series.json
           if-no-files-found: error
           retention-days: 30
       - name: Commit apenas dos agregados, nunca dos arquivos CNPJ individuais
@@ -121,14 +128,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           cp public/data/cnpj.json /tmp/cnpj-aggregates-approved.json
-          if test -f public/data/cnpj-geo-hex500.json; then cp public/data/cnpj-geo-hex500.json /tmp/cnpj-geocoded-approved.json; fi
+          if test -f public/data/cnpj-geo-hex500.json; then cp public/data/cnpj-geo-hex500.json /tmp/cnpj-geocoded-approved.json; cp public/data/cnpj-geo-hex500-series.json /tmp/cnpj-geocoded-history-approved.json; fi
           for attempt in 1 2 3 4 5; do
             git fetch origin main
             git reset --hard origin/main
             cp /tmp/cnpj-aggregates-approved.json public/data/cnpj.json
-            if test -f /tmp/cnpj-geocoded-approved.json; then cp /tmp/cnpj-geocoded-approved.json public/data/cnpj-geo-hex500.json; fi
+            if test -f /tmp/cnpj-geocoded-approved.json; then cp /tmp/cnpj-geocoded-approved.json public/data/cnpj-geo-hex500.json; cp /tmp/cnpj-geocoded-history-approved.json public/data/cnpj-geo-hex500-series.json; fi
             git add public/data/cnpj.json
-            if test -f /tmp/cnpj-geocoded-approved.json; then git add public/data/cnpj-geo-hex500.json; fi
+            if test -f /tmp/cnpj-geocoded-approved.json; then git add public/data/cnpj-geo-hex500.json public/data/cnpj-geo-hex500-series.json; fi
             if git diff --cached --quiet; then
               echo "Agregado oficial já publicado no último commit"; break
             fi
