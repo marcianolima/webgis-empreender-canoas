@@ -7,6 +7,7 @@ on:
       - scripts/collect_hex500.py
       - .github/workflows/bairros.yml
       - public/data/cnpj.json
+      - public/data/cnpj-geo-hex500.json
   workflow_dispatch:
   schedule:
     - cron: "17 13 14 * *"
@@ -57,6 +58,12 @@ jobs:
           assert hexdata["coverage"]["gridCells"]>=300
           assert hexdata["coverage"]["nonResidentialWithCoordinatesInOfficialBairros"]>=2000
           assert hexdata["privacy"]["individualCoordinatesPublished"] is False
+          if hexdata.get("cnpjMatch"):
+            geocoded=json.loads((base/"cnpj-geo-hex500.json").read_text())
+            assert geocoded["reference"]==cnpj["reference"]
+            assert hexdata["cnpjMatch"]["matched"]==geocoded["coverage"]["matched"]
+            assert geocoded["privacy"]["individualCoordinatesPublished"] is False
+            assert geocoded["privacy"]["individualAddressesPublished"] is False
           assert hexfile.read_bytes()[:8]==b"PMTiles\x03"
           assert hashlib.sha256(hexfile.read_bytes()).hexdigest()==hexdata["pmtiles"]["sha256"]
           assert x["schemaVersion"]==1 and x["status"]=="verified"
