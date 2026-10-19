@@ -40,8 +40,10 @@ class TestCartographicIntegrity(unittest.TestCase):
   self.assertEqual(len(topo["fullCellBairro"]),topo["fullyContainedHexagons"])
   self.assertEqual(topo["fullyContainedHexagons"]+topo["crossBorderHexagons"],d["coverage"]["gridCells"])
   self.assertGreaterEqual(topo["fragments"],d["coverage"]["gridCells"])
-  self.assertEqual(
-   sum(r["observedAddresses"] or 0 for r in topo["neighborhoods"])+
-   topo["unassignedCnefePointBoundary"]+topo["ambiguousCnefePointBoundary"],
-   d["coverage"]["nonResidentialWithCoordinatesInOfficialBairros"])
+  published=sum(r["observedAddresses"] or 0 for r in topo["neighborhoods"])
+  missing=sum(r["observedAddresses"] is None for r in topo["neighborhoods"])
+  located=d["coverage"]["nonResidentialWithCoordinatesInOfficialBairros"]-topo["unassignedCnefePointBoundary"]-topo["ambiguousCnefePointBoundary"]
+  # Each suppressed neighborhood total hides 1–4 records, never replace by zero.
+  self.assertLessEqual(published,located)
+  self.assertLessEqual(located-published,missing*4)
 if __name__=="__main__":unittest.main()
