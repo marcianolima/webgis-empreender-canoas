@@ -14,11 +14,16 @@ const C=["#e4f1eb","#bbdfcf","#80c5a8","#409d7c","#136747"];
 type Cell={cell:string;n:number|null;n_high:number|null;a_km2:number;d_km2?:number;
  lon:number;lat:number;[key:string]:string|number|null|undefined};
 type SourceData={schemaVersion:1;status:"verified"|"not_loaded";territory:string;reference:string;cellWidthMeters:number;
- generatedAt:string;heatMetricsVersion?:number;pmtiles:null|{path:string;layers:string[];bytes:number;sha256:string};
+ generatedAt:string;heatMetricsVersion?:number;spatialOverlayVersion?:number;pmtiles:null|{path:string;layers:string[];bytes:number;sha256:string};
  coverage:null|{allCnefeRecords:number;nonResidentialWithCoordinatesInOfficialBairros:number;
  notInOfficialBairros:number;invalidCoordinates:number;gridCells:number;
  cellsWithNonResidential:number;heatCellsAtLeastFiveHighQualityAddresses:number;
  kindCounts:Record<string,number>;geocodingLevelCounts:Record<string,number>};
+ spatialTopology?:{fragments:number;fullyContainedHexagons:number;crossBorderHexagons:number;ambiguousOfficialFragments?:number;ambiguousOfficialAreaKm2?:number;
+  unassignedCnefePointBoundary:number;ambiguousCnefePointBoundary:number;
+  fullCellBairro:Record<string,string>;neighborhoods:Array<{bairro:string;areaKm2:number;fullCells:number;
+  borderFragments:number;fullCellAreaKm2:number;partialAreaKm2:number;cnpjPublishedFullCells:number|null;cnpjCellsPublished:number;
+  observedAddresses:number|null;highQualityAddresses:number|null;observedPerKm2:number|null;kinds:Record<string,number|null>}>};
  kinds?:Record<string,string>;cells?:Cell[];notes?:string[];privacy?:{individualCoordinatesPublished:boolean};cnpjMatch?:{active:number;hasUsableAddress:number;matched:number;matchedPercent:number;cellsPublished:number;matchedInPublishedCells:number;unpublishedBelowPrivacyThreshold?:number;diagnostics?:Record<string,number>}|null;cnpjReference?:string|null;economicHotspots?:{id:string;rank:number;matched:number;hexagons:number;lon:number;lat:number}[];hotspotMethod?:string};
 type Metric="n"|"n_high"|"d_km2"|"k3"|"k4"|"k5"|"k6"|"k8"|"cnpj";
 type Mode="hex"|"heat";
@@ -68,9 +73,10 @@ function add(root:HTMLElement,label:string,value:string){
  line.append(b,document.createTextNode(value));root.append(line);
 }
 function csvExport(data:SourceData,cells:Cell[],metric:string,bairroPorCelula:Map<string,string>){
- const header=["territorio_ibge","fonte","referencia","id_hex","largura_faces_m","lon_centro_estatistico","lat_centro_estatistico","area_recortada_km2","bairro_por_centro_representativo","indicador","valor"];
+ const full=data.spatialTopology?.fullCellBairro;
+ const header=["territorio_ibge","fonte","referencia","id_hex","largura_faces_m","lon_centro_estatistico","lat_centro_estatistico","area_recortada_km2",full?"bairro_contencao_integral":"bairro_por_centro_representativo","indicador","valor"];
  const rows=cells.map(c=>["4304606","IBGE CNEFE 2022","2022",c.cell,"500",String(c.lon),String(c.lat),
-  String(c.a_km2),bairroPorCelula.get(c.cell)||"",metric,String(numberIn(c,metric)??"")]);
+  String(c.a_km2),full?(full[c.cell]||""):(bairroPorCelula.get(c.cell)||""),metric,String(numberIn(c,metric)??"")]);
  const quote=(s:string)=>'"'+(/^[=+\-@]/.test(s)&&!/^-?\d+(\.\d+)?$/.test(s)?"'"+s:s).replaceAll('"','""')+'"';
  const csv="\ufeff"+[header,...rows].map(row=>row.map(quote).join(";")).join("\r\n");
  const uri=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
@@ -96,7 +102,11 @@ export function Hex500Dashboard(){
  const cells=useMemo(()=>data?.cells||[],[data]);
  const bairroPorCelula=useMemo(()=>assignBairros(cells,bairros),[cells,bairros]);
  const bairroNames=useMemo(()=>[...new Set((bairros?.features||[]).map(f=>f.properties.BAIRRO))].sort((a,b)=>a.localeCompare(b,"pt-BR")),[bairros]);
- const visibleCells=useMemo(()=>bairro==="all"?cells:cells.filter(c=>bairroPorCelula.get(c.cell)===bairro),[cells,bairroPorCelula,bairro]);
+ const hasOverlay=data?.spatialOverlayVersion===1&&!!data.spatialTopology&&!!data.pmtiles?.layers.includes("hex_bairros");
+ const neighborhoodStats=data?.spatialTopology?.neighborhoods.find(n=>n.bairro===bairro);
+ const visibleCells=useMemo(()=>bairro==="all"?cells:hasOverlay?
+  cells.filter(c=>data?.spatialTopology?.fullCellBairro[c.cell]===bairro):
+  cells.filter(c=>bairroPorCelula.get(c.cell)===bairro),[cells,hasOverlay,data,bairroPorCelula,bairro]);
  const sectorsCnpj=useMemo(()=>Array.from(new Set(cells.flatMap(c=>Object.keys(c).filter(k=>/^cs[A-U]$/.test(k)).map(k=>k.slice(-1))))).sort(),[cells]);
  const selectedMetric=metric==="cnpj"&&cnpjSector!=="all"?"cs"+cnpjSector:metric;
  const ranking=useMemo(()=>visibleCells.filter(c=>numberIn(c,selectedMetric)!==null).sort((a,b)=>(numberIn(b,selectedMetric)||0)-(numberIn(a,selectedMetric)||0)),[visibleCells,selectedMetric]);
@@ -162,6 +172,12 @@ export function Hex500Dashboard(){
        paint:{"fill-color":C[2],"fill-opacity":.85}},
       {id:"hex-line",type:"line",source:"grid","source-layer":"hex500",
        paint:{"line-color":"#426b5d","line-width":.45,"line-opacity":.45}},
+      ...(data.spatialOverlayVersion===1&&data.pmtiles?.layers.includes("hex_bairros")?[
+       {id:"hex-bairro-fill",type:"fill",source:"grid","source-layer":"hex_bairros",layout:{visibility:"none"},
+        paint:{"fill-color":"#e3e9e6","fill-opacity":.82}},
+       {id:"hex-bairro-border",type:"line",source:"grid","source-layer":"hex_bairros",layout:{visibility:"none"},
+        paint:{"line-color":"#736d61","line-width":.55,"line-opacity":.7}}
+      ] as maplibregl.LayerSpecification[]:[]),
       {id:"heat",type:"heatmap",source:"grid","source-layer":"heat500",layout:{visibility:"none"},
        paint:{"heatmap-weight":["interpolate",["linear"],["to-number",["get","w"],0],5,.16,100,1],
         "heatmap-intensity":["interpolate",["linear"],["zoom"],9,.6,15,1.5],
@@ -209,6 +225,32 @@ export function Hex500Dashboard(){
      add(root,"Referência","CNEFE/IBGE 2022");
      new maplibregl.Popup({maxWidth:"275px"}).setLngLat(e.lngLat).setDOMContent(root).addTo(map);
    });
+   if(data.spatialOverlayVersion===1&&data.pmtiles?.layers.includes("hex_bairros")){
+    map.on("click","hex-bairro-fill",(e)=>{
+     const props=e.features?.[0]?.properties;
+     if(!props||!map)return;
+     const full=Number(props.full)===1;
+     const root=document.createElement("div");
+     const strong=document.createElement("strong");
+     strong.textContent=String(props.bairro)+" · "+String(props.cell);root.append(strong);
+     add(root,"Área interseção",n2.format(Number(props.area_km2))+" km²");
+     add(root,"Participação no hexágono",n2.format(Number(props.share_pct))+"%");
+     if(!full){
+      add(root,"Contagens","Não atribuídas: célula atravessa divisas");
+      setSelected("");
+     }else{
+      setSelected(String(props.cell));
+      const st=current.current;
+      const cell=st?.cells.find(c=>c.cell===props.cell);
+      add(root,"Indicador selecionado",st&&cell?fmt(numberIn(cell,st.metric)):"N/D");
+      add(root,"Endereços CNEFE",cell?fmt(numberIn(cell,"n")):"N/D");
+     }
+     add(root,"Geometria","Interseção real GeoCanoas · EPSG:31982");
+     new maplibregl.Popup({maxWidth:"300px"}).setLngLat(e.lngLat).setDOMContent(root).addTo(map);
+    });
+    map.on("mouseenter","hex-bairro-fill",()=>{if(map)map.getCanvas().style.cursor="pointer"});
+    map.on("mouseleave","hex-bairro-fill",()=>{if(map)map.getCanvas().style.cursor=""});
+   }
    map.on("mouseenter","hex-fill",()=>{if(map)map.getCanvas().style.cursor="pointer"});
    map.on("mouseleave","hex-fill",()=>{if(map)map.getCanvas().style.cursor=""});
    map.on("error",e=>{const message=String(e.error?.message||"");if(!dead&&/PMTiles|hex500|heat500|source-layer/i.test(message))setMapError(message)});
@@ -218,15 +260,24 @@ export function Hex500Dashboard(){
  useEffect(()=>{
   const map=mapRef.current;
   if(!map||!mapReady)return;
-  map.setLayoutProperty("hex-fill","visibility","visible");
+  const exactBairro=hasOverlay&&bairro!=="all";
+  map.setLayoutProperty("hex-fill","visibility",exactBairro?"none":"visible");
   const spatialFilter:FilterSpecification|null=bairro==="all"?null:["in",["get","cell"],["literal",visibleIds]];
+  if(hasOverlay){
+   map.setLayoutProperty("hex-bairro-fill","visibility",exactBairro?"visible":"none");
+   map.setLayoutProperty("hex-bairro-border","visibility",exactBairro?"visible":"none");
+   map.setFilter("hex-bairro-fill",["==",["get","bairro"],bairro]);
+   map.setFilter("hex-bairro-border",["==",["get","bairro"],bairro]);
+   map.setPaintProperty("hex-bairro-fill","fill-color",
+    ["case",["==",["get","full"],0],"#f0d5a8",expression(selectedMetric,thresholds)] as ExpressionSpecification);
+  }
   map.setFilter("hex-fill",spatialFilter);
   map.setFilter("hex-line",spatialFilter);
   map.setFilter("bairro-focus",["==",["get","BAIRRO"],bairro==="all"?"__nenhum__":bairro]);
   map.setPaintProperty("hex-fill","fill-color",expression(selectedMetric,thresholds));
   map.setPaintProperty("hex-fill","fill-opacity",mode==="hex"?.78:.015);
-  map.setLayoutProperty("hex-line","visibility",mode==="hex"?"visible":"none");
-  map.setLayoutProperty("heat","visibility",mode==="heat"&&!!activeHeatKey?"visible":"none");
+  map.setLayoutProperty("hex-line","visibility",mode==="hex"&&!exactBairro?"visible":"none");
+  map.setLayoutProperty("heat","visibility",mode==="heat"&&!!activeHeatKey&&bairro==="all"?"visible":"none");
   map.setLayoutProperty("hotspots-fill","visibility",showHotspots&&bairro==="all"?"visible":"none");
   map.setLayoutProperty("hotspots-border","visibility",showHotspots&&bairro==="all"?"visible":"none");
   map.setFilter("selected-hex",["==",["get","cell"],selected||"____"]);
@@ -236,10 +287,10 @@ export function Hex500Dashboard(){
     map.setPaintProperty("heat","heatmap-weight",["interpolate",["linear"],
       ["to-number",["get",activeHeatKey],0],5,.16,100,1] as ExpressionSpecification);
   }
- },[mode,selectedMetric,thresholds,mapReady,selected,showHotspots,bairro,visibleIds,activeHeatKey]);
+ },[mode,selectedMetric,thresholds,mapReady,selected,showHotspots,bairro,visibleIds,activeHeatKey,hasOverlay]);
  useEffect(()=>{const map=mapRef.current;if(map&&mapReady)map.setLayoutProperty("osm","visibility",osm?"visible":"none")},[osm,mapReady]);
  function chooseBairro(next:string){
-  setBairro(next);setSelected("");
+  setBairro(next);setSelected("");if(next!=="all")setMode("hex");
   const map=mapRef.current;
   if(!map)return;
   if(next==="all"){map.flyTo({center:[-51.19,-29.914],zoom:11.2});return;}
@@ -292,7 +343,7 @@ export function Hex500Dashboard(){
     <div className="text-xs font-bold text-slate-600">Visualização
      <div className="mt-2 flex gap-2">
       <button onClick={()=>setMode("hex")} className={"flex flex-1 items-center justify-center gap-1 rounded-xl px-3 py-2.5 text-xs font-semibold "+(mode==="hex"?"bg-brand-600 text-white":"bg-slate-100 text-slate-600")}><Layers3 size={14}/> Hexágonos</button>
-      <button disabled={!activeHeatKey} title={metric==="d_km2"?"Densidade por área não pode ser interpolada como contagem":undefined} onClick={()=>setMode("heat")} className={"flex flex-1 items-center justify-center gap-1 rounded-xl px-3 py-2.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40 "+(mode==="heat"?"bg-brand-600 text-white":"bg-slate-100 text-slate-600")}><Flame size={14}/> Calor</button>
+      <button disabled={!activeHeatKey||bairro!=="all"} title={bairro!=="all"?"Calor não disponível em bairros: a suavização ultrapassa divisas":metric==="d_km2"?"Densidade por área não pode ser interpolada como contagem":undefined} onClick={()=>setMode("heat")} className={"flex flex-1 items-center justify-center gap-1 rounded-xl px-3 py-2.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40 "+(mode==="heat"?"bg-brand-600 text-white":"bg-slate-100 text-slate-600")}><Flame size={14}/> Calor</button>
      </div>
     </div>
     <label className="text-xs font-bold text-slate-600">Variável
@@ -315,8 +366,25 @@ export function Hex500Dashboard(){
      </select>
     </label>
    </section>
-   {bairro!=="all"&&<p className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900"><LocateFixed className="mt-0.5 shrink-0" size={15}/> <span>Bairro <strong>{bairro}</strong>: {num.format(visibleCells.length)} hexágonos associados pelo ponto representativo à geometria oficial. Células que cruzam limites não foram subdivididas: esta seleção é exploratória e não substitui o total cadastral por bairro. Perímetros dos núcleos municipais ficam ocultos durante o recorte.</span></p>}
-   {!!data.economicHotspots?.length&&<section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+   {bairro!=="all"&&<section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
+    <h2 className="flex items-center gap-2 text-sm font-bold"><LocateFixed size={16}/> Diagnóstico geométrico · {bairro}</h2>
+    {hasOverlay&&neighborhoodStats?<>
+     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {[
+       ["Endereços CNEFE no bairro",fmt(neighborhoodStats.observedAddresses),"Coordenadas fornecidas pelo IBGE, inclusive estimadas"],
+       ["Densidade por km²",fmt(neighborhoodStats.observedPerKm2),"Território completo, inclusive áreas não urbanizadas"],
+       ["Hexágonos integralmente contidos",num.format(neighborhoodStats.fullCells),"Contagens atribuíveis sem rateio"],
+       ["Fragmentos de divisa",num.format(neighborhoodStats.borderFragments),"Geometria, sem repartir observações"],
+      ].map(([label,val,note])=><div key={label} className="rounded-xl bg-slate-50 p-3">
+       <p className="text-xs font-semibold text-slate-600">{label}</p>
+       <p className="mt-1 text-lg font-extrabold tabular-nums">{val}</p>
+       <p className="text-[11px] leading-relaxed text-slate-500">{note}</p></div>)}
+     </div>
+     <p className="text-xs leading-relaxed text-slate-600">Área oficial: {fmt(neighborhoodStats.areaKm2)} km². Interseções calculadas em EPSG:31982. <strong>Partes de divisa aparecem em bege</strong> sem receber as contagens de todo o hexágono. CNPJs publicados em células integralmente contidas: {fmt(neighborhoodStats.cnpjPublishedFullCells)}, em {num.format(neighborhoodStats.cnpjCellsPublished)} células publicáveis. Esse subtotal abrange somente o subconjunto geocodificado e não o universo empresarial do bairro.</p>
+    </>:<p className="text-xs text-amber-900">O PMTiles ainda não inclui as interseções: permanece a seleção exploratória pelo ponto representativo das células.</p>}
+   </section>}
+   {hasOverlay&&!!data.spatialTopology?.ambiguousOfficialAreaKm2&&<p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">A malha oficial apresenta {fmt(data.spatialTopology.ambiguousOfficialAreaKm2)} km² de áreas sobrepostas entre bairros, não atribuídas arbitrariamente. Essas ambiguidades territoriais merecem revisão na fonte cartográfica oficial.</p>}
+   {!!data.economicHotspots?.length&&bairro==="all"&&<section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
      <div className="flex flex-wrap items-center justify-between gap-3">
       <div><h2 className="text-sm font-bold text-amber-900">Núcleos contíguos de concentração empresarial</h2>
        <p className="mt-1 text-xs leading-relaxed text-amber-900">{data.economicHotspots.length} agrupamentos identificados com hexágonos vizinhos do quartil superior, pelo menos 3 células e 60 CNPJs conciliados no conjunto. São concentração do subconjunto geocodificado, não do total municipal.</p></div>
@@ -334,7 +402,7 @@ export function Hex500Dashboard(){
     </section>}
    <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_325px]">
     <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-card sm:p-4">
-     <h2 className="mb-3 flex items-center gap-2 text-sm font-bold"><MapPin size={16}/> {mode==="heat"?"Mapa de calor das células":"Densidade por hexágono"} · {metricLabel}</h2>
+     <h2 className="mb-3 flex items-center gap-2 text-sm font-bold"><MapPin size={16}/> {mode==="heat"?"Mapa de calor das células":"Distribuição por hexágono"} · {metricLabel}</h2>
      <div className="relative">
       <div ref={canvas} className="h-[410px] overflow-hidden rounded-xl bg-slate-100 sm:h-[590px]" role="region" aria-label="Mapa PMTiles hexágonos 500m, CNEFE Canoas"/>
       {!mapReady&&!mapError&&<div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/70 text-sm font-semibold text-slate-600">Carregando camada de hexágonos PMTiles…</div>}
@@ -342,6 +410,7 @@ export function Hex500Dashboard(){
      </div>
      {mode==="hex"?<div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-700" aria-label={"Legenda quantitativa: "+metricLabel}>
        <span className="inline-flex items-center gap-1"><span className="h-3 w-4 rounded bg-slate-200"/> N/D ou suprimido (1–4)</span>
+       {bairro!=="all"&&hasOverlay&&<span className="inline-flex items-center gap-1"><span className="h-3 w-4 rounded bg-[#f0d5a8]"/> Divisa · sem rateio</span>}
        {bands.map((band,i)=><span key={i} className="inline-flex items-center gap-1"><span className="h-3 w-4 rounded" style={{backgroundColor:band.color}}/>{band.label}</span>)}
       </div>:<p className="mt-3 text-xs leading-relaxed text-amber-900">O calor usa os <strong>centros dos hexágonos ponderados</strong> {metric==="n"&&data.heatMetricsVersion!==2?"pelas coordenadas de maior qualidade (arquivo cartográfico anterior)":"pelas contagens publicáveis da variável selecionada"}; esses centros não são localizações individuais de empresas ou endereços. É uma superfície suavizada de intensidade espacial.</p>}
      {metric==="d_km2"&&<p className="mt-3 text-xs text-slate-600">A taxa por km² é representada somente no mapa coroplético: a interpolação entre células distorceria o denominador territorial.</p>}
@@ -351,6 +420,7 @@ export function Hex500Dashboard(){
     <aside className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
      <h2 className="font-bold">Células mais concentradas</h2><p className="mt-1 text-xs text-slate-500">{num.format(ranking.length)} hexágonos com valor publicável na variável selecionada{bairro!=="all"?" · "+bairro:""}.</p>
      <label className="mt-3 flex items-center gap-2 rounded-lg border border-slate-200 px-2.5 py-2"><Search size={15}/><input value={search} onChange={e=>setSearch(e.target.value)} className="min-w-0 flex-1 text-xs outline-none" placeholder="Filtrar identificador de grade" aria-label="Filtrar hexágonos"/></label>
+     {hasOverlay&&bairro!=="all"&&<p className="mt-2 text-xs text-slate-500">Ranking exclusivo dos hexágonos totalmente contidos no bairro; células que cruzam divisas não possuem contagens territorializadas.</p>}
      <div className="mt-3 max-h-[495px] space-y-1 overflow-auto">
       {ranking.filter(c=>c.cell.toLowerCase().includes(search.toLowerCase())).slice(0,120).map((c,i)=><button key={c.cell} onClick={()=>{setSelected(c.cell);mapRef.current?.flyTo({center:[c.lon,c.lat],zoom:14.2})}}
         className={"flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-left "+(selected===c.cell?"border-brand-600 bg-brand-50":"border-slate-100 bg-slate-50 hover:border-brand-200")}>

@@ -105,6 +105,19 @@ jobs:
                 assert await hotspot.is_checked()
                 assert await hp.get_by_text("5 agrupamentos identificados",exact=False).count()>0
                 print("HOTSPOT_500M_UI_OK",label,"five contiguous regions",flush=True)
+                with urllib.request.urlopen(ROOT+"data/cnefe-hex500.json",timeout=20) as rr:
+                  published=json.load(rr)
+                assert published["spatialOverlayVersion"]==1
+                assert "hex_bairros" in published["pmtiles"]["layers"]
+                assert published["spatialTopology"]["fullyContainedHexagons"]>0
+                await hp.get_by_label("Bairro oficial · seleção espacial").select_option("Centro")
+                await hp.wait_for_timeout(1300)
+                scoped=await hp.locator("body").inner_text()
+                assert "Diagnóstico geométrico · Centro" in scoped
+                assert "Partes de divisa aparecem em bege" in scoped
+                assert "Ranking exclusivo dos hexágonos" in scoped
+                assert not h_errors,h_errors
+                print("TOPOLOGICAL_INTERSECTION_BROWSER_OK",label,flush=True)
                 if label=="mobile":
                   m=await hp.evaluate("({scroll:document.documentElement.scrollWidth,window:window.innerWidth})")
                   print("HEX_MOBILE_OVERFLOW",m,flush=True)

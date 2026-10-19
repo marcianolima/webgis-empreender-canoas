@@ -6,9 +6,16 @@ on:
       - scripts/collect_bairros.py
       - scripts/collect_hex500.py
       - tests/test_cnpj_geocoding.py
+      - tests/test_cartographic_integrity.py
       - .github/workflows/bairros.yml
       - public/data/cnpj.json
       - public/data/cnpj-geo-hex500.json
+  pull_request:
+    paths:
+      - scripts/collect_hex500.py
+      - scripts/collect_bairros.py
+      - tests/test_cartographic_integrity.py
+      - .github/workflows/bairros.yml
   workflow_dispatch:
   workflow_run:
     workflows:
@@ -20,8 +27,8 @@ permissions:
   contents: write
   actions: write
 concurrency:
-  group: canoas-bairros-pmtiles
-  cancel-in-progress: false
+  group: canoas-bairros-pmtiles-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'prod' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   tiles:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
@@ -45,10 +52,34 @@ jobs:
           tippecanoe --version
       - name: Testes de bairros, geometrias e hexágonos
         run: python -m unittest discover -s tests -p 'test_bairros.py' -v
+      - name: Auditoria cartográfica de supressão e consistência dos dados atuais
+        run: python -m unittest discover -s tests -p 'test_cartographic_integrity.py' -v
       - name: Testar cruzamento exato e limiares de privacidade CNPJ
         run: python -m unittest discover -s tests -p 'test_cnpj_geocoding.py' -v
-      - name: Coletar 18 bairros GeoCanoas, conciliar CNPJs e gerar PMTiles
-        run: python scripts/collect_bairros.py
+      - name: Coletar bairros oficiais com fallback no último snapshot validado
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/geocanoas-prior
+          cp public/data/bairros-economia.pmtiles public/data/bairros-oficiais.geojson public/data/bairros-economia.json public/data/bairros-economia-series.json /tmp/geocanoas-prior/
+          if timeout 150s python scripts/collect_bairros.py; then
+            echo "GeoCanoas oficial atualizado e validado"
+          else
+            echo "::warning::GeoCanoas FeatureServer indisponível: snapshot geométrico anterior recuperado"
+            cp /tmp/geocanoas-prior/* public/data/
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          d=Path("public/data")
+          x=json.loads((d/"bairros-economia.json").read_text())
+          source=json.loads((d/"bairros-oficiais.geojson").read_text())
+          cnpj=json.loads((d/"cnpj.json").read_text())
+          assert x["status"]=="verified" and x["territory"]=="4304606"
+          assert x["reference"]==cnpj["reference"], "Existing bairros snapshot is stale relative to CNPJ"
+          assert len(source["features"])==len(x["neighborhoods"])==18
+          print("GEOCANOAS_SNAPSHOT_FALLBACK",x["reference"],flush=True)
+          PY
+          fi
       - name: Gerar hexágonos 500m e calor de endereços não domiciliares CNEFE/IBGE
         run: python scripts/collect_hex500.py
       - name: Validar domínio, dados originais, formatos e arquivo de mapa
@@ -69,6 +100,20 @@ jobs:
           assert hexdata["privacy"]["individualCoordinatesPublished"] is False
           assert hexdata["coverage"]["heatCellsAtLeastFiveHighQualityAddresses"]>=250
           assert "hotspots500" in hexdata["pmtiles"]["layers"]
+          assert "hex_bairros" in hexdata["pmtiles"]["layers"]
+          assert hexdata["spatialOverlayVersion"]==1
+          topo=hexdata["spatialTopology"]
+          assert len(topo["neighborhoods"])==18
+          assert len(topo["fullCellBairro"])==topo["fullyContainedHexagons"]
+          assert topo["fullyContainedHexagons"]+topo["crossBorderHexagons"]==hexdata["coverage"]["gridCells"]
+          assert topo["fragments"]>=hexdata["coverage"]["gridCells"]
+          assert set(topo["fullCellBairro"]).issubset({row["cell"] for row in hexdata["cells"]})
+          observed=sum(row["observedAddresses"] or 0 for row in topo["neighborhoods"])
+          suppressed=sum(row["observedAddresses"] is None for row in topo["neighborhoods"])
+          located=hexdata["coverage"]["nonResidentialWithCoordinatesInOfficialBairros"]-topo["unassignedCnefePointBoundary"]-topo["ambiguousCnefePointBoundary"]
+          assert observed<=located and located-observed<=suppressed*4
+          assert all(row["cnpjCellsPublished"]<=row["fullCells"] for row in topo["neighborhoods"])
+          assert all(row["partialAreaKm2"]>=0 and row["fullCellAreaKm2"]>=0 for row in topo["neighborhoods"])
           hotspots=hexdata.get("economicHotspots",[])
           assert len({h["id"] for h in hotspots})==len(hotspots)
           assert all(h["matched"]>=60 and h["hexagons"]>=3 for h in hotspots)
@@ -117,6 +162,7 @@ jobs:
           retention-days: 30
           if-no-files-found: error
       - name: Publicar dados oficiais sobre último commit de main
+        if: github.event_name != 'pull_request'
         run: |
           set -euo pipefail
           mkdir -p /tmp/canoas-geo-approved
@@ -134,6 +180,7 @@ jobs:
             if [ "$i" -eq 5 ]; then exit 1; fi
           done
       - name: Publicar PMTiles de bairros e CNPJ no GitHub Pages
+        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run deploy.yml --ref main
