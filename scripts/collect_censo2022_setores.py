@@ -56,7 +56,7 @@ SELECTED = {
         "pessoas_sexo":"V01006", "masculino":"V01007", "feminino":"V01008",
         # Age/sex counts are kept separately, always under the exact
         # authoritative description; do not invent broad age bands.
-        **{"demo_"+str(i):"V"+str(i) for i in range(1009,1042)}
+        **{"demo_"+str(i):f"V{i:05d}" for i in range(1009,1042)}
     },
     "domicilio": {
         "dp_permanentes":"V00001", "dp_improvisados":"V00002",
@@ -293,7 +293,7 @@ def official_neighborhoods(fields):
                 if share<.999:rec["populationAreaAllocationUnknown"]+=m["pop"]*share
         overlap.append({"id":sid,"officialBairroDominant":links[0][0] if links else None,
           "dominantAreaPercent":round(100*links[0][1],2) if links else 0,
-          "bairrosIntersected":[{"name":n,"areaSharePct":round(100,fraction*100)/100} for n,fraction in links],
+          "bairrosIntersected":[{"name":n,"areaSharePct":round(fraction*100,2)} for n,fraction in links],
           "crossBoundary":any(part<.999 for _,part in links) or not links})
     for name,g in regions:
         rec=output[name]
