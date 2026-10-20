@@ -54,7 +54,7 @@ function color(steps:number[]):ExpressionSpecification{
  const field=["number",["get","__metric__"],-1]; // substitute metric in calling function
  const items:unknown[]=["step",field,green[0]];
  steps.forEach((v,i)=>items.push(v,green[Math.min(i+1,4)]));
- return ["case",["==",field,-1],NODATA,items] as ExpressionSpecification;
+ return ["case",["==",field,-1],NODATA,items] as unknown as ExpressionSpecification;
 }
 function metricColor(metric:string,steps:number[]):ExpressionSpecification{
  const expr=color(steps);
@@ -232,13 +232,13 @@ export function Censo2022SetoresDashboard(){
     const id=String(e.features?.[0]?.properties?.id||"");
     const state=stateRef.current;
     const row=state?.byId.get(id);
-    if(!row)return;
+    if(!row||!state)return;
     setSelected(id);
     const root=document.createElement("div"),h=document.createElement("strong");
     h.textContent="Setor censitário "+id;root.append(h);
     append(root,"Situação",row.situacao);
     const metricInfo=state?.dictionary.get(state.metric);
-    append(root,"Indicador",metricInfo?.label||metric);
+    append(root,"Indicador",metricInfo?.label||state.metric);
     append(root,"Valor",format(row.metrics[state.metric],metricInfo));
     append(root,"População 2022",format(row.metrics.pop));
     append(root,"Domicílios ocupados",format(row.metrics.dom_ocupados));
