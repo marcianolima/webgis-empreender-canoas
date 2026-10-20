@@ -5,7 +5,7 @@ import {usePathname} from "next/navigation";
 import {useEffect,useMemo,useRef,useState} from "react";
 import {
   BarChart3,BookOpen,BriefcaseBusiness,ChevronDown,ChevronRight,Database,
-  ExternalLink,FileText,Globe2,Hexagon,Home,Landmark,
+  ExternalLink,FileText,Globe2,Hexagon,Home,Landmark,Layers3,
   MapPinned,Menu,Network,SearchCheck,TrendingUp,X,type LucideIcon
 } from "lucide-react";
 
@@ -16,6 +16,7 @@ const groups:NavGroup[]=[
  {id:"territorio",label:"Território e mapas",icon:MapPinned,items:[
   {href:"/#mapa",label:"Território de Canoas",icon:Globe2},
   {href:"/bairros",label:"Mapa econômico",icon:MapPinned},
+  {href:"/territorio",label:"Inteligência territorial",icon:Layers3},
   {href:"/hex500",label:"Hexágonos e calor",icon:Hexagon}
  ]},
  {id:"economia",label:"Empresas e indicadores",icon:BriefcaseBusiness,items:[
@@ -41,6 +42,7 @@ const titles:Record<string,string>={
  "/":"Painel geral",
  "/cnpj":"Empresas CNPJ",
  "/bairros":"Mapa econômico de bairros",
+ "/territorio":"Inteligência territorial",
  "/hex500":"Hexágonos e calor",
  "/setores":"Setores econômicos",
  "/trabalho":"Emprego e exportações",
@@ -56,7 +58,8 @@ const titles:Record<string,string>={
 type HeaderAction={href:string;label:string;icon:LucideIcon};
 const headerActions:Record<string,HeaderAction>={
  "/cnpj":{href:"/bairros",label:"Mapa econômico",icon:MapPinned},
- "/bairros":{href:"/hex500",label:"Hexágonos e calor",icon:Hexagon},
+ "/bairros":{href:"/territorio",label:"Análise comparativa",icon:Layers3},
+ "/territorio":{href:"/hex500",label:"Hexágonos e calor",icon:Hexagon},
  "/hex500":{href:"/bairros",label:"Mapa econômico",icon:MapPinned},
  "/sebrae":{href:"/sebrae/series",label:"Séries históricas",icon:TrendingUp},
  "/sebrae/series":{href:"/sebrae/consulta",label:"Consulta ao vivo",icon:SearchCheck},
