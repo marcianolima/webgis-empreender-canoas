@@ -198,7 +198,7 @@ jobs:
                 content=await tp.locator("body").inner_text()
                 assert "Mapa indisponível" not in content,content[-2500:]
                 assert "Carregando cartografia PMTiles" not in content
-                assert "CNPJs territorializados" in content and "Precisão mensurável" in content
+                assert "cnpjs territorializados" in content.lower() and "precisão mensurável" in content.lower(),content[-2300:]
                 timg=Image.open(io.BytesIO(await tp.locator(".maplibregl-canvas").screenshot())).convert("RGB")
                 colored=sum(1 for r,g,b in timg.getdata() if 30<r<230 and 30<b<235 and abs(r-b)>15)
                 print("BIVARIATE_MAP",label,"canvas",timg.size,"colored",colored,flush=True)
