@@ -38,7 +38,7 @@ type Topology={schemaVersion:1;status:"verified";territory:string;modelled:boole
 type DistrictBusiness={reference:string;neighborhoods:{name:string;active:number|null;areaKm2:number;population2022:number|null}[]};
 type HexContext={spatialTopology?:{neighborhoods:{bairro:string;observedAddresses:number|null;observedPerKm2:number|null}[]}};
 type OfficialPolygon={type:"FeatureCollection";features:Array<{properties:{BAIRRO:string};geometry:GeoJSON.Polygon|GeoJSON.MultiPolygon}>};
-type FocusState={sectors:Sector[];byId:Map<string,Sector>;dictionary:Map<string,Dictionary>};
+type FocusState={sectors:Sector[];byId:Map<string,Sector>;dictionary:Map<string,Dictionary>;metric:string};
 const format=(v:number|null|undefined,metadata?:Dictionary):string=>{
  if(v===null||v===undefined||!Number.isFinite(v))return "N/D";
  if(metadata?.unit.startsWith("R$"))return money.format(v);
@@ -169,7 +169,7 @@ export function Censo2022SetoresDashboard(){
   }
   return buckets;
  },[valid,metric]);
- stateRef.current={sectors:filtered,byId,dictionary};
+ stateRef.current={sectors:filtered,byId,dictionary,metric};
 
  useEffect(()=>{
   if(!census?.pmtiles||!element.current||!official||!topology)return;
@@ -233,9 +233,9 @@ export function Censo2022SetoresDashboard(){
     const root=document.createElement("div"),h=document.createElement("strong");
     h.textContent="Setor censitário "+id;root.append(h);
     append(root,"Situação",row.situacao);
-    const metricInfo=state?.dictionary.get(metric);
+    const metricInfo=state?.dictionary.get(state.metric);
     append(root,"Indicador",metricInfo?.label||metric);
-    append(root,"Valor",format(row.metrics[metric],metricInfo));
+    append(root,"Valor",format(row.metrics[state.metric],metricInfo));
     append(root,"População 2022",format(row.metrics.pop));
     append(root,"Domicílios ocupados",format(row.metrics.dom_ocupados));
     const overlap=links.get(id);
@@ -250,7 +250,7 @@ export function Censo2022SetoresDashboard(){
    });
   })().catch(e=>{if(!disposed)setMapError(String(e));});
   return ()=>{disposed=true;map?.remove();if(registered)maplibregl.removeProtocol("pmtiles");mapRef.current=null;};
- },[census,official,topology,links,metric]);
+ },[census,official,topology,links]);
 
  useEffect(()=>{
   const map=mapRef.current;if(!map||!ready)return;
