@@ -85,6 +85,7 @@ jobs:
       - name: Validar site e integridade territorial
         run: |
           python - <<'PY'
+          import hashlib
           import json
           from pathlib import Path
           p=Path("out")
@@ -139,6 +140,20 @@ jobs:
           assert (p/"bairros/index.html").exists(),"página de bairros não exportada"
           assert (p/"hex500/index.html").exists(),"página hexagonal não exportada"
           assert (p/"territorio/index.html").exists(),"cartografia comparativa não exportada"
+          assert (p/"censo2022/index.html").exists(),"atlas censitário não exportado"
+          sectors=json.loads((p/"data/censo2022-setores.json").read_text())
+          seams=json.loads((p/"data/censo2022-setores-bairros.json").read_text())
+          features=json.loads((p/"data/censo2022-setores.geojson").read_text())
+          tiles=p/"data/censo2022-setores.pmtiles"
+          assert sectors["schemaVersion"]==1 and sectors["status"]=="verified"
+          assert sectors["territory"]==seams["territory"]=="4304606"
+          assert sectors["sectorCount"]==len(sectors["sectors"])==len(features["features"])==659
+          assert sectors["populationSumReported"]==347657
+          assert len(seams["neighborhoods"])==18
+          assert len(sectors["dictionary"])>=100
+          assert tiles.exists() and tiles.read_bytes()[:8]==bytes((80,77,84,105,108,101,115,3))
+          assert hashlib.sha256(tiles.read_bytes()).hexdigest()==sectors["pmtiles"]["sha256"]
+          assert sectors["privacy"]["individualCoordinatesPublished"] is False
           assert (p/"data/bairros-oficiais.geojson").exists(),"malha GeoCanoas não armazenada"
           bounds=json.loads((p/"data/bairros-oficiais.geojson").read_text())
           assert len(bounds["features"])==18
@@ -214,6 +229,14 @@ jobs:
                   get("bairros/")
                   get("hex500/")
                   get("territorio/")
+                  get("censo2022/")
+                  census=json.loads(get("data/censo2022-setores.json"))
+                  assert census["territory"]=="4304606" and census["sectorCount"]==659
+                  assert census["populationSumReported"]==347657
+                  assert len(json.loads(get("data/censo2022-setores-bairros.json"))["neighborhoods"])==18
+                  pm_set=get("data/censo2022-setores.pmtiles")
+                  assert pm_set[:8]==bytes((80,77,84,105,108,101,115,3))
+                  print("CENSO_SETORES_PM_HTTP_OK",len(pm_set),flush=True)
                   detail=json.loads(get("data/cnefe-hex500.json"))
                   assert detail["territory"]=="4304606"
                   if detail.get("status")=="verified":
