@@ -4,6 +4,8 @@ on:
     branches: [feat/censo2022-setores-pmtiles-20261020]
     paths:
       - .github/workflows/censo2022.yml
+      - scripts/collect_censo2022_setores.py
+      - tests/test_censo2022_setores.py
   workflow_dispatch:
 permissions:
   contents: write
