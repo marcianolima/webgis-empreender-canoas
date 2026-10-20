@@ -62,5 +62,7 @@ jobs:
             echo "Nenhum arquivo censitário alterado"
           else
             git commit -m "data(censo2022): publicar malha e agregados oficiais municipais em PMTiles"
-            git push
+            git fetch origin "$GITHUB_REF_NAME"
+            git rebase "origin/$GITHUB_REF_NAME"
+            git push origin "HEAD:$GITHUB_REF_NAME"
           fi
