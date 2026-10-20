@@ -360,6 +360,7 @@ export function Hex500Dashboard(){
       <option value="all">Todo o município</option>
       {bairroNames.map(name=><option key={name} value={name}>{name}</option>)}
      </select>
+       {bairro!=="all"&&<a href={base+"/censo2022/?bairro="+encodeURIComponent(bairro)} className="mt-2 inline-block text-xs font-bold text-brand-700 underline">Ver setores censitários do bairro →</a>}
     </label>
     <label className="text-xs font-bold text-slate-600">Base cartográfica
      <select value={osm?"osm":"off"} onChange={e=>setOsm(e.target.value==="osm")} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-normal">
