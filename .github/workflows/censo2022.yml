@@ -1,0 +1,68 @@
+name: Censo 2022 | Geoprocessamento e PMTiles Canoas
+on:
+  push:
+    branches: [feat/censo2022-setores-pmtiles-20261020]
+    paths:
+      - .github/workflows/censo2022.yml
+      - scripts/collect_censo2022_setores.py
+      - tests/test_censo2022_setores.py
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: censo2022-canoas-2026
+  cancel-in-progress: false
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar bibliotecas geoespaciais e dicionário oficial
+        run: python -m pip install --quiet "pyshp>=2.3,<3" "shapely>=2,<3" "pyproj>=3.6,<4" "openpyxl>=3.1,<4"
+      - name: Instalar compilador PMTiles vetorial
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq make g++ libsqlite3-dev zlib1g-dev liblzma-dev
+          git clone --quiet --depth 1 https://github.com/felt/tippecanoe.git /tmp/tippecanoe-censo
+          make -C /tmp/tippecanoe-censo -j2 >/tmp/tippecanoe-censo-make.log 2>&1 || { tail -70 /tmp/tippecanoe-censo-make.log; exit 1; }
+          sudo make -C /tmp/tippecanoe-censo install >/dev/null
+          tippecanoe --version
+      - name: Baixar setores RS e extrair apenas Canoas, criar PMTiles e indicadores
+        run: python -u scripts/collect_censo2022_setores.py
+      - name: Integridade de fontes, setores, somas e PMTiles
+        run: |
+          python -m unittest discover -s tests -p 'test_censo2022_setores.py' -v
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          d=Path("public/data")
+          x=json.loads((d/"censo2022-setores.json").read_text())
+          b=json.loads((d/"censo2022-setores-bairros.json").read_text())
+          g=json.loads((d/"censo2022-setores.geojson").read_text())
+          m=d/"censo2022-setores.pmtiles"
+          assert x["status"]==b["status"]=="verified" and x["territory"]=="4304606"
+          assert len(x["sectors"])==len(g["features"])==x["sectorCount"]
+          assert len(b["neighborhoods"])==18
+          assert m.read_bytes()[:8]==b"PMTiles\x03"
+          assert hashlib.sha256(m.read_bytes()).hexdigest()==x["pmtiles"]["sha256"]
+          print("CENSO2022_SETORES_READY",x["sectorCount"],x["populationSumReported"],m.stat().st_size)
+          PY
+      - name: Versionar os dados filtrados locais (não arquivar ZIP estadual)
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/censo2022-setores.json public/data/censo2022-setores-bairros.json public/data/censo2022-setores.geojson public/data/censo2022-setores.pmtiles
+          if git diff --cached --quiet; then
+            echo "Nenhum arquivo censitário alterado"
+          else
+            git commit -m "data(censo2022): publicar malha e agregados oficiais municipais em PMTiles"
+            git fetch origin "$GITHUB_REF_NAME"
+            git rebase "origin/$GITHUB_REF_NAME"
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi

@@ -311,6 +311,7 @@ export function TerritorialIntelligenceDashboard(){
       <p>Endereços CNEFE não residenciais geolocalizados: {fmt(chosen.cnefeObserved)}</p>
       <p>Qualidade de endereço CNEFE (1–2): {fmt(chosen.highQualityPct,"%")}</p>
       <p>{integer.format(chosen.fullCells)} hexágonos inteiramente contidos e {integer.format(chosen.borderFragments)} fragmentos de divisa.</p>
+      <a href={prefix+"/censo2022/?bairro="+encodeURIComponent(chosen.name)} className="mt-2 inline-block font-bold text-brand-700 underline">Consultar indicadores IBGE dos setores neste bairro →</a>
      </section>}
     </aside>
    </section>
