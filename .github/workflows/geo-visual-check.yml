@@ -95,7 +95,7 @@ jobs:
                 assert "Carregando PMTiles" not in content,content[-3000:]
                 topbar=page.get_by_label("Cabeçalho do observatório")
                 print("HEADER_LINKS",label,await topbar.locator("a").evaluate_all("(links)=>links.map(a=>({href:a.getAttribute('href'),name:a.getAttribute('aria-label')}))"),flush=True)
-                await topbar.get_by_role("link",name="Hexágonos e calor").wait_for(timeout=12000)
+                await topbar.get_by_role("link",name="Análise comparativa").wait_for(timeout=12000)
                 assert await page.get_by_text("← Observatório econômico").count()==0
                 assert await page.get_by_text("Hexágonos 500 m e mapa de calor →").count()==0
                 assert not errors,errors
@@ -186,6 +186,44 @@ jobs:
                   assert m["scroll"]<=m["window"]+12
                 await hp.screenshot(path=f"hex500-{label}.png",full_page=True)
                 await hp.close()
+                tp=await browser.new_page(viewport={"width":w,"height":h},device_scale_factor=1)
+                t_errors=[]
+                tp.on("pageerror",lambda err:t_errors.append(str(err)))
+                response=await tp.goto(ROOT+"territorio/",wait_until="domcontentloaded",timeout=60000)
+                assert response and response.status==200
+                await tp.get_by_role("heading",name="Inteligência territorial comparativa").wait_for()
+                await tp.get_by_text("Bairros comparáveis",exact=True).wait_for(timeout=35000)
+                await tp.locator(".maplibregl-canvas").wait_for(timeout=45000)
+                await tp.wait_for_timeout(6000)
+                content=await tp.locator("body").inner_text()
+                assert "Mapa indisponível" not in content,content[-2500:]
+                assert "Carregando cartografia PMTiles" not in content
+                assert "CNPJs territorializados" in content and "Precisão mensurável" in content
+                timg=Image.open(io.BytesIO(await tp.locator(".maplibregl-canvas").screenshot())).convert("RGB")
+                colored=sum(1 for r,g,b in timg.getdata() if 30<r<230 and 30<b<235 and abs(r-b)>15)
+                print("BIVARIATE_MAP",label,"canvas",timg.size,"colored",colored,flush=True)
+                assert colored>300,"Thematic bivariate PMTiles map did not render"
+                selector=tp.get_by_label("Modo cartográfico")
+                for choice in ("cnpjDensity","cnefeDensity","quality","bivariate"):
+                  await selector.select_option(choice)
+                  await tp.wait_for_timeout(180)
+                  assert "Mapa indisponível" not in (await tp.locator("body").inner_text())
+                rank=tp.get_by_role("heading",name="Ranking territorial")
+                assert await rank.count()==1
+                await tp.get_by_label("Ranking por").select_option("cnefe")
+                await tp.get_by_label("Buscar bairro na comparação").fill("Centro")
+                await tp.get_by_role("button",name="1. Centro").click()
+                await tp.wait_for_timeout(200)
+                assert "Endereços CNEFE não residenciais geolocalizados" in (await tp.locator("body").inner_text())
+                await tp.get_by_label("Buscar bairro na comparação").fill("")
+                if label=="mobile":
+                  width=await tp.evaluate("({scroll:document.documentElement.scrollWidth,window:window.innerWidth})")
+                  print("BIVARIATE_MOBILE_OVERFLOW",width,flush=True)
+                  assert width["scroll"]<=width["window"]+12
+                assert not t_errors,t_errors
+                print("BIVARIATE_TERRITORIAL_BROWSER_OK",label,flush=True)
+                await tp.screenshot(path=f"territorio-{label}.png",full_page=True)
+                await tp.close()
               await browser.close()
           asyncio.run(main())
           PY
@@ -199,6 +237,8 @@ jobs:
             geo-mobile.png
             hex500-desktop.png
             hex500-mobile.png
+            territorio-desktop.png
+            territorio-mobile.png
             header-desktop.png
             header-mobile.png
           if-no-files-found: ignore
