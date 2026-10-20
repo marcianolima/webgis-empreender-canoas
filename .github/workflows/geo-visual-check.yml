@@ -212,7 +212,7 @@ jobs:
                 assert await rank.count()==1
                 await tp.get_by_label("Ranking por").select_option("cnefe")
                 await tp.get_by_label("Buscar bairro na comparação").fill("Centro")
-                await tp.get_by_role("button",name="1. Centro").click()
+                await tp.locator("aside button").filter(has_text="Centro").first.click()
                 await tp.wait_for_timeout(200)
                 assert "Endereços CNEFE não residenciais geolocalizados" in (await tp.locator("body").inner_text())
                 await tp.get_by_label("Buscar bairro na comparação").fill("")
