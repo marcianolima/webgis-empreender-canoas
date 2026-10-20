@@ -276,6 +276,7 @@ export function BairrosDashboard(){
        <strong>{selectedRow.name}</strong><p className="mt-1">CNPJs ativos: {formatted(selectedRow.row.active,"active")}</p>
        <p>População 2022 (GeoCanoas): {selectedRow.row.population2022===null?"N/D":number.format(selectedRow.row.population2022)}</p>
        <p>{textMetric[metric]}: {formatted(selectedRow.value,metric)} {selectedRow.value!==null?unitMetric[metric]:""}</p>
+        <Link href={"/censo2022?bairro="+encodeURIComponent(selectedRow.name)} className="mt-2 inline-flex font-bold text-brand-700 underline">Explorar setores censitários deste bairro →</Link>
       </div>}
     </aside>
    </section>
