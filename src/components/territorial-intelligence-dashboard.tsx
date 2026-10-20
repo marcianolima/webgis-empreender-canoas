@@ -93,7 +93,7 @@ export function TerritorialIntelligenceDashboard(){
  const comparable=rows.filter(r=>r.classIndex!==null).length;
  const qualityCount=rows.filter(r=>r.highQualityPct!==null).length;
  snapshot.current={rows,view};
- const anchors=useMemo(()=>new Map(labels?.features.map(f=>[f.properties.bairro,f.geometry.coordinates])||[]),[labels]);
+ const anchors=useMemo(()=>new Map<string,number[]>(labels?.features.map(f=>[f.properties.bairro,f.geometry.coordinates] as [string,number[]])||[]),[labels]);
 
  useEffect(()=>{
   if(!cnpj?.pmtiles||!node.current||!cnefe||!labels)return;
