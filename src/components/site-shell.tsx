@@ -17,6 +17,7 @@ const groups:NavGroup[]=[
   {href:"/#mapa",label:"Território de Canoas",icon:Globe2},
   {href:"/bairros",label:"Mapa econômico",icon:MapPinned},
   {href:"/territorio",label:"Inteligência territorial",icon:Layers3},
+  {href:"/censo2022",label:"Censo 2022 · Setores",icon:MapPinned},
   {href:"/hex500",label:"Hexágonos e calor",icon:Hexagon}
  ]},
  {id:"economia",label:"Empresas e indicadores",icon:BriefcaseBusiness,items:[
@@ -43,6 +44,7 @@ const titles:Record<string,string>={
  "/cnpj":"Empresas CNPJ",
  "/bairros":"Mapa econômico de bairros",
  "/territorio":"Inteligência territorial",
+ "/censo2022":"Censo 2022 · Setores",
  "/hex500":"Hexágonos e calor",
  "/setores":"Setores econômicos",
  "/trabalho":"Emprego e exportações",
@@ -59,7 +61,8 @@ type HeaderAction={href:string;label:string;icon:LucideIcon};
 const headerActions:Record<string,HeaderAction>={
  "/cnpj":{href:"/bairros",label:"Mapa econômico",icon:MapPinned},
  "/bairros":{href:"/territorio",label:"Análise comparativa",icon:Layers3},
- "/territorio":{href:"/hex500",label:"Hexágonos e calor",icon:Hexagon},
+ "/territorio":{href:"/censo2022",label:"Atlas Censo 2022",icon:MapPinned},
+ "/censo2022":{href:"/hex500",label:"Hexágonos e calor",icon:Hexagon},
  "/hex500":{href:"/bairros",label:"Mapa econômico",icon:MapPinned},
  "/sebrae":{href:"/sebrae/series",label:"Séries históricas",icon:TrendingUp},
  "/sebrae/series":{href:"/sebrae/consulta",label:"Consulta ao vivo",icon:SearchCheck},
