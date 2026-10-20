@@ -1,0 +1,51 @@
+name: Censo 2022 | Inspecionar malha e agregados setoriais
+on:
+  push:
+    branches: [feat/censo2022-setores-pmtiles-20261020]
+    paths: [.github/workflows/probe-censo2022.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspecionar arquivos oficiais IBGE e geometrias do RS
+        run: |
+          python - <<'PY'
+          import urllib.request,zipfile,io,csv,os,traceback,struct
+          root="https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/Agregados_por_Setores_Censitarios/Agregados_por_Setor_csv/"
+          files=[
+            ("malha","https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/Agregados_por_Setores_Censitarios/malha_com_atributos/setores/shp/UF/RS/RS_setores_CD2022.zip"),
+            ("basico",root+"Agregados_por_setores_basico_BR_20260520.zip"),
+            ("demografia",root+"Agregados_por_setores_demografia_BR.zip"),
+            ("alfabetizacao",root+"Agregados_por_setores_alfabetizacao_BR.zip"),
+            ("domicilio1",root+"Agregados_por_setores_caracteristicas_domicilio1_BR.zip"),
+          ]
+          for name,url in files:
+            try:
+              req=urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0 (IBGE Census open data)","Accept":"*/*"})
+              with urllib.request.urlopen(req,timeout=90) as r:b=r.read(170000000)
+              print("ARCHIVE",name,"bytes",len(b),"signature",b[:4],flush=True)
+              z=zipfile.ZipFile(io.BytesIO(b))
+              print("MEMBERS",name,[(f.filename,f.file_size) for f in z.infolist()][:16],flush=True)
+              for f in z.infolist():
+                if f.filename.lower().endswith((".csv",".txt")) and f.file_size<350000000:
+                  with z.open(f) as stream:
+                    lines=[stream.readline().decode("utf-8-sig",errors="replace").strip() for _ in range(3)]
+                  print("SAMPLE",name,f.filename,[(len(line),line[:1400]) for line in lines],flush=True)
+                  break
+                if f.filename.lower().endswith(".dbf"):
+                  with z.open(f) as stream:
+                    h=stream.read(32)
+                    n=struct.unpack("<I",h[4:8])[0];length=struct.unpack("<H",h[8:10])[0];count=(length-33)//32
+                    fields=[]
+                    for i in range(count):
+                      x=stream.read(32)
+                      fields.append((x[:11].rstrip(b"\\0").decode("latin1"),chr(x[11]),x[16],x[17]))
+                  print("DBF_SCHEMA",name,n,fields,flush=True)
+                  break
+            except Exception as ex:print("PROBE_ERROR",name,type(ex).__name__,str(ex)[:500],flush=True)
+          PY
