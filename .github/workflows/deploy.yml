@@ -138,6 +138,7 @@ jobs:
           assert (p/"sebrae/consulta/index.html").exists(),"página de consulta avançada não exportada"
           assert (p/"bairros/index.html").exists(),"página de bairros não exportada"
           assert (p/"hex500/index.html").exists(),"página hexagonal não exportada"
+          assert (p/"territorio/index.html").exists(),"cartografia comparativa não exportada"
           assert (p/"data/bairros-oficiais.geojson").exists(),"malha GeoCanoas não armazenada"
           bounds=json.loads((p/"data/bairros-oficiais.geojson").read_text())
           assert len(bounds["features"])==18
@@ -212,6 +213,7 @@ jobs:
                   get("sebrae/consulta/")
                   get("bairros/")
                   get("hex500/")
+                  get("territorio/")
                   detail=json.loads(get("data/cnefe-hex500.json"))
                   assert detail["territory"]=="4304606"
                   if detail.get("status")=="verified":
