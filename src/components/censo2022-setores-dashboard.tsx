@@ -127,6 +127,10 @@ export function Censo2022SetoresDashboard(){
      c.privacy.individualCoordinatesPublished)throw Error("Arquivos censitários municipais não homologados");
    if(!c.dictionary.some(x=>x.id==="pop")||!c.dictionary.some(x=>x.id==="dens_pop"))throw Error("Metadados censitários incompletos");
    setCensus(c);setTopology(t);setBusiness(b);setHex(h);setOfficial(o);
+   const requestedBairro=new URLSearchParams(window.location.search).get("bairro");
+   if(requestedBairro&&t.neighborhoods.some(row=>row.bairro===requestedBairro))setBairro(requestedBairro);
+   const requestedSector=new URLSearchParams(window.location.search).get("setor");
+   if(requestedSector&&c.sectors.some(row=>row.id===requestedSector))setSelected(requestedSector);
   }).catch(e=>{if(e.name!=="AbortError")setError(String(e.message||e));});
   return ()=>ctrl.abort();
  },[]);
@@ -260,6 +264,11 @@ export function Censo2022SetoresDashboard(){
   map.setFilter("censo-select",["==",["get","id"],selected]);
   map.setFilter("bairros-select",["==",["get","BAIRRO"],bairro==="all"?"":bairro]);
  },[metric,steps,visibleIds,selected,ready,bairro]);
+ useEffect(()=>{
+  const map=mapRef.current;
+  const sector=byId.get(selected);
+  if(map&&ready&&sector)map.flyTo({center:[sector.centroid[0],sector.centroid[1]],zoom:14,speed:1.1});
+ },[byId,selected,ready]);
  useEffect(()=>{
   const map=mapRef.current;if(map&&ready)setBasemapVisible(map,basemap);
  },[basemap,ready]);
